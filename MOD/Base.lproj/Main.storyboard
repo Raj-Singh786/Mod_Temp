@@ -11,6 +11,9 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <customFonts key="customFonts">
+        <array key="PlusJakartaSans-Bold.ttf">
+            <string>PlusJakartaSans-Bold</string>
+        </array>
         <array key="PlusJakartaSans-ExtraBold.ttf">
             <string>PlusJakartaSans-ExtraBold</string>
         </array>
@@ -141,6 +144,9 @@ baked at 800° perfection within minutes.</string>
                                                         <real key="value" value="20"/>
                                                     </userDefinedRuntimeAttribute>
                                                 </userDefinedRuntimeAttributes>
+                                                <connections>
+                                                    <action selector="didTapOnstartBtn:" destination="ZoE-g8-n7m" eventType="touchUpInside" id="CUf-BC-rZv"/>
+                                                </connections>
                                             </button>
                                         </subviews>
                                         <constraints>
@@ -197,6 +203,7 @@ baked at 800° perfection within minutes.</string>
                         <outlet property="descLabel" destination="A8y-st-dMC" id="cAQ-Sh-EiP"/>
                         <outlet property="pageControl" destination="6aY-mn-ebc" id="Gq9-2R-8yT"/>
                         <outlet property="scrollView" destination="XdY-C1-q6p" id="dnE-wR-SY5"/>
+                        <outlet property="skipBtn" destination="vwG-qq-0xq" id="a1B-2c-3d4"/>
                         <outlet property="startedBtn" destination="T8Z-bG-Jhz" id="jkP-yx-bop"/>
                         <outlet property="titleLabel" destination="P6D-ga-Wff" id="fLF-za-Brc"/>
                     </connections>
@@ -205,15 +212,242 @@ baked at 800° perfection within minutes.</string>
             </objects>
             <point key="canvasLocation" x="852.67175572519079" y="130.98591549295776"/>
         </scene>
+        <!--Login View Controller-->
+        <scene sceneID="bsG-Ro-XWn">
+            <objects>
+                <viewController storyboardIdentifier="LoginViewController" id="szo-Qp-P3t" customClass="LoginViewController" customModule="MOD" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="WeU-a0-Jf4">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4tK-fy-Qfy">
+                                <rect key="frame" x="0.0" y="118" width="393" height="60"/>
+                                <subviews>
+                                    <stackView opaque="NO" contentMode="scaleToFill" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Cnp-QC-c7H">
+                                        <rect key="frame" x="123.33333333333333" y="15" width="146.33333333333337" height="30"/>
+                                        <subviews>
+                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="shield-icon" translatesAutoresizingMaskIntoConstraints="NO" id="fhR-SP-syT">
+                                                <rect key="frame" x="0.0" y="0.0" width="30" height="30"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="width" constant="30" id="gEI-fF-X7x"/>
+                                                    <constraint firstAttribute="height" constant="30" id="zvi-1R-5Od"/>
+                                                </constraints>
+                                            </imageView>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MOD - Log In" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="n86-id-TdW">
+                                                <rect key="frame" x="38.000000000000021" y="0.0" width="108.33333333333331" height="30"/>
+                                                <fontDescription key="fontDescription" name="PlusJakartaSans-Bold" family="Plus Jakarta Sans" pointSize="17"/>
+                                                <nil key="textColor"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                        </subviews>
+                                    </stackView>
+                                </subviews>
+                                <color key="backgroundColor" name="mod_back"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="60" id="Nou-dZ-LE1"/>
+                                    <constraint firstItem="Cnp-QC-c7H" firstAttribute="centerY" secondItem="4tK-fy-Qfy" secondAttribute="centerY" id="lIF-8u-a4p"/>
+                                    <constraint firstItem="Cnp-QC-c7H" firstAttribute="centerX" secondItem="4tK-fy-Qfy" secondAttribute="centerX" id="zwh-C8-sve"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                        <color key="value" name="text_gray"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                        <real key="value" value="0.5"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Welcome Back" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="YlL-S0-YEn">
+                                <rect key="frame" x="20" y="198" width="353" height="29"/>
+                                <fontDescription key="fontDescription" name="PlusJakartaSans-Bold" family="Plus Jakarta Sans" pointSize="24"/>
+                                <color key="textColor" name="black_bold"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Access your perks, saved pizzas &amp; points balance" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="EpG-ft-g3f">
+                                <rect key="frame" x="20" y="232" width="353" height="17"/>
+                                <fontDescription key="fontDescription" name="PlusJakartaSans-Regular" family="Plus Jakarta Sans" pointSize="14"/>
+                                <color key="textColor" name="black_bold"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Email or Mobile Number" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tD4-tW-JA8">
+                                <rect key="frame" x="20" y="279" width="353" height="14.666666666666686"/>
+                                <fontDescription key="fontDescription" name="PlusJakartaSans-SemiBold" family="Plus Jakarta Sans" pointSize="12"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="NUG-9r-cfV">
+                                <rect key="frame" x="20" y="454.66666666666669" width="353" height="123.33333333333331"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jjh-6L-FH3">
+                                        <rect key="frame" x="0.0" y="0.0" width="353" height="45"/>
+                                        <color key="backgroundColor" name="mod_red"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="45" id="YKD-1r-A2x"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="PlusJakartaSans-SemiBold" family="Plus Jakarta Sans" pointSize="14"/>
+                                        <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                                        <state key="normal" title="Continue login">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="20"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="didTapOnLoginBtn:" destination="szo-Qp-P3t" eventType="touchUpInside" id="Hkb-75-bMr"/>
+                                            <action selector="didTapOnstartBtn:" destination="ZoE-g8-n7m" eventType="touchUpInside" id="QE7-o1-6xc"/>
+                                        </connections>
+                                    </button>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="OR" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="oeh-tr-WOW">
+                                        <rect key="frame" x="0.0" y="55" width="353" height="13.333333333333329"/>
+                                        <fontDescription key="fontDescription" name="PlusJakartaSans-Bold" family="Plus Jakarta Sans" pointSize="11"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="B8w-9g-iUW">
+                                        <rect key="frame" x="0.0" y="78.333333333333314" width="353" height="45"/>
+                                        <color key="backgroundColor" name="Colors"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="45" id="h4p-ID-GvQ"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="PlusJakartaSans-SemiBold" family="Plus Jakarta Sans" pointSize="14"/>
+                                        <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                                        <state key="normal" title="Continue  As Guest">
+                                            <color key="titleColor" name="black_bold"/>
+                                        </state>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="20"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                                <color key="value" name="text_gray"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                                <real key="value" value="0.5"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="didTapOnGuestBtn:" destination="szo-Qp-P3t" eventType="touchUpInside" id="wA2-5P-evT"/>
+                                            <action selector="didTapOnstartBtn:" destination="ZoE-g8-n7m" eventType="touchUpInside" id="ZYA-c7-Ln1"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                            </stackView>
+                            <stackView opaque="NO" contentMode="scaleToFill" spacing="1" translatesAutoresizingMaskIntoConstraints="NO" id="FUq-KX-sGt">
+                                <rect key="frame" x="30" y="354.66666666666669" width="333" height="20"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Don't have an account? " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DUx-s4-QzQ">
+                                        <rect key="frame" x="0.0" y="0.0" width="156" height="20"/>
+                                        <fontDescription key="fontDescription" name="PlusJakartaSans-Regular" family="Plus Jakarta Sans" pointSize="14"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Sign Up &amp; Claim $20 Perks" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KUl-bf-80Y">
+                                        <rect key="frame" x="157" y="0.0" width="176" height="20"/>
+                                        <fontDescription key="fontDescription" name="PlusJakartaSans-SemiBold" family="Plus Jakarta Sans" pointSize="14"/>
+                                        <color key="textColor" name="mod_red"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="20" id="Uji-ZC-5sj"/>
+                                </constraints>
+                            </stackView>
+                            <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gXn-c1-FJb">
+                                <rect key="frame" x="20" y="301.66666666666669" width="343" height="45"/>
+                                <subviews>
+                                    <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Enter Email or Mobile Number" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="uPS-DL-r00">
+                                        <rect key="frame" x="40" y="12" width="279" height="21"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no"/>
+                                    </textField>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="kcA-vk-zUO">
+                                        <rect key="frame" x="10" y="12.666666666666629" width="20" height="20"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="20" id="C6y-kh-lEo"/>
+                                            <constraint firstAttribute="height" constant="18" id="oBY-U5-Hze"/>
+                                        </constraints>
+                                        <imageReference key="image" image="envelope" catalog="system" symbolScale="large" renderingMode="hierarchical">
+                                            <hierarchicalColors>
+                                                <color systemColor="labelColor"/>
+                                                <color systemColor="secondaryLabelColor"/>
+                                                <color systemColor="tertiaryLabelColor"/>
+                                            </hierarchicalColors>
+                                        </imageReference>
+                                    </imageView>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="kcA-vk-zUO" firstAttribute="leading" secondItem="gXn-c1-FJb" secondAttribute="leading" constant="10" id="6R8-hC-KG3"/>
+                                    <constraint firstAttribute="bottom" secondItem="uPS-DL-r00" secondAttribute="bottom" constant="12" id="RiB-8g-pIz"/>
+                                    <constraint firstAttribute="height" constant="45" id="Zgn-uA-YUI"/>
+                                    <constraint firstItem="uPS-DL-r00" firstAttribute="leading" secondItem="kcA-vk-zUO" secondAttribute="trailing" constant="10" id="ebJ-Cg-VOm"/>
+                                    <constraint firstItem="uPS-DL-r00" firstAttribute="top" secondItem="gXn-c1-FJb" secondAttribute="top" constant="12" id="l30-vf-2vq"/>
+                                    <constraint firstItem="kcA-vk-zUO" firstAttribute="centerY" secondItem="gXn-c1-FJb" secondAttribute="centerY" id="oHB-d0-7x4"/>
+                                    <constraint firstAttribute="trailing" secondItem="uPS-DL-r00" secondAttribute="trailing" constant="24" id="q10-gZ-qOc"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                        <real key="value" value="16"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                        <color key="value" name="text_gray"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                        <real key="value" value="1"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="Ire-cd-0qN"/>
+                        <color key="backgroundColor" name="mod_back"/>
+                        <constraints>
+                            <constraint firstItem="FUq-KX-sGt" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="30" id="4fQ-Ds-g6a"/>
+                            <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="NUG-9r-cfV" secondAttribute="trailing" constant="20" id="64q-f3-iDL"/>
+                            <constraint firstItem="gXn-c1-FJb" firstAttribute="top" secondItem="tD4-tW-JA8" secondAttribute="bottom" constant="8" id="7dC-yz-sVP"/>
+                            <constraint firstItem="EpG-ft-g3f" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="9s3-h6-bpq"/>
+                            <constraint firstItem="YlL-S0-YEn" firstAttribute="top" secondItem="4tK-fy-Qfy" secondAttribute="bottom" constant="20" id="Chn-Oq-yZr"/>
+                            <constraint firstItem="EpG-ft-g3f" firstAttribute="top" secondItem="YlL-S0-YEn" secondAttribute="bottom" constant="5" id="LIQ-eV-JwL"/>
+                            <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="YlL-S0-YEn" secondAttribute="trailing" constant="20" id="MOy-JB-iAi"/>
+                            <constraint firstItem="4tK-fy-Qfy" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" id="Oup-l1-1zN"/>
+                            <constraint firstItem="4tK-fy-Qfy" firstAttribute="trailing" secondItem="Ire-cd-0qN" secondAttribute="trailing" id="QQ9-dv-xHf"/>
+                            <constraint firstItem="gXn-c1-FJb" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="R5S-5s-s6F"/>
+                            <constraint firstItem="YlL-S0-YEn" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="V2S-Hn-Aqh"/>
+                            <constraint firstItem="FUq-KX-sGt" firstAttribute="top" secondItem="gXn-c1-FJb" secondAttribute="bottom" constant="8" id="c6B-xs-FO4"/>
+                            <constraint firstItem="NUG-9r-cfV" firstAttribute="top" secondItem="FUq-KX-sGt" secondAttribute="bottom" constant="80" id="eR4-zE-SeS"/>
+                            <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="EpG-ft-g3f" secondAttribute="trailing" constant="20" id="guZ-wd-uDv"/>
+                            <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="FUq-KX-sGt" secondAttribute="trailing" constant="30" id="hit-Ma-04g"/>
+                            <constraint firstItem="4tK-fy-Qfy" firstAttribute="top" secondItem="Ire-cd-0qN" secondAttribute="top" id="jpB-LJ-huO"/>
+                            <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="gXn-c1-FJb" secondAttribute="trailing" constant="30" id="n9a-iv-L7s"/>
+                            <constraint firstItem="tD4-tW-JA8" firstAttribute="top" secondItem="EpG-ft-g3f" secondAttribute="bottom" constant="30" id="nG9-wr-KOz"/>
+                            <constraint firstItem="tD4-tW-JA8" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="r8V-PA-urr"/>
+                            <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="tD4-tW-JA8" secondAttribute="trailing" constant="20" id="sdb-Xo-Xwb"/>
+                            <constraint firstItem="NUG-9r-cfV" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="usL-Y1-rBQ"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="loginField" destination="uPS-DL-r00" id="wuP-BQ-ydW"/>
+                        <outlet property="signupLbl" destination="KUl-bf-80Y" id="rjh-OB-mw7"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="q5G-o6-Te0" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1643.5114503816794" y="133.80281690140845"/>
+        </scene>
     </scenes>
     <resources>
         <image name="arrow.right" catalog="system" width="128" height="95"/>
+        <image name="envelope" catalog="system" width="128" height="85"/>
         <image name="onboard1" width="1911" height="1757"/>
+        <image name="shield-icon" width="64" height="64"/>
         <namedColor name="Colors">
             <color red="0.99607843137254903" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="black_bold">
             <color red="0.094117647058823528" green="0.094117647058823528" blue="0.10588235294117647" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="mod_back">
+            <color red="0.97647058823529409" green="0.97647058823529409" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="mod_red">
             <color red="0.72549019607843135" green="0.0" blue="0.15294117647058825" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

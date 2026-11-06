@@ -8,9 +8,12 @@
 import Foundation
 import UIKit
 enum AppFonts : String {
+    case jakartaRegular = "PlusJakartaSans-Regular"
     case jakartaMedium = "PlusJakartaSans-Medium"
-   
-    
+    case jakartaSemiBold = "PlusJakartaSans-SemiBold"
+    case jakartaBold = "PlusJakartaSans-Bold"
+    case jakartaExtraBold = "PlusJakartaSans-ExtraBold"
+
 }
 
 extension AppFonts {

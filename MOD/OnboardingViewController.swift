@@ -4,6 +4,7 @@ import UIKit
 class OnboardingViewController: UIViewController {
     @IBOutlet weak var pageControl: UIPageControl!
     @IBOutlet weak var startedBtn: UIButton!
+    @IBOutlet weak var skipBtn: UIButton!
     @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var blackBgView: UIView!
 
@@ -50,6 +51,7 @@ class OnboardingViewController: UIViewController {
         descLabel.numberOfLines = 0
         updateContent(for: 0, animated: false)
         configureBtn()
+        skipBtn.addTarget(self, action: #selector(didTapOnstartBtn), for: .touchUpInside)
     }
 
     override func viewDidLayoutSubviews() {
@@ -64,7 +66,13 @@ class OnboardingViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
     }
-
+    
+    //All button action
+    
+    @IBAction func didTapOnstartBtn(_ sender: UIButton) {
+        openLoginVC()
+    }
+    
     // MARK: - Setup
     private func configureBlackBackground() {
         blackBgView.backgroundColor = .clear
@@ -199,6 +207,15 @@ extension OnboardingViewController: UIScrollViewDelegate {
         guard page != currentPage, slideArray.indices.contains(page) else { return }
         currentPage = page
         updateContent(for: page)
+    }
+}
+
+
+//MARK: - Open another controller
+extension OnboardingViewController {
+func openLoginVC() {
+            let vc = LoginViewController.instantiate(fromAppStoryboard: .Main)
+            self.navigationController?.pushViewController(vc, animated: true)
     }
 }
 

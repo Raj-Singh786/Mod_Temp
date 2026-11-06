@@ -31,9 +31,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             fatalError("Unable to instantiate OnboardingViewController")
         }
 
+        let navigationController = UINavigationController(rootViewController: onboardingVC)
+
         let window = UIWindow(windowScene: windowScene)
 
-        window.rootViewController = onboardingVC
+        window.rootViewController = navigationController
 
         self.window = window
         window.makeKeyAndVisible()
