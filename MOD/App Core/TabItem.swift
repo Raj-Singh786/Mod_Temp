@@ -25,7 +25,7 @@ enum TabItems: String, CaseIterable {
              
 
         case .Menu:
-            return MenuVC.instantiate(fromAppStoryboard: .Home)
+            return UIHostingController(rootView: MenuScreen())
             
 
         case .Cart:
