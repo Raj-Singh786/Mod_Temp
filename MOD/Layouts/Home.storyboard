@@ -112,14 +112,14 @@
                         <color key="backgroundColor" name="onboard_back"/>
                         <constraints>
                             <constraint firstItem="Wrq-6g-R28" firstAttribute="top" secondItem="jdB-hc-pRi" secondAttribute="top" constant="20" id="1xC-4B-674"/>
-                            <constraint firstItem="jdB-hc-pRi" firstAttribute="bottom" secondItem="4wJ-pp-BaF" secondAttribute="bottom" id="RPA-pE-yYP"/>
-                            <constraint firstItem="3W6-Vq-RgJ" firstAttribute="top" secondItem="jdB-hc-pRi" secondAttribute="top" id="Tql-gM-6bj"/>
-                            <constraint firstItem="jdB-hc-pRi" firstAttribute="trailing" secondItem="4wJ-pp-BaF" secondAttribute="trailing" constant="10" id="VlZ-hM-nYx"/>
-                            <constraint firstItem="jdB-hc-pRi" firstAttribute="trailing" secondItem="Wrq-6g-R28" secondAttribute="trailing" constant="20" id="ZoV-2z-0FQ"/>
-                            <constraint firstItem="3W6-Vq-RgJ" firstAttribute="leading" secondItem="jdB-hc-pRi" secondAttribute="leading" constant="20" id="avk-TK-Njt"/>
-                            <constraint firstItem="Wrq-6g-R28" firstAttribute="leading" secondItem="3W6-Vq-RgJ" secondAttribute="trailing" constant="15" id="avy-PZ-IOg"/>
-                            <constraint firstItem="4wJ-pp-BaF" firstAttribute="leading" secondItem="jdB-hc-pRi" secondAttribute="leading" constant="10" id="drf-Gb-yKn"/>
-                            <constraint firstItem="4wJ-pp-BaF" firstAttribute="top" secondItem="3W6-Vq-RgJ" secondAttribute="bottom" constant="10" id="sya-GC-YaD"/>
+                            <constraint firstItem="jdB-hc-pRi" firstAttribute="bottom" secondItem="4wJ-pp-BaF" secondAttribute="bottom"/>
+                            <constraint firstItem="3W6-Vq-RgJ" firstAttribute="top" secondItem="jdB-hc-pRi" secondAttribute="top"/>
+                            <constraint firstItem="jdB-hc-pRi" firstAttribute="trailing" secondItem="4wJ-pp-BaF" secondAttribute="trailing" constant="10"/>
+                            <constraint firstItem="jdB-hc-pRi" firstAttribute="trailing" secondItem="Wrq-6g-R28" secondAttribute="trailing" constant="20"/>
+                            <constraint firstItem="3W6-Vq-RgJ" firstAttribute="leading" secondItem="jdB-hc-pRi" secondAttribute="leading" constant="20"/>
+                            <constraint firstItem="Wrq-6g-R28" firstAttribute="leading" secondItem="3W6-Vq-RgJ" secondAttribute="trailing" constant="15"/>
+                            <constraint firstItem="4wJ-pp-BaF" firstAttribute="leading" secondItem="jdB-hc-pRi" secondAttribute="leading" constant="10"/>
+                            <constraint firstItem="4wJ-pp-BaF" firstAttribute="top" secondItem="3W6-Vq-RgJ" secondAttribute="bottom" constant="10"/>
                         </constraints>
                     </view>
                     <connections>

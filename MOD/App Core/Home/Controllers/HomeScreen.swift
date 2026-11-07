@@ -52,15 +52,62 @@ struct HomeScreen: View {
 struct LocationHeaderView: View {
     @State private var address: String = ""
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label("Set delivery address", systemImage: "mappin.and.ellipse")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.red)
-            TextField("Enter address for nearby", text: $address)
-                .padding(12)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-                .font(.system(size: 14))
+        HStack(spacing: 12) {
+            // Main Location Container
+            HStack(spacing: 12) {
+                // Pin Icon with Background
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.1))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "mappin.and.ellipse")
+                        .foregroundColor(.red)
+                }
+                
+                // Labels
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Set delivery address")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                    Text("Enter address for nearb")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                // Chevron
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.white)
+            .cornerRadius(30)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            
+            // Notification Button
+            ZStack(alignment: .topTrailing) {
+                Button(action: {}) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 18))
+                        .foregroundColor(.black)
+                        .frame(width: 44, height: 44)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                }
+                
+                // Badge
+                Text("3")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 18, height: 18)
+                    .background(Color.red)
+                    .clipShape(Circle())
+                    .offset(x: -2, y: 2)
+            }
         }
         .padding(.horizontal, 18)
         .padding(.top, 18)
