@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SwiftUI
 
 
 
@@ -76,7 +77,20 @@ class LoginViewController: UIViewController {
     }
 
     @objc private func didTapSignupLabel() {
-        openSignupScreen()
+        let signupView = SignupView(onDismiss: { [weak self] in
+            if let nav = self?.navigationController {
+                nav.popViewController(animated: true)
+            } else {
+                self?.dismiss(animated: true)
+            }
+        })
+        let hostingController = UIHostingController(rootView: signupView)
+        hostingController.modalPresentationStyle = .fullScreen
+        if let nav = navigationController {
+            nav.pushViewController(hostingController, animated: true)
+        } else {
+            present(hostingController, animated: true)
+        }
     }
 
     @objc private func textDidChange() {
@@ -85,18 +99,7 @@ class LoginViewController: UIViewController {
 
     // MARK: - Navigation
 
-    private func openSignupScreen() {
-        // Storyboard ID of your signup screen must be "SignupViewController"
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let vc = storyboard.instantiateViewController(withIdentifier: "SignupViewController")
-
-        if let nav = navigationController {
-            nav.pushViewController(vc, animated: true)
-        } else {
-            vc.modalPresentationStyle = .fullScreen
-            present(vc, animated: true)
-        }
-    }
+    
 
     // MARK: - Error UI
 
