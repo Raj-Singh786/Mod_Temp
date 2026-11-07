@@ -64,7 +64,12 @@ struct HomeScreen: View {
                 }
 
                 // 5. Recommended for You (Horizontal)
-                SectionHeader(title: "Recommended for You", subtitle: "Bestsellers based on your taste")
+                SectionHeader(
+                    title: "Recommended for You",
+                    subtitle: "Bestsellers based on your taste",
+                    buttonTitle: "View menu",
+                    action: {}
+                )
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         ForEach(MockData.recommended) { pizza in
@@ -74,7 +79,12 @@ struct HomeScreen: View {
                 }
 
                 // 6. Value Combos (Horizontal)
-                SectionHeader(title: "Value Combos", buttonTitle: "View menu", action: {})
+                SectionHeader(
+                    title: "Value Combos",
+                    subtitle: "Pizza + Sides + Drinks combos",
+                    buttonTitle: "View menu",
+                    action: {}
+                )
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         ForEach(MockData.combos) { combo in
@@ -519,78 +529,136 @@ struct PizzaCardView: View {
     let pizza: Pizza
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 13)
-                    .fill(Color(.systemGray6))
-                    .frame(height: 80)
-                Image(systemName: "photo") // Placeholder
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 60)
+            // Image with Badge
+            ZStack(alignment: .topLeading) {
+                if let _ = UIImage(named: pizza.imageName) {
+                    Image(pizza.imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 148, height: 125)
+                        .cornerRadius(16)
+                        .clipped()
+                } else {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.gray.opacity(0.15))
+                        .frame(width: 148, height: 125)
+                }
+
+                if let badge = pizza.badge, let color = pizza.badgeColor {
+                    Text(badge)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(pizza.badgeTextColor ?? .white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(color)
+                        .cornerRadius(6)
+                        .padding(7)
+                }
             }
+            .frame(width: 148, height: 125)
+
+            // Name
             Text(pizza.name)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.black)
-                .lineLimit(2)
-            Text(pizza.price)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundColor(.red)
-            Button(action: {}) {
-                Text("add")
-                    .font(.system(size: 13, weight: .semibold))
-                    .padding(.vertical, 5)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(7)
+                .foregroundColor(.black)
+                .lineLimit(1)
+
+            // Description
+            Text(pizza.description)
+                .font(.system(size: 12))
+                .foregroundColor(.gray)
+                .lineLimit(1)
+
+            // Price & Plus Button Row
+            HStack(alignment: .center) {
+                Text(pizza.price)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.black)
+
+                Spacer()
+
+                Button(action: {}) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 32, height: 32)
+                        .background(Color.red)
+                        .clipShape(Circle())
+                }
             }
         }
-        .padding(10)
+        .padding(11)
+        .frame(width: 170)
         .background(Color.white)
-        .cornerRadius(18)
-        .frame(width: 130)
-        .shadow(color: Color.black.opacity(0.11), radius: 6, x: 0, y: 4)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
     }
 }
 
 struct ComboCardView: View {
     let combo: Combo
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(combo.badge)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.red.opacity(0.9))
-                .cornerRadius(7)
-            Text(combo.title)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.black)
-            Text(combo.subtitle)
-                .font(.system(size: 13))
-                .foregroundColor(Color(.systemGray))
-            HStack {
-                Text(combo.price)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.red)
-                Spacer()
-                Button(action: {}) {
-                    Text("Customize")
-                        .font(.system(size: 14, weight: .semibold))
-                        .padding(.vertical, 8)
-                        .frame(width: 90)
-                        .background(Color.red)
+        HStack {
+            VStack(alignment: .leading, spacing: 8) {
+                // Badge
+                Text(combo.badge)
+                    .font(.system(size: 11, weight: .heavy))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.22))
+                    .cornerRadius(6)
+
+                // Multi-line Title
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(combo.titleLine1)
+                        .font(.system(size: 18, weight: .heavy))
                         .foregroundColor(.white)
-                        .cornerRadius(8)
+                    Text(combo.titleLine2)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundColor(.white)
                 }
+
+                // Price Row
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(combo.price)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundColor(.white)
+                    Text(combo.originalPrice)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.65))
+                        .strikethrough()
+                }
+                .padding(.top, 2)
+            }
+
+            Spacer()
+
+            // Customize Button
+            Button(action: {}) {
+                Text("Customize")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color(red: 0.88, green: 0.12, blue: 0.18))
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Color.white)
+                    .cornerRadius(20)
             }
         }
-        .padding(14)
-        .background(Color.white)
-        .cornerRadius(18)
-        .frame(width: 240)
-        .shadow(color: Color.black.opacity(0.11), radius: 8, x: 0, y: 5)
+        .padding(18)
+        .frame(width: 330)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.88, green: 0.12, blue: 0.18),
+                    Color(red: 0.72, green: 0.05, blue: 0.18)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(22)
+        .shadow(color: Color(red: 0.88, green: 0.12, blue: 0.18).opacity(0.3), radius: 10, x: 0, y: 5)
     }
 }
 
@@ -658,15 +726,21 @@ struct Promo: Identifiable {
 struct Pizza: Identifiable {
     let id = UUID()
     let name: String
+    let description: String
     let price: String
+    let imageName: String
+    var badge: String? = nil
+    var badgeColor: Color? = nil
+    var badgeTextColor: Color? = nil
 }
 
 struct Combo: Identifiable {
     let id = UUID()
     let badge: String
-    let title: String
-    let subtitle: String
+    let titleLine1: String
+    let titleLine2: String
     let price: String
+    let originalPrice: String
 }
 
 struct MockData {
@@ -729,13 +803,49 @@ struct MockData {
         )
     ]
     static let recommended = [
-        Pizza(name: "Pepperoni Lovers", price: "$12.99"),
-        Pizza(name: "Farm House", price: "$11.49"),
-        Pizza(name: "Classic Veggie", price: "$10.99")
+        Pizza(
+            name: "Pepperoni Lovers",
+            description: "Signature red sauce,...",
+            price: "$15.99",
+            imageName: "pizza1",
+            badge: "Popular",
+            badgeColor: Color.black.opacity(0.75),
+            badgeTextColor: .white
+        ),
+        Pizza(
+            name: "Pepperoni &...",
+            description: "Cream cheese swirl lattice",
+            price: "$16.99",
+            imageName: "pizza2",
+            badge: "Special",
+            badgeColor: Color(red: 0.98, green: 0.62, blue: 0.08),
+            badgeTextColor: .white
+        ),
+        Pizza(
+            name: "Classic Veggie",
+            description: "Smoked artisan sausage...",
+            price: "$14.50",
+            imageName: "pizza3",
+            badge: nil,
+            badgeColor: nil,
+            badgeTextColor: nil
+        )
     ]
     static let combos = [
-        Combo(badge: "FAMILY MEAL DEAL", title: "2 Mediums · Breadsticks · 2L Soda", subtitle: "Pizza + sides + drinks combos", price: "$29.99 → $24.99"),
-        Combo(badge: "PARTY PACK", title: "3 Large Pizzas · 3L Soda", subtitle: "Perfect for 6+ people", price: "$44.99 → $35.99")
+        Combo(
+            badge: "FAMILY MEAL DEAL",
+            titleLine1: "2 Mediums + Breadsticks +",
+            titleLine2: "2L Soda",
+            price: "$29.99",
+            originalPrice: "$39.99"
+        ),
+        Combo(
+            badge: "PARTY PACK",
+            titleLine1: "3 Large Pizzas + Sides +",
+            titleLine2: "3L Soda",
+            price: "$39.99",
+            originalPrice: "$49.99"
+        )
     ]
 }
 

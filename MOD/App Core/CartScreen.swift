@@ -76,16 +76,9 @@ struct CartScreen: View {
                     
                     // 1. Navigation Header
                     HStack {
-                        Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.black)
-                                .frame(width: 38, height: 38)
-                                .background(Color.white)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
-                        }
+                     
                         
+                        Spacer()
                         Spacer()
                         
                         VStack(spacing: 2) {
