@@ -1,43 +1,69 @@
 import SwiftUI
 
 struct HomeScreen: View {
+    @State private var selectedPromoIndex: Int = 0
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 22) {
                 // 1. Location Header
                 LocationHeaderView()
 
-                // 2. Main Loyalty Card (not horizontally scrollable)
+                // 2. Main Loyalty Card (Welcome Perks)
                 WelcomeLoyaltyCardView()
 
-                // 3. Promotions & Deals (Horizontal)
-                SectionHeader(title: "Promotions & Deals", buttonTitle: "All", action: {})
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 14) {
-                        ForEach(MockData.promos) { promo in
-                            PromoCardView(promo: promo)
+                // 3. Promotions & Deals Section (Wide card + page indicator)
+                VStack(alignment: .leading, spacing: 12) {
+                    SectionHeader(title: "Promotions & Deals", buttonTitle: "All (6)", action: {})
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 14) {
+                            ForEach(Array(MockData.promos.enumerated()), id: \.element.id) { index, promo in
+                                PromoCardView(promo: promo)
+                            }
                         }
-                    }.padding(.horizontal, 14)
+                        .padding(.horizontal, 16)
+                    }
+
+                    // Page Indicator Dots
+                    HStack(spacing: 6) {
+                        ForEach(0..<MockData.promos.count, id: \.self) { index in
+                            if index == selectedPromoIndex {
+                                Capsule()
+                                    .fill(Color.red)
+                                    .frame(width: 22, height: 6)
+                            } else {
+                                Circle()
+                                    .fill(Color(.systemGray4))
+                                    .frame(width: 6, height: 6)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
                 }
 
-                // 4. Recommended for You (Horizontal)
+                // 4. Quick Feature Badges (Hot & Fresh, Live Tracking, Hut Rewards)
+                QuickFeaturesView()
+
+                // 5. Recommended for You (Horizontal)
                 SectionHeader(title: "Recommended for You", subtitle: "Bestsellers based on your taste")
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         ForEach(MockData.recommended) { pizza in
                             PizzaCardView(pizza: pizza)
                         }
-                    }.padding(.horizontal, 14)
+                    }.padding(.horizontal, 16)
                 }
 
-                // 5. Value Combos (Horizontal)
+                // 6. Value Combos (Horizontal)
                 SectionHeader(title: "Value Combos", buttonTitle: "View menu", action: {})
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         ForEach(MockData.combos) { combo in
                             ComboCardView(combo: combo)
                         }
-                    }.padding(.horizontal, 14)
+                    }.padding(.horizontal, 16)
                 }
             }
             .padding(.vertical, 18)
@@ -174,37 +200,148 @@ struct WelcomeLoyaltyCardView: View {
 
 struct PromoCardView: View {
     let promo: Promo
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(promo.badge)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.red.opacity(0.9))
-                .cornerRadius(7)
-            Text(promo.title)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-            Text(promo.subtitle)
-                .font(.system(size: 13))
-                .foregroundColor(.white)
-            Button(action: {}) {
-                Text("Order Now")
-                    .font(.system(size: 14, weight: .semibold))
-                    .padding(.vertical, 7)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.white)
-                    .foregroundColor(.red)
-                    .cornerRadius(7)
+        HStack(spacing: 0) {
+            // Left Content
+            VStack(alignment: .leading, spacing: 6) {
+                // Badge
+                Text(promo.badge)
+                    .font(.system(size: 10, weight: .heavy))
+                    .foregroundColor(promo.badgeTextColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(promo.badgeBgColor)
+                    .cornerRadius(6)
+
+                // Multi-line Title
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(promo.titleLine1)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundColor(.white)
+                    Text(promo.titleLine2)
+                        .font(.system(size: 18, weight: .heavy))
+                        .foregroundColor(promo.titleLine2Color)
+                }
+                
+                Text(promo.subtitle)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.85))
+                    .lineLimit(1)
+                
+                Spacer(minLength: 6)
+                
+                // Button
+                Button(action: {}) {
+                    HStack(spacing: 4) {
+                        Text(promo.buttonText)
+                            .font(.system(size: 13, weight: .bold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundColor(promo.buttonTextColor)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(promo.buttonBgColor)
+                    .cornerRadius(8)
+                }
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .background(promo.cardBgColor)
+
+            // Right Image
+            ZStack {
+                if let imageName = promo.imageName, !imageName.isEmpty, let _ = UIImage(named: imageName) {
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 140, height: 156)
+                        .clipped()
+                } else {
+                    ZStack {
+                        Color.white.opacity(0.12)
+                        VStack(spacing: 6) {
+                            Image(systemName: "shippingbox.fill")
+                                .font(.system(size: 34))
+                                .foregroundColor(.white.opacity(0.75))
+                            Text("FRESH & HOT")
+                                .font(.system(size: 10, weight: .heavy))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                    }
+                    .frame(width: 140, height: 156)
+                }
+            }
+            .frame(width: 140, height: 156)
+            .clipped()
         }
-        .padding(16)
-        .background(
-            LinearGradient(gradient: Gradient(colors: [Color.red, Color.red.opacity(0.8)]), startPoint: .top, endPoint: .bottom)
-        )
+        .frame(width: 320, height: 156)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+    }
+}
+
+// MARK: - Quick Features (Hot & Fresh, Live Tracking, Hut Rewards)
+
+struct QuickFeaturesView: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            QuickFeatureCard(
+                iconName: "bolt.fill",
+                title: "Hot & Fresh",
+                subtitle: "30–min guarantee"
+            )
+            QuickFeatureCard(
+                iconName: "mappin.and.ellipse",
+                title: "Live Tracking",
+                subtitle: "Oven to door"
+            )
+            QuickFeatureCard(
+                iconName: "dollarsign.circle",
+                title: "Hut Rewards",
+                subtitle: "Earn free pizza"
+            )
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
+struct QuickFeatureCard: View {
+    let iconName: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(Color.red.opacity(0.1))
+                    .frame(width: 44, height: 44)
+                Image(systemName: iconName)
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundColor(.red)
+            }
+            .padding(.top, 4)
+
+            Text(title)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            Text(subtitle)
+                .font(.system(size: 12))
+                .foregroundColor(.gray)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 6)
+        .frame(maxWidth: .infinity)
+        .background(Color.white)
         .cornerRadius(18)
-        .frame(width: 220)
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
     }
 }
 
@@ -309,7 +446,7 @@ struct SectionHeader: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.black)
                 if let subtitle = subtitle {
                     Text(subtitle)
@@ -321,7 +458,7 @@ struct SectionHeader: View {
             if let buttonTitle = buttonTitle, let action = action {
                 Button(action: action) {
                     Text(buttonTitle)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.red)
                 }
             }
@@ -335,8 +472,17 @@ struct SectionHeader: View {
 struct Promo: Identifiable {
     let id = UUID()
     let badge: String
-    let title: String
+    var badgeBgColor: Color = Color.red
+    var badgeTextColor: Color = .white
+    let titleLine1: String
+    let titleLine2: String
+    var titleLine2Color: Color = Color(red: 1.0, green: 0.78, blue: 0.1)
     let subtitle: String
+    var buttonText: String = "Order Now"
+    var cardBgColor: Color = Color(red: 0.11, green: 0.11, blue: 0.13)
+    var buttonBgColor: Color = Color.red
+    var buttonTextColor: Color = .white
+    var imageName: String? = "onboard1"
 }
 
 struct Pizza: Identifiable {
@@ -354,9 +500,63 @@ struct Combo: Identifiable {
 }
 
 struct MockData {
-    static let promos = [
-        Promo(badge: "LIMITED OFFER", title: "MOD BOX UP TO 30% OFF", subtitle: "Build your custom combo"),
-        Promo(badge: "HOT DEAL", title: "Buy 1 Get 1 Pizza", subtitle: "Only for today!")
+    static let promos: [Promo] = [
+        Promo(
+            badge: "LIMITED OFFER",
+            badgeBgColor: Color.red,
+            badgeTextColor: .white,
+            titleLine1: "MOD BOX",
+            titleLine2: "UP TO 30% OFF",
+            titleLine2Color: Color(red: 1.0, green: 0.78, blue: 0.1),
+            subtitle: "Build your custom combo",
+            buttonText: "Order Now",
+            cardBgColor: Color(red: 0.11, green: 0.11, blue: 0.13),
+            buttonBgColor: Color.red,
+            buttonTextColor: .white,
+            imageName: "onboard1"
+        ),
+        Promo(
+            badge: "SUPER SAVER",
+            badgeBgColor: Color(red: 1.0, green: 0.82, blue: 0.2),
+            badgeTextColor: .black,
+            titleLine1: "GREAT DEALS",
+            titleLine2: "BUY 1 GET 1",
+            titleLine2Color: .white,
+            subtitle: "Online exclusive · Margherita + Sides",
+            buttonText: "Order Now",
+            cardBgColor: Color.red,
+            buttonBgColor: .white,
+            buttonTextColor: Color.red,
+            imageName: "onboard2"
+        ),
+        Promo(
+            badge: "WEEKEND SPECIAL",
+            badgeBgColor: Color.red,
+            badgeTextColor: .white,
+            titleLine1: "COMBO CRUNCH",
+            titleLine2: "FLAT 25% OFF",
+            titleLine2Color: Color(red: 1.0, green: 0.78, blue: 0.1),
+            subtitle: "Pizza + garlic sticks + drinks",
+            buttonText: "Order Now",
+            cardBgColor: Color(red: 0.11, green: 0.11, blue: 0.13),
+            buttonBgColor: Color.red,
+            buttonTextColor: .white,
+            imageName: "onboard3"
+        ),
+        Promo(
+            badge: "FAMILY PACK",
+            badgeBgColor: Color(red: 1.0, green: 0.82, blue: 0.2),
+            badgeTextColor: .black,
+            titleLine1: "MEGA SAVER",
+            titleLine2: "SAVE UP TO $15",
+            titleLine2Color: .white,
+            subtitle: "Feast with friends & family",
+            buttonText: "Order Now",
+            cardBgColor: Color.red,
+            buttonBgColor: .white,
+            buttonTextColor: Color.red,
+            imageName: "onboard1"
+        )
     ]
     static let recommended = [
         Pizza(name: "Pepperoni Lovers", price: "$12.99"),
