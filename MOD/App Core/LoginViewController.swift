@@ -72,7 +72,7 @@ class LoginViewController: UIViewController {
     }
 
     @IBAction func didTapOnGuestBtn(_ sender: UIButton) {
-        // TODO: continue as guest
+        kSharedAppDelegate?.moveToTabBar(isGuest: true)
     }
 
     @objc private func didTapSignupLabel() {

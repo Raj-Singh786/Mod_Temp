@@ -20,7 +20,8 @@ enum TabItems: String, CaseIterable {
     var viewController: UIViewController {
         switch self {
         case .Home:
-            return UIHostingController(rootView: HomeScreen())
+            let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
+            return UIHostingController(rootView: HomeScreen(isGuest: isGuest))
              
 
         case .Menu:

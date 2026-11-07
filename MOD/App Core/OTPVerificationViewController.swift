@@ -306,7 +306,7 @@ class OTPVerificationViewController: UIViewController {
             present(alert, animated: true)
         }
         
-        kSharedAppDelegate?.moveToTabBar()
+        kSharedAppDelegate?.moveToTabBar(isGuest: false)
     }
 }
 

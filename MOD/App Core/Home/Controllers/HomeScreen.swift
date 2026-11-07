@@ -1,16 +1,29 @@
 import SwiftUI
 
 struct HomeScreen: View {
+    @AppStorage("isGuestUser") var isGuestStored: Bool = true
+    var isGuestOverride: Bool? = nil
+
+    var isGuest: Bool {
+        isGuestOverride ?? isGuestStored
+    }
+
     @State private var selectedPromoIndex: Int = 0
+
+    init(isGuest: Bool? = nil) {
+        self.isGuestOverride = isGuest
+    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 22) {
-                // 1. Location Header
-                LocationHeaderView()
+                // 1. Location Header (Adapts to Guest vs Logged-In)
+                LocationHeaderView(isGuest: isGuest)
 
-                // 2. Main Loyalty Card (Welcome Perks)
-                WelcomeLoyaltyCardView()
+                // 2. Main Loyalty Card (Only for guest user)
+                if isGuest {
+                    WelcomeLoyaltyCardView()
+                }
 
                 // 3. Promotions & Deals Section (Wide card + page indicator)
                 VStack(alignment: .leading, spacing: 12) {
@@ -43,8 +56,12 @@ struct HomeScreen: View {
                     .padding(.top, 4)
                 }
 
-                // 4. Quick Feature Badges (Hot & Fresh, Live Tracking, Hut Rewards)
-                QuickFeaturesView()
+                // 4. Feature Section (Guest: QuickFeaturesView | Logged-in: RecentOrderView)
+                if isGuest {
+                    QuickFeaturesView()
+                } else {
+                    RecentOrderView()
+                }
 
                 // 5. Recommended for You (Horizontal)
                 SectionHeader(title: "Recommended for You", subtitle: "Bestsellers based on your taste")
@@ -76,42 +93,52 @@ struct HomeScreen: View {
 // MARK: - Subviews
 
 struct LocationHeaderView: View {
+    var isGuest: Bool = false
     @State private var address: String = ""
+
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             // Main Location Container
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 // Pin Icon with Background
                 ZStack {
                     Circle()
                         .fill(Color.red.opacity(0.1))
-                        .frame(width: 40, height: 40)
+                        .frame(width: 38, height: 38)
                     Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.red)
                 }
                 
                 // Labels
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Set delivery address")
-                        .font(.system(size: 16, weight: .bold))
+                    Text(isGuest ? "Set delivery address" : "772 Silva Ave, Apt 4B")
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.black)
-                    Text("Enter address for nearb")
-                        .font(.system(size: 14))
+                        .lineLimit(1)
+                    Text(isGuest ? "Enter address for nearby" : "Delivery ~45 min • $2.99")
+                        .font(.system(size: 12))
                         .foregroundColor(.gray)
+                        .lineLimit(1)
                 }
                 
                 Spacer()
                 
                 // Chevron
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.gray)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .background(Color.white)
-            .cornerRadius(30)
-            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            .cornerRadius(28)
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
+            
+            // Pizza Tracker Icon (Only shown for logged-in users)
+            if !isGuest {
+                PizzaTrackerView(activeSlices: 2, totalSlices: 6, badgeCount: 2)
+            }
             
             // Notification Button
             ZStack(alignment: .topTrailing) {
@@ -122,7 +149,7 @@ struct LocationHeaderView: View {
                         .frame(width: 44, height: 44)
                         .background(Color.white)
                         .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
                 }
                 
                 // Badge
@@ -135,8 +162,8 @@ struct LocationHeaderView: View {
                     .offset(x: -2, y: 2)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 18)
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
     }
 }
 
@@ -342,6 +369,149 @@ struct QuickFeatureCard: View {
         .background(Color.white)
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+    }
+}
+
+// MARK: - Pizza Tracker View (Logged-in Header)
+
+struct PizzaTrackerView: View {
+    var activeSlices: Int = 2
+    var totalSlices: Int = 6
+    var badgeCount: Int = 2
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            ZStack {
+                // Outer circle border
+                Circle()
+                    .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                    .background(Circle().fill(Color.white))
+
+                // Custom Pizza Slices Canvas
+                Canvas { context, size in
+                    let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                    let radius = min(size.width, size.height) / 2 - 2
+                    let sliceAngle = (2 * Double.pi) / Double(totalSlices)
+
+                    for i in 0..<totalSlices {
+                        let startAngle = Double(i) * sliceAngle - Double.pi / 2
+                        let endAngle = startAngle + sliceAngle
+
+                        var path = Path()
+                        path.move(to: center)
+                        path.addArc(center: center, radius: radius, startAngle: Angle(radians: startAngle), endAngle: Angle(radians: endAngle), clockwise: false)
+                        path.closeSubpath()
+
+                        if i < activeSlices {
+                            // Active cheese & pepperoni slice
+                            context.fill(path, with: .color(Color(red: 1.0, green: 0.78, blue: 0.28)))
+                            context.stroke(path, with: .color(Color(red: 0.85, green: 0.55, blue: 0.1)), lineWidth: 1)
+
+                            let midAngle = startAngle + sliceAngle / 2
+                            let pepDist1 = radius * 0.52
+                            let pep1 = CGPoint(x: center.x + CGFloat(cos(midAngle - 0.12)) * pepDist1,
+                                               y: center.y + CGFloat(sin(midAngle - 0.12)) * pepDist1)
+                            let pepDist2 = radius * 0.78
+                            let pep2 = CGPoint(x: center.x + CGFloat(cos(midAngle + 0.14)) * pepDist2,
+                                               y: center.y + CGFloat(sin(midAngle + 0.14)) * pepDist2)
+
+                            let pepPath1 = Path(ellipseIn: CGRect(x: pep1.x - 2.5, y: pep1.y - 2.5, width: 5, height: 5))
+                            context.fill(pepPath1, with: .color(Color(red: 0.85, green: 0.18, blue: 0.18)))
+                            let pepPath2 = Path(ellipseIn: CGRect(x: pep2.x - 2, y: pep2.y - 2, width: 4, height: 4))
+                            context.fill(pepPath2, with: .color(Color(red: 0.85, green: 0.18, blue: 0.18)))
+                        } else {
+                            // Inactive slice
+                            context.fill(path, with: .color(Color(red: 0.93, green: 0.94, blue: 0.96)))
+                            context.stroke(path, with: .color(Color.black.opacity(0.18)), lineWidth: 0.8)
+
+                            let midAngle = startAngle + sliceAngle / 2
+                            let dotDist = radius * 0.6
+                            let dot = CGPoint(x: center.x + CGFloat(cos(midAngle)) * dotDist,
+                                              y: center.y + CGFloat(sin(midAngle)) * dotDist)
+                            let dotPath = Path(ellipseIn: CGRect(x: dot.x - 1, y: dot.y - 1, width: 2, height: 2))
+                            context.fill(dotPath, with: .color(Color.black.opacity(0.25)))
+                        }
+                    }
+                }
+                .frame(width: 40, height: 40)
+            }
+            .frame(width: 44, height: 44)
+            .background(Color.white)
+            .clipShape(Circle())
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
+
+            // Red Badge
+            if badgeCount > 0 {
+                Text("\(badgeCount)")
+                    .font(.system(size: 10, weight: .heavy))
+                    .foregroundColor(.white)
+                    .frame(width: 18, height: 18)
+                    .background(Color.red)
+                    .clipShape(Circle())
+                    .offset(x: 3, y: -3)
+            }
+        }
+    }
+}
+
+// MARK: - Recent Order View (Logged-in Mode)
+
+struct RecentOrderView: View {
+    var statusText: String = "Delivered 3 days ago"
+    var itemsText: String = "Pepperoni Pizza, Breadsticks,..."
+    var priceText: String = "$24.90"
+    var onReorder: () -> Void = {}
+    var onViewAll: () -> Void = {}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Recent Order", buttonTitle: "View all", action: onViewAll)
+
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    // Status Badge
+                    Text(statusText)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color(red: 0.12, green: 0.55, blue: 0.38))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color(red: 0.90, green: 0.98, blue: 0.94))
+                        .cornerRadius(6)
+
+                    // Items Description
+                    Text(itemsText)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.black)
+                        .lineLimit(1)
+
+                    // Price
+                    Text(priceText)
+                        .font(.system(size: 17, weight: .heavy))
+                        .foregroundColor(.black)
+                }
+
+                Spacer()
+
+                // Reorder Button
+                Button(action: onReorder) {
+                    VStack(spacing: 5) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 18, weight: .bold))
+                        Text("Reorder")
+                            .font(.system(size: 13, weight: .bold))
+                    }
+                    .foregroundColor(.red)
+                    .frame(width: 86, height: 72)
+                    .background(Color.red.opacity(0.08))
+                    .cornerRadius(14)
+                }
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(18)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 3)
+            .padding(.horizontal, 16)
+        }
     }
 }
 
@@ -569,8 +739,14 @@ struct MockData {
     ]
 }
 
-#Preview {
+#Preview("Logged-in User Mode") {
     NavigationView {
-        HomeScreen()
+        HomeScreen(isGuest: false)
+    }
+}
+
+#Preview("Guest User Mode") {
+    NavigationView {
+        HomeScreen(isGuest: true)
     }
 }
