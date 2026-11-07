@@ -9,6 +9,7 @@ struct HomeScreen: View {
     }
 
     @State private var selectedPromoIndex: Int = 0
+    @State private var showStoreLocation: Bool = false
 
     init(isGuest: Bool? = nil) {
         self.isGuestOverride = isGuest
@@ -18,7 +19,9 @@ struct HomeScreen: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 22) {
                 // 1. Location Header (Adapts to Guest vs Logged-In)
-                LocationHeaderView(isGuest: isGuest)
+                LocationHeaderView(isGuest: isGuest, onSelectLocation: {
+                    showStoreLocation = true
+                })
 
                 // 2. Main Loyalty Card (Only for guest user)
                 if isGuest {
@@ -97,6 +100,9 @@ struct HomeScreen: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationBarHidden(true)
+        .fullScreenCover(isPresented: $showStoreLocation) {
+            StoreLocationScreen()
+        }
     }
 }
 
@@ -104,46 +110,50 @@ struct HomeScreen: View {
 
 struct LocationHeaderView: View {
     var isGuest: Bool = false
+    var onSelectLocation: () -> Void = {}
     @State private var address: String = ""
 
     var body: some View {
         HStack(spacing: 10) {
             // Main Location Container
-            HStack(spacing: 10) {
-                // Pin Icon with Background
-                ZStack {
-                    Circle()
-                        .fill(Color.red.opacity(0.1))
-                        .frame(width: 38, height: 38)
-                    Image(systemName: "mappin.and.ellipse")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.red)
-                }
-                
-                // Labels
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(isGuest ? "Set delivery address" : "772 Silva Ave, Apt 4B")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.black)
-                        .lineLimit(1)
-                    Text(isGuest ? "Enter address for nearby" : "Delivery ~45 min • $2.99")
-                        .font(.system(size: 12))
+            Button(action: onSelectLocation) {
+                HStack(spacing: 10) {
+                    // Pin Icon with Background
+                    ZStack {
+                        Circle()
+                            .fill(Color.red.opacity(0.1))
+                            .frame(width: 38, height: 38)
+                        Image(systemName: "mappin.and.ellipse")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.red)
+                    }
+                    
+                    // Labels
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(isGuest ? "Set delivery address" : "772 Silva Ave, Apt 4B")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.black)
+                            .lineLimit(1)
+                        Text(isGuest ? "Enter address for nearby" : "Delivery ~45 min • $2.99")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                    
+                    // Chevron
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.gray)
-                        .lineLimit(1)
                 }
-                
-                Spacer()
-                
-                // Chevron
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.gray)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.white)
+                .cornerRadius(28)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.white)
-            .cornerRadius(28)
-            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
+            .buttonStyle(PlainButtonStyle())
             
             // Pizza Tracker Icon (Only shown for logged-in users)
             if !isGuest {
