@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import SwiftUI
 
 enum TabItems: String, CaseIterable {
 
@@ -19,7 +20,7 @@ enum TabItems: String, CaseIterable {
     var viewController: UIViewController {
         switch self {
         case .Home:
-            return HomeVC.instantiate(fromAppStoryboard: .Home)
+            return UIHostingController(rootView: HomeScreen())
              
 
         case .Menu:
@@ -82,3 +83,4 @@ enum TabItems: String, CaseIterable {
         return rawValue
     }
 }
+
