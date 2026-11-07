@@ -20,7 +20,8 @@ class TabBarVC: UITabBarController {
         .Home,
         .Menu,
         .Cart,
-        .Orders
+        .Orders,
+        .Sign
     ]
 
     override func viewDidLoad() {
@@ -157,13 +158,26 @@ extension TabBarVC {
         let nav4 = BaseNavigationVC(
             rootViewController: trackVC
         )
+        
+        let ProfileVC = tabItems[4].viewController
+
+        ProfileVC.tabBarItem = UITabBarItem(
+            title: tabItems[4].displayTitle,
+            image: tabItems[4].unSelectedIcon,
+            selectedImage: tabItems[4].selectedIcon
+        )
+
+        let nav5 = BaseNavigationVC(
+            rootViewController: ProfileVC
+        )
 
 
         viewControllers = [
             nav1,
             nav2,
             nav3,
-            nav4
+            nav4,
+            nav5
         ]
 
         selectedIndex = myIndex

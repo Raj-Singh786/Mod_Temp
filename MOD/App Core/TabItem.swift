@@ -29,7 +29,7 @@ enum TabItems: String, CaseIterable {
             
 
         case .Cart:
-            return CartVC.instantiate(fromAppStoryboard: .Home)
+            return UIHostingController(rootView: CartScreen())
 
         case .Orders:
              return OrderVC.instantiate(fromAppStoryboard: .Home)
