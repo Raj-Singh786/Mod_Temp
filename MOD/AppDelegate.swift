@@ -36,3 +36,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 }
 
+
+extension AppDelegate {
+    func moveToTabBar() {
+        print("")
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let sceneDelegate = windowScene.delegate as? SceneDelegate else { return }
+        let tabBarVC = TabBarVC.instantiate(fromAppStoryboard: .Home)
+        let navVC = UINavigationController(rootViewController: tabBarVC)
+        sceneDelegate.window?.rootViewController =  navVC
+    }
+}

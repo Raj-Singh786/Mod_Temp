@@ -24,7 +24,7 @@ func getCircularBorder(_ object: Any) {
         } else if let view = object as? UIView {
             view.layer.cornerRadius = view.frame.height / 2
             view.layer.borderWidth = 0.5
-            view.layer.borderColor = AppColor.primary_black.cgColor
+            view.layer.borderColor = AppColor.text_gray.cgColor
             view.clipsToBounds = true
         } else {
             // Handle other types or unsupported types
