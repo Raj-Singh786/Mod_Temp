@@ -81,7 +81,13 @@ enum TabItems: String, CaseIterable {
     }
 
     var displayTitle: String {
-        return rawValue
+        switch self {
+        case .Sign:
+            let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
+            return isGuest ? "Sign In" : "Profile"
+        default:
+            return rawValue
+        }
     }
 }
 
