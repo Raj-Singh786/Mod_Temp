@@ -99,6 +99,7 @@ struct CheckoutScreen: View {
     @State private var contactNumber: String = ""
     @State private var activeAlert: ActiveCheckoutAlert? = nil
     @State private var deliveryAddress: String = "450 Sutter St, Apt 8B, San Francisco, CA 94108"
+    @State private var showConfirmOrderScreen: Bool = false
 
     // Colors
     private let modRed = Color(red: 0.78, green: 0.08, blue: 0.18)
@@ -162,10 +163,46 @@ struct CheckoutScreen: View {
         }
     }
 
+    // Display Name for Payment Method on Confirmation Screen
+    private var paymentMethodDisplayName: String {
+        switch selectedPaymentMethod {
+        case .modWallet:
+            return "MOD Wallet"
+        case .digitalPay:
+            return selectedDigitalApp.rawValue
+        case .creditDebit:
+            return "Visa"
+        case .giftCard:
+            return "Gift Card"
+        case .cashOnDelivery:
+            return "Cash On Delivery"
+        }
+    }
+
     // MARK: - Body
 
     var body: some View {
         ZStack(alignment: .bottom) {
+            // Push Navigation to Order Confirmation Screen
+            NavigationLink(
+                destination: ConfirmOrderScreen(
+                    orderNumber: "PH-89421",
+                    customerName: customerName.isEmpty ? "Alex" : customerName,
+                    contactNumber: contactNumber,
+                    deliveryAddress: deliveryAddress,
+                    orderType: orderType,
+                    itemCount: cartItems.count,
+                    paymentMethod: paymentMethodDisplayName,
+                    totalAmount: totalToPay,
+                    estimatedArrival: orderType == .pickup ? "5:45 PM" : "10:15 PM",
+                    pointsEarned: 140
+                ),
+                isActive: $showConfirmOrderScreen
+            ) {
+                EmptyView()
+            }
+            .hidden()
+
             VStack(spacing: 0) {
                 // 1. Navigation Header
                 navigationHeader
@@ -1375,7 +1412,7 @@ struct CheckoutScreen: View {
             }
         }
 
-        activeAlert = .success
+        showConfirmOrderScreen = true
     }
 }
 
