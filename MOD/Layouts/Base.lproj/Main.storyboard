@@ -165,7 +165,7 @@ baked at 800° perfection within minutes.</string>
                                 </constraints>
                             </view>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="vwG-qq-0xq">
-                                <rect key="frame" x="313" y="118" width="60" height="30"/>
+                                <rect key="frame" x="313" y="108" width="60" height="30"/>
                                 <color key="backgroundColor" systemColor="systemGray2Color"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="30" id="KqD-eR-FNF"/>
@@ -187,7 +187,7 @@ baked at 800° perfection within minutes.</string>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="XdY-C1-q6p" secondAttribute="bottom" id="BjD-3f-KGU"/>
-                            <constraint firstItem="vwG-qq-0xq" firstAttribute="top" secondItem="mMC-W1-hhO" secondAttribute="top" id="C9s-3m-zcB"/>
+                            <constraint firstItem="vwG-qq-0xq" firstAttribute="top" secondItem="mMC-W1-hhO" secondAttribute="top" constant="-10" id="C9s-3m-zcB"/>
                             <constraint firstAttribute="bottom" secondItem="Awo-hg-BXR" secondAttribute="bottom" id="dE4-L1-vil"/>
                             <constraint firstItem="Awo-hg-BXR" firstAttribute="leading" secondItem="mMC-W1-hhO" secondAttribute="leading" id="ilv-pf-dan"/>
                             <constraint firstItem="mMC-W1-hhO" firstAttribute="trailing" secondItem="vwG-qq-0xq" secondAttribute="trailing" constant="20" id="mDI-RU-RWF"/>

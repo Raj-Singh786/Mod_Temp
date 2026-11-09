@@ -36,7 +36,7 @@ class LoginViewController: UIViewController {
         loginField.delegate = self
         loginField.keyboardType = .phonePad
         loginField.textContentType = .telephoneNumber
-        loginField.placeholder = "Enter mobile number"
+        loginField.placeholder = "Enter mobile number/Email"
         loginField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
         
     }

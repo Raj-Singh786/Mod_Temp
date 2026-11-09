@@ -10,6 +10,7 @@ struct HomeScreen: View {
 
     @State private var selectedPromoIndex: Int = 0
     @State private var showStoreLocation: Bool = false
+    @State private var showRewardsScreen: Bool = false
 
     init(isGuest: Bool? = nil) {
         self.isGuestOverride = isGuest
@@ -21,11 +22,15 @@ struct HomeScreen: View {
                 // 1. Location Header (Adapts to Guest vs Logged-In)
                 LocationHeaderView(isGuest: isGuest, onSelectLocation: {
                     showStoreLocation = true
+                }, onSelectRewards: {
+                    showRewardsScreen = true
                 })
 
                 // 2. Main Loyalty Card (Only for guest user)
                 if isGuest {
-                    WelcomeLoyaltyCardView()
+                    WelcomeLoyaltyCardView(onSelectRewards: {
+                        showRewardsScreen = true
+                    })
                 }
 
                 // 3. Promotions & Deals Section (Wide card + page indicator)
@@ -103,6 +108,9 @@ struct HomeScreen: View {
         .fullScreenCover(isPresented: $showStoreLocation) {
             StoreLocationScreen()
         }
+        .fullScreenCover(isPresented: $showRewardsScreen) {
+            MODRewardsScreen()
+        }
     }
 }
 
@@ -111,6 +119,7 @@ struct HomeScreen: View {
 struct LocationHeaderView: View {
     var isGuest: Bool = false
     var onSelectLocation: () -> Void = {}
+    var onSelectRewards: () -> Void = {}
     @State private var address: String = ""
 
     var body: some View {
@@ -155,10 +164,11 @@ struct LocationHeaderView: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            // Pizza Tracker Icon (Only shown for logged-in users)
-            if !isGuest {
-                PizzaTrackerView(activeSlices: 2, totalSlices: 6, badgeCount: 2)
+            // Pizza Tracker Button (Clicking navigates to MOD Rewards)
+            Button(action: onSelectRewards) {
+                PizzaTrackerView(activeSlices: 6, totalSlices: 8, badgeCount: 2)
             }
+            .buttonStyle(PlainButtonStyle())
             
             // Notification Button
             ZStack(alignment: .topTrailing) {
@@ -188,6 +198,8 @@ struct LocationHeaderView: View {
 }
 
 struct WelcomeLoyaltyCardView: View {
+    var onSelectRewards: () -> Void = {}
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -215,7 +227,7 @@ struct WelcomeLoyaltyCardView: View {
                 PillView(text: "Zero Delivery Fee")
             }
             HStack(spacing: 14) {
-                Button(action: {}) {
+                Button(action: onSelectRewards) {
                     Text("Claim Loyalty")
                         .font(.system(size: 15, weight: .semibold))
                         .frame(maxWidth: .infinity)
@@ -395,8 +407,8 @@ struct QuickFeatureCard: View {
 // MARK: - Pizza Tracker View (Logged-in Header)
 
 struct PizzaTrackerView: View {
-    var activeSlices: Int = 2
-    var totalSlices: Int = 6
+    var activeSlices: Int = 6
+    var totalSlices: Int = 8
     var badgeCount: Int = 2
 
     var body: some View {
