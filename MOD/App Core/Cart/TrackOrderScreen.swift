@@ -531,9 +531,9 @@ struct TrackOrderScreen: View {
 
             // Tip Option Pills: $2.00 | $3.00 | $5.00 | Custom
             HStack(spacing: 10) {
-                tipButton(amount: 2.00, title: "$2.00")
-                tipButton(amount: 3.00, title: "$3.00")
-                tipButton(amount: 5.00, title: "$5.00")
+                tipButton(amount: 2.00, title: "5%")
+                tipButton(amount: 3.00, title: "10%")
+                tipButton(amount: 5.00, title: "15%")
                 customTipButton
             }
 

@@ -15,8 +15,8 @@ class OrderVC: UIViewController {
 
         navigationController?.isNavigationBarHidden = true
 
-        let trackOrderView = TrackOrderScreen()
-        let hostingController = UIHostingController(rootView: trackOrderView)
+        let orderHistoryView = OrderHistoryScreen()
+        let hostingController = UIHostingController(rootView: orderHistoryView)
         addChild(hostingController)
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false

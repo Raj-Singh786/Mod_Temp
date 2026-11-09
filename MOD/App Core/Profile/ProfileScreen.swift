@@ -11,6 +11,7 @@ struct ProfileScreen: View {
     // MARK: - State
     @State private var isDarkMode: Bool = false
     @State private var showRewardsScreen: Bool = false
+    @State private var showOrdersHistoryScreen: Bool = false
     @State private var showingAlert: Bool = false
     @State private var alertTitle: String = ""
     @State private var alertMessage: String = ""
@@ -73,7 +74,7 @@ struct ProfileScreen: View {
                             iconColor: Color(red: 0.88, green: 0.12, blue: 0.22),
                             iconBgColor: Color(red: 0.99, green: 0.92, blue: 0.93),
                             title: "My Orders",
-                            action: { triggerAlert(title: "My Orders", message: "Viewing active and placed orders.") }
+                            action: { showOrdersHistoryScreen = true }
                         )
                         Divider().padding(.leading, 56)
                         
@@ -82,7 +83,7 @@ struct ProfileScreen: View {
                             iconColor: Color(red: 0.88, green: 0.12, blue: 0.22),
                             iconBgColor: Color(red: 0.99, green: 0.92, blue: 0.93),
                             title: "Orders History",
-                            action: { triggerAlert(title: "Orders History", message: "Viewing past delivered orders.") }
+                            action: { showOrdersHistoryScreen = true }
                         )
                         Divider().padding(.leading, 56)
                         
@@ -286,6 +287,9 @@ struct ProfileScreen: View {
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showRewardsScreen) {
             MODRewardsScreen()
+        }
+        .fullScreenCover(isPresented: $showOrdersHistoryScreen) {
+            OrderHistoryScreen()
         }
         .alert(isPresented: $showingAlert) {
             Alert(
