@@ -79,8 +79,22 @@ struct CartScreen: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollView(.vertical, showsIndicators: false) {
+        NavigationView {
+            ZStack(alignment: .bottom) {
+                // Push Navigation to CheckoutScreen
+                NavigationLink(
+                    destination: CheckoutScreen(
+                        cartItems: cartItems,
+                        orderType: orderType,
+                        scheduledTime: scheduledTime
+                    ),
+                    isActive: $showCheckoutScreen
+                ) {
+                    EmptyView()
+                }
+                .hidden()
+
+                ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
                     
                     // 1. Navigation Header
@@ -471,13 +485,9 @@ struct CartScreen: View {
         .sheet(isPresented: $showTimeOptionsSheet) {
             TimePickerSheet(selectedTime: $scheduledTime)
         }
-        .fullScreenCover(isPresented: $showCheckoutScreen) {
-            CheckoutScreen(
-                cartItems: cartItems,
-                orderType: orderType,
-                scheduledTime: scheduledTime
-            )
         }
+        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationBarHidden(true)
         .onAppear {
             loadOrderTypeFromDefaults()
         }

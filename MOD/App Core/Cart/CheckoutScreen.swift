@@ -28,6 +28,20 @@ enum DigitalPayApp: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum ActiveCheckoutAlert: Identifiable {
+    case success
+    case changeAddress
+    case validation(String)
+
+    var id: String {
+        switch self {
+        case .success: return "success"
+        case .changeAddress: return "changeAddress"
+        case .validation(let msg): return "validation_\(msg)"
+        }
+    }
+}
+
 // MARK: - Checkout Screen
 
 struct CheckoutScreen: View {
@@ -79,11 +93,12 @@ struct CheckoutScreen: View {
     @State private var showMorePaymentOptions: Bool = false
     @State private var selectedMoreOption: String? = nil
 
-    // UI Feedback
-    @State private var showOrderSuccessAlert: Bool = false
-    @State private var showAddressChangeAlert: Bool = false
+    // User / Guest State & Recipient Details
+    @State private var isGuest: Bool = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
+    @State private var customerName: String = ""
+    @State private var contactNumber: String = ""
+    @State private var activeAlert: ActiveCheckoutAlert? = nil
     @State private var deliveryAddress: String = "450 Sutter St, Apt 8B, San Francisco, CA 94108"
-    @State private var recipientInfo: String = "Alex Morgan • (555) 234-5678"
 
     // Colors
     private let modRed = Color(red: 0.78, green: 0.08, blue: 0.18)
@@ -186,22 +201,43 @@ struct CheckoutScreen: View {
             stickyBottomBar
         }
         .edgesIgnoringSafeArea(.bottom)
-        .alert(isPresented: $showOrderSuccessAlert) {
-            Alert(
-                title: Text("🎉 Order Placed Successfully!"),
-                message: Text("Thank you! Your order has been placed and is being prepared. You can track it in the Orders tab."),
-                dismissButton: .default(Text("View Order Status")) {
-                    dismiss()
+        .alert(item: $activeAlert) { alert in
+            switch alert {
+            case .success:
+                return Alert(
+                    title: Text("🎉 Order Placed Successfully!"),
+                    message: Text("Thank you\(customerName.isEmpty ? "" : ", " + customerName)! Your order has been placed and is being prepared. You can track it in the Orders tab."),
+                    dismissButton: .default(Text("View Order Status")) {
+                        dismiss()
+                    }
+                )
+            case .changeAddress:
+                return Alert(
+                    title: Text("Change Address"),
+                    message: Text("To update your address or store location, select Location on the Home screen."),
+                    dismissButton: .default(Text("OK"))
+                )
+            case .validation(let message):
+                return Alert(
+                    title: Text("Missing Information"),
+                    message: Text(message),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+        }
+        .onAppear {
+            let guest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
+            self.isGuest = guest
+            if !guest {
+                if customerName.isEmpty {
+                    customerName = "Alex Morgan"
                 }
-            )
+                if contactNumber.isEmpty {
+                    contactNumber = "(555) 234-5678"
+                }
+            }
         }
-        .alert(isPresented: $showAddressChangeAlert) {
-            Alert(
-                title: Text("Change Address"),
-                message: Text("To update your address or store location, select Location on the Home screen."),
-                dismissButton: .default(Text("OK"))
-            )
-        }
+        .navigationBarHidden(true)
     }
 
     // MARK: - 1. Navigation Header
@@ -412,29 +448,35 @@ struct CheckoutScreen: View {
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.black)
 
-                            Text("DEFAULT")
+                            Text(orderType == .pickup ? "STORE" : "DEFAULT")
                                 .font(.system(size: 9.5, weight: .heavy))
                                 .foregroundColor(modRed)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(pillPink)
                                 .cornerRadius(4)
+
+                            if isGuest {
+                                Text("GUEST")
+                                    .font(.system(size: 9.5, weight: .heavy))
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.gray.opacity(0.12))
+                                    .cornerRadius(4)
+                            }
                         }
 
                         Text(orderType == .pickup ? "452 Market St, San Francisco, CA (0.8 mi away)" : deliveryAddress)
                             .font(.system(size: 13))
                             .foregroundColor(.gray)
                             .lineLimit(2)
-
-                        Text(recipientInfo)
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray.opacity(0.85))
                     }
 
                     Spacer()
 
                     Button(action: {
-                        showAddressChangeAlert = true
+                        activeAlert = .changeAddress
                     }) {
                         HStack(spacing: 3) {
                             Image(systemName: "pencil")
@@ -444,6 +486,111 @@ struct CheckoutScreen: View {
                         }
                         .foregroundColor(modRed)
                     }
+                }
+
+                Divider()
+
+                // Two Rows Below Address: Name & Contact Number (Optional for Guest User)
+                VStack(spacing: 10) {
+                    // Row 1: Full Name (Required)
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(pillPink)
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(modRed)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 4) {
+                                Text("Name")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(.gray)
+                                Text("*")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(modRed)
+                            }
+
+                            TextField("Enter your full name", text: $customerName)
+                                .font(.system(size: 13.5, weight: .medium))
+                                .foregroundColor(.black)
+                                .autocapitalization(.words)
+                                .disableAutocorrection(true)
+                        }
+
+                        if !customerName.isEmpty {
+                            Button(action: { customerName = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray.opacity(0.5))
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(Color(red: 0.98, green: 0.98, blue: 0.99))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(borderGray.opacity(0.8), lineWidth: 1)
+                    )
+
+                    // Row 2: Contact Number (Optional for Guest User)
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(pillPink)
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "phone.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(modRed)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 5) {
+                                Text("Contact Number")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(.gray)
+
+                                if isGuest {
+                                    Text("(Optional)")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundColor(Color.gray)
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 1)
+                                        .background(Color.black.opacity(0.05))
+                                        .cornerRadius(4)
+                                } else {
+                                    Text("*")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(modRed)
+                                }
+                            }
+
+                            TextField(isGuest ? "Enter contact number (optional)" : "Enter contact number", text: $contactNumber)
+                                .font(.system(size: 13.5, weight: .medium))
+                                .foregroundColor(.black)
+                                .keyboardType(.phonePad)
+                        }
+
+                        if !contactNumber.isEmpty {
+                            Button(action: { contactNumber = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray.opacity(0.5))
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(Color(red: 0.98, green: 0.98, blue: 0.99))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(borderGray.opacity(0.8), lineWidth: 1)
+                    )
                 }
 
                 Divider()
@@ -1170,7 +1317,7 @@ struct CheckoutScreen: View {
         VStack(spacing: 8) {
             // Big Red Pay Button
             Button(action: {
-                showOrderSuccessAlert = true
+                validateAndProceedOrder()
             }) {
                 HStack(spacing: 8) {
                     Image(systemName: "lock.fill")
@@ -1208,6 +1355,27 @@ struct CheckoutScreen: View {
             Color.white
                 .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: -4)
         )
+    }
+
+    // MARK: - Order Validation & Placement
+
+    private func validateAndProceedOrder() {
+        let trimmedName = customerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedName.isEmpty {
+            activeAlert = .validation("Please enter your full name to proceed with the order.")
+            return
+        }
+
+        // Contact number is required for logged-in users, but optional for guest users
+        if !isGuest {
+            let trimmedPhone = contactNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedPhone.isEmpty {
+                activeAlert = .validation("Please enter your contact phone number to proceed with the order.")
+                return
+            }
+        }
+
+        activeAlert = .success
     }
 }
 
