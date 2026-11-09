@@ -43,6 +43,13 @@ struct CartScreen: View {
         )
     ]
     
+    // Order Type (read from UserDefaults; defaults to .delivery)
+    @State var orderType: CartOrderType = .delivery
+    @State private var designatedVehicle: String = "White Honda Civic • CA 8XYZ123"
+    @State private var curbsideBay: String = "Curbside (Bay #1– 4)"
+    @State private var showVehicleEditSheet: Bool = false
+    @State private var showTimeOptionsSheet: Bool = false
+
     @State private var appliedCoupon: String? = nil
     @State private var scheduledTime: String = "Today, Oct 24 • 5:30 PM"
     @State private var showClearAlert: Bool = false
@@ -62,7 +69,8 @@ struct CartScreen: View {
     }
     
     private var deliveryFee: Double {
-        cartItems.isEmpty ? 0.0 : 2.99
+        if orderType == .pickup { return 0.0 }
+        return cartItems.isEmpty ? 0.0 : 2.99
     }
     
     private var grandTotal: Double {
@@ -106,15 +114,15 @@ struct CartScreen: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
 
-                    // 2. Delivery Location & Scheduled Time
-                    VStack(alignment: .leading, spacing: 10) {
-                        // Delivery Address Row
+                    // 2. Fulfillment Details (Adjusted per Order Type: Pickup vs Delivery)
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Location Header Row (Pickup at / Delivery to)
                         HStack {
                             HStack(spacing: 6) {
                                 Image(systemName: "mappin.circle.fill")
                                     .font(.system(size: 15))
                                     .foregroundColor(.red)
-                                Text("Delivery to")
+                                Text(orderType == .pickup ? "Pickup at" : "Delivery to")
                                     .font(.system(size: 13))
                                     .foregroundColor(.gray)
                                 Text("Downtown Hut")
@@ -133,7 +141,7 @@ struct CartScreen: View {
                                 .cornerRadius(12)
                         }
                         
-                        // Scheduled Time Container
+                        // Scheduled Time Container (Snap design)
                         HStack {
                             HStack(spacing: 10) {
                                 ZStack {
@@ -157,7 +165,7 @@ struct CartScreen: View {
                             
                             Spacer()
                             
-                            Button(action: {}) {
+                            Button(action: { showTimeOptionsSheet = true }) {
                                 Text("Change")
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(.red)
@@ -170,6 +178,12 @@ struct CartScreen: View {
                             RoundedRectangle(cornerRadius: 14)
                                 .stroke(Color.gray.opacity(0.12), lineWidth: 1)
                         )
+
+                        // Pickup Details Card (Snap-based UI for Pickup)
+                        if orderType == .pickup {
+                            pickupLocationCard
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     }
                     .padding(.horizontal, 16)
 
@@ -353,7 +367,19 @@ struct CartScreen: View {
                                     .foregroundColor(Color(red: 0.12, green: 0.65, blue: 0.38))
                             }
                         }
-                        BillRow(title: "Delivery Fee", amount: deliveryFee)
+                        if orderType == .delivery {
+                            BillRow(title: "Delivery Fee", amount: deliveryFee)
+                        } else {
+                            HStack {
+                                Text("Pickup Fee")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Text("FREE")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(Color(red: 0.12, green: 0.65, blue: 0.38))
+                            }
+                        }
                         
                         Divider().padding(.vertical, 4)
                         
@@ -393,7 +419,7 @@ struct CartScreen: View {
                         Spacer()
                         
                         HStack(spacing: 6) {
-                            Text("Proceed to Checkout")
+                            Text(orderType == .pickup ? "Proceed to Pickup" : "Proceed to Checkout")
                                 .font(.system(size: 15, weight: .bold))
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 14, weight: .bold))
@@ -438,9 +464,154 @@ struct CartScreen: View {
         .alert(isPresented: $showCouponAlert) {
             Alert(title: Text("Coupon Applied"), message: Text(couponAlertMsg), dismissButton: .default(Text("OK")))
         }
+        .sheet(isPresented: $showVehicleEditSheet) {
+            VehicleEditSheet(vehicle: $designatedVehicle, bay: $curbsideBay)
+        }
+        .sheet(isPresented: $showTimeOptionsSheet) {
+            TimePickerSheet(selectedTime: $scheduledTime)
+        }
+        .onAppear {
+            loadOrderTypeFromDefaults()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            loadOrderTypeFromDefaults()
+        }
+    }
+
+    // MARK: - Pickup Location Details Card (Snap Design)
+
+    private var pickupLocationCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // 1. Store Info Row
+            HStack(alignment: .top, spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(red: 1.0, green: 0.90, blue: 0.90))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: "storefront.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(Color(red: 0.78, green: 0.08, blue: 0.18))
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Pickup Location")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.48))
+
+                    Text("Downtown Hut #1204")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.black)
+
+                    Text("452 Market St, San Francisco, CA (0.8 mi away)")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.48))
+                        .lineLimit(2)
+
+                    // Curbside Badge
+                    HStack(spacing: 6) {
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(red: 0.78, green: 0.08, blue: 0.18))
+
+                        Text(curbsideBay)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color(red: 0.78, green: 0.08, blue: 0.18))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(red: 0.99, green: 0.92, blue: 0.93))
+                    .cornerRadius(12)
+                    .padding(.top, 4)
+                }
+            }
+
+            Divider()
+                .padding(.vertical, 2)
+
+            // 2. Estimated Ready Row
+            HStack(alignment: .center, spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(red: 0.90, green: 0.96, blue: 0.93))
+                        .frame(width: 36, height: 36)
+
+                    Image(systemName: "timer")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(Color(red: 0.12, green: 0.55, blue: 0.35))
+                }
+
+                Group {
+                    Text("Estimated Ready: ")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.black)
+                    + Text("10–15 min (ASAP) • Kitchen on Normal Capacity.")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(red: 0.38, green: 0.38, blue: 0.42))
+                }
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // 3. Designated Vehicle Box
+            HStack(spacing: 12) {
+                Image(systemName: "car.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(red: 0.78, green: 0.08, blue: 0.18))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Designated Vehicle")
+                        .font(.system(size: 11.5, weight: .bold))
+                        .foregroundColor(Color(red: 0.78, green: 0.08, blue: 0.18))
+
+                    Text(designatedVehicle)
+                        .font(.system(size: 13.5, weight: .bold))
+                        .foregroundColor(.black)
+                }
+
+                Spacer()
+
+                Button(action: {
+                    showVehicleEditSheet = true
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Edit")
+                            .font(.system(size: 12, weight: .bold))
+                    }
+                    .foregroundColor(Color(red: 0.78, green: 0.08, blue: 0.18))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Color(red: 0.97, green: 0.88, blue: 0.90))
+                    .cornerRadius(10)
+                }
+            }
+            .padding(12)
+            .background(Color(red: 0.99, green: 0.96, blue: 0.97))
+            .cornerRadius(14)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(18)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.gray.opacity(0.12), lineWidth: 1)
+        )
     }
 
     // MARK: - Actions
+
+    private func loadOrderTypeFromDefaults() {
+        let saved = UserDefaults.standard.string(forKey: "selectedOrderType")
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if saved == "pickup" {
+                orderType = .pickup
+            } else {
+                orderType = .delivery
+            }
+        }
+    }
 
     private func addItem(name: String, price: Double, image: String) {
         withAnimation {
@@ -790,6 +961,107 @@ struct CartItem: Identifiable {
 struct CartCustomization {
     let text: String
     let isPositive: Bool
+}
+
+enum CartOrderType: String, CaseIterable, Identifiable {
+    case pickup = "Pickup"
+    case delivery = "Delivery"
+
+    var id: String { rawValue }
+}
+
+// MARK: - Vehicle Edit Sheet
+
+struct VehicleEditSheet: View {
+    @Environment(\.presentationMode) private var presentationMode
+    @Binding var vehicle: String
+    @Binding var bay: String
+
+    @State private var tempVehicle: String = ""
+    @State private var tempBay: String = ""
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Designated Vehicle Details")) {
+                    TextField("e.g. White Honda Civic • CA 8XYZ123", text: $tempVehicle)
+                }
+
+                Section(header: Text("Curbside Bay / Instructions")) {
+                    TextField("e.g. Curbside (Bay #1– 4)", text: $tempBay)
+                }
+            }
+            .navigationTitle("Designated Vehicle")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        vehicle = tempVehicle
+                        bay = tempBay
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .font(.headline)
+                    .foregroundColor(.red)
+                }
+            }
+            .onAppear {
+                tempVehicle = vehicle
+                tempBay = bay
+            }
+        }
+    }
+}
+
+// MARK: - Time Picker Sheet
+
+struct TimePickerSheet: View {
+    @Environment(\.presentationMode) private var presentationMode
+    @Binding var selectedTime: String
+
+    let timeSlots = [
+        "Today, Oct 24 • 5:30 PM",
+        "Today, Oct 24 • 6:00 PM",
+        "Today, Oct 24 • 6:30 PM",
+        "Today, Oct 24 • 7:00 PM",
+        "Tomorrow, Oct 25 • 12:30 PM"
+    ]
+
+    var body: some View {
+        NavigationView {
+            List(timeSlots, id: \.self) { slot in
+                Button(action: {
+                    selectedTime = slot
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    HStack {
+                        Text(slot)
+                            .font(.system(size: 15, weight: selectedTime == slot ? .bold : .regular))
+                            .foregroundColor(.black)
+                        Spacer()
+                        if selectedTime == slot {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            .navigationTitle("Scheduled Time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Close") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+        }
+    }
 }
 
 #Preview {

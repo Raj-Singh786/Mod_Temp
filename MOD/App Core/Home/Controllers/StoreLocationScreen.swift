@@ -13,7 +13,7 @@ struct StoreLocationScreen: View {
     
     // MARK: - State
     @State private var searchAddress: String = "Market St, San Francisco, CA"
-    @State private var selectedOrderType: OrderType = .carryout
+    @State private var selectedOrderType: OrderType = .delivery
     @State private var isOrderTypeExpanded: Bool = true
     @State private var selectedTimePreference: TimePreference = .asap
     @State private var selectedStoreId: String = "#1204"
@@ -194,15 +194,20 @@ struct StoreLocationScreen: View {
 
                                 if isOrderTypeExpanded {
                                     // Carryout Active Subcard
-                                    Button(action: { selectedOrderType = .carryout }) {
+                                    Button(action: {
+                                        withAnimation {
+                                            selectedOrderType = .carryout
+                                            UserDefaults.standard.set("pickup", forKey: "selectedOrderType")
+                                        }
+                                    }) {
                                         HStack(spacing: 12) {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 8)
-                                                    .fill(Color(red: 0.85, green: 0.08, blue: 0.18))
+                                                    .fill(selectedOrderType == .carryout ? Color(red: 0.85, green: 0.08, blue: 0.18) : Color.gray.opacity(0.1))
                                                     .frame(width: 34, height: 34)
                                                 Image(systemName: "bag.fill")
                                                     .font(.system(size: 15))
-                                                    .foregroundColor(.white)
+                                                    .foregroundColor(selectedOrderType == .carryout ? .white : .gray)
                                             }
                                             
                                             VStack(alignment: .leading, spacing: 2) {
@@ -210,13 +215,15 @@ struct StoreLocationScreen: View {
                                                     Text("Carryout / Pickup")
                                                         .font(.system(size: 14, weight: .bold))
                                                         .foregroundColor(.black)
-                                                    Text("ACTIVE")
-                                                        .font(.system(size: 10, weight: .heavy))
-                                                        .foregroundColor(.white)
-                                                        .padding(.horizontal, 6)
-                                                        .padding(.vertical, 2)
-                                                        .background(Color.red)
-                                                        .cornerRadius(4)
+                                                    if selectedOrderType == .carryout {
+                                                        Text("ACTIVE")
+                                                            .font(.system(size: 10, weight: .heavy))
+                                                            .foregroundColor(.white)
+                                                            .padding(.horizontal, 6)
+                                                            .padding(.vertical, 2)
+                                                            .background(Color.red)
+                                                            .cornerRadius(4)
+                                                    }
                                                 }
                                                 Text("Free • Ready in 10–15 mins • 3 stores nearby")
                                                     .font(.system(size: 12))
@@ -239,15 +246,20 @@ struct StoreLocationScreen: View {
                                     }
 
                                     // Delivery Subcard
-                                    Button(action: { selectedOrderType = .delivery }) {
+                                    Button(action: {
+                                        withAnimation {
+                                            selectedOrderType = .delivery
+                                            UserDefaults.standard.set("delivery", forKey: "selectedOrderType")
+                                        }
+                                    }) {
                                         HStack(spacing: 12) {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 8)
-                                                    .fill(Color.gray.opacity(0.1))
+                                                    .fill(selectedOrderType == .delivery ? Color(red: 0.85, green: 0.08, blue: 0.18) : Color.gray.opacity(0.1))
                                                     .frame(width: 34, height: 34)
                                                 Image(systemName: "box.truck.fill")
                                                     .font(.system(size: 14))
-                                                    .foregroundColor(.gray)
+                                                    .foregroundColor(selectedOrderType == .delivery ? .white : .gray)
                                             }
                                             
                                             VStack(alignment: .leading, spacing: 2) {
@@ -258,6 +270,15 @@ struct StoreLocationScreen: View {
                                                     Text("~$2.99 fee")
                                                         .font(.system(size: 11))
                                                         .foregroundColor(.gray)
+                                                    if selectedOrderType == .delivery {
+                                                        Text("ACTIVE")
+                                                            .font(.system(size: 10, weight: .heavy))
+                                                            .foregroundColor(.white)
+                                                            .padding(.horizontal, 6)
+                                                            .padding(.vertical, 2)
+                                                            .background(Color.red)
+                                                            .cornerRadius(4)
+                                                    }
                                                 }
                                                 Text("35–45 mins • Delivered straight to your door")
                                                     .font(.system(size: 12))
@@ -519,7 +540,7 @@ struct StoreLocationScreen: View {
                         Circle()
                             .fill(Color(red: 0.12, green: 0.65, blue: 0.38))
                             .frame(width: 6, height: 6)
-                        Text("Carryout •")
+                        Text(selectedOrderType == .carryout ? "Carryout •" : "Delivery •")
                             .font(.system(size: 12))
                             .foregroundColor(.black)
                         Text(selectedStoreName)
@@ -561,6 +582,14 @@ struct StoreLocationScreen: View {
         }
         .background(Color(red: 0.98, green: 0.98, blue: 0.99).edgesIgnoringSafeArea(.all))
         .navigationBarHidden(true)
+        .onAppear {
+            let saved = UserDefaults.standard.string(forKey: "selectedOrderType")
+            if saved == "pickup" {
+                selectedOrderType = .carryout
+            } else {
+                selectedOrderType = .delivery
+            }
+        }
     }
 
     private var selectedStoreName: String {
@@ -573,6 +602,9 @@ struct StoreLocationScreen: View {
     }
 
     private func handleOpenLocationInMap() {
+        // Save current selection to UserDefaults
+        UserDefaults.standard.set(selectedOrderType == .carryout ? "pickup" : "delivery", forKey: "selectedOrderType")
+
         // Open Apple Maps with selected store coordinate
         let coord: CLLocationCoordinate2D
         switch selectedStoreId {
