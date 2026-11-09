@@ -14,6 +14,7 @@ struct MODRewardsScreen: View {
     @State private var showingAlert: Bool = false
     @State private var alertTitle: String = ""
     @State private var alertMessage: String = ""
+    @State private var showWalletTopUp: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -38,9 +39,18 @@ struct MODRewardsScreen: View {
                 
                 Spacer()
                 
-                // Placeholder to keep the title centered without the share button
-                Color.clear
-                    .frame(width: 44, height: 44)
+                // Plus button to navigate to WalletTopUPScreen
+                Button(action: {
+                    showWalletTopUp = true
+                }) {
+                    Image(systemName: "plus")
+                        .font(Font.appFont(.jakartaBold, size: 16))
+                        .foregroundColor(Color(red: 0.88, green: 0.12, blue: 0.22))
+                        .frame(width: 38, height: 38)
+                        .background(Color(red: 0.99, green: 0.92, blue: 0.93))
+                        .clipShape(Circle())
+                }
+                .frame(width: 44, height: 44, alignment: .trailing)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
@@ -51,7 +61,9 @@ struct MODRewardsScreen: View {
                 VStack(spacing: 20) {
                     
                     // 1. Points & Tier Milestone Summary Card
-                    PointsSummaryCard()
+                    PointsSummaryCard(onTopUp: {
+                        showWalletTopUp = true
+                    })
                         .padding(.horizontal, 16)
                         .padding(.top, 12)
                     
@@ -89,6 +101,9 @@ struct MODRewardsScreen: View {
             .background(Color(red: 0.98, green: 0.98, blue: 0.99).ignoresSafeArea())
         }
         .background(Color.white.ignoresSafeArea(edges: .top))
+        .fullScreenCover(isPresented: $showWalletTopUp) {
+            WalletTopUPScreen()
+        }
         .alert(isPresented: $showingAlert) {
             Alert(
                 title: Text(alertTitle),
@@ -102,6 +117,8 @@ struct MODRewardsScreen: View {
 // MARK: - 1. Points Summary Card
 
 private struct PointsSummaryCard: View {
+    var onTopUp: () -> Void = {}
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             
@@ -111,6 +128,22 @@ private struct PointsSummaryCard: View {
                     .font(.system(size: 10))
                 Text("2 Rewards Unlocked")
                     .font(.system(size: 11, weight: .bold))
+                
+                Spacer()
+
+                Button(action: onTopUp) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 11))
+                        Text("Top Up")
+                            .font(Font.appFont(.jakartaBold, size: 11))
+                    }
+                    .foregroundColor(Color(red: 0.88, green: 0.12, blue: 0.22))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 3.5)
+                    .background(Color(red: 0.99, green: 0.92, blue: 0.93))
+                    .cornerRadius(10)
+                }
             }
             .foregroundColor(Color(red: 0.65, green: 0.44, blue: 0.08))
             .padding(.horizontal, 10)
@@ -121,9 +154,20 @@ private struct PointsSummaryCard: View {
             // Points Value & Slice Circular Tracker
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("185 MOD Points")
-                        .font(.system(size: 26, weight: .heavy))
-                        .foregroundColor(Color(red: 0.1, green: 0.12, blue: 0.18))
+                    HStack(spacing: 8) {
+                        Text("185 MOD Points")
+                            .font(.system(size: 26, weight: .heavy))
+                            .foregroundColor(Color(red: 0.1, green: 0.12, blue: 0.18))
+
+                        Button(action: onTopUp) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 24, height: 24)
+                                .background(Color(red: 0.88, green: 0.12, blue: 0.22))
+                                .clipShape(Circle())
+                        }
+                    }
                     
                     Text("Only 15 pts away from next reward tier!")
                         .font(.system(size: 13))

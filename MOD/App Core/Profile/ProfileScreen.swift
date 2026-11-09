@@ -12,6 +12,7 @@ struct ProfileScreen: View {
     @State private var isDarkMode: Bool = false
     @State private var showRewardsScreen: Bool = false
     @State private var showOrdersHistoryScreen: Bool = false
+    @State private var showWalletTopUp: Bool = false
     @State private var showingAlert: Bool = false
     @State private var alertTitle: String = ""
     @State private var alertMessage: String = ""
@@ -44,7 +45,7 @@ struct ProfileScreen: View {
                 // 3. Dark MOD-PAY / MOD Wallet Card
                 ModWalletCardView(
                     onTopUp: {
-                        triggerAlert(title: "Top Up Wallet", message: "Choose amount to reload your MOD-PAY balance.")
+                        showWalletTopUp = true
                     },
                     onScan: {
                         triggerAlert(title: "Scan Receipt", message: "Scan in-store receipt QR to earn points instantly.")
@@ -290,6 +291,9 @@ struct ProfileScreen: View {
         }
         .fullScreenCover(isPresented: $showOrdersHistoryScreen) {
             OrderHistoryScreen()
+        }
+        .fullScreenCover(isPresented: $showWalletTopUp) {
+            WalletTopUPScreen()
         }
         .alert(isPresented: $showingAlert) {
             Alert(
