@@ -49,6 +49,7 @@ struct CartScreen: View {
     @State private var curbsideBay: String = "Curbside (Bay #1– 4)"
     @State private var showVehicleEditSheet: Bool = false
     @State private var showTimeOptionsSheet: Bool = false
+    @State private var showCheckoutScreen: Bool = false
 
     @State private var appliedCoupon: String? = nil
     @State private var scheduledTime: String = "Today, Oct 24 • 5:30 PM"
@@ -470,6 +471,13 @@ struct CartScreen: View {
         .sheet(isPresented: $showTimeOptionsSheet) {
             TimePickerSheet(selectedTime: $scheduledTime)
         }
+        .fullScreenCover(isPresented: $showCheckoutScreen) {
+            CheckoutScreen(
+                cartItems: cartItems,
+                orderType: orderType,
+                scheduledTime: scheduledTime
+            )
+        }
         .onAppear {
             loadOrderTypeFromDefaults()
         }
@@ -633,7 +641,7 @@ struct CartScreen: View {
     }
 
     private func handleCheckout() {
-        // Handle checkout action
+        showCheckoutScreen = true
     }
 }
 
