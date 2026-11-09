@@ -31,6 +31,7 @@ struct ConfirmOrderScreen: View {
     @State private var haloPulsing: Bool = false
     @State private var showHelpSheet: Bool = false
     @State private var showTrackOrderSheet: Bool = false
+    @State private var navigateToTrackOrder: Bool = false
 
     // App Colors
     private let modRed = Color(red: 0.78, green: 0.08, blue: 0.18)
@@ -61,6 +62,22 @@ struct ConfirmOrderScreen: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
+            // Push Navigation to Track Order Screen
+            NavigationLink(
+                destination: TrackOrderScreen(
+                    orderNumber: orderNumber,
+                    customerName: customerName,
+                    deliveryAddress: deliveryAddress,
+                    estimatedDeliveryTime: "5:30 PM",
+                    totalBaseAmount: totalAmount,
+                    pointsEarned: pointsEarned
+                ),
+                isActive: $navigateToTrackOrder
+            ) {
+                EmptyView()
+            }
+            .hidden()
+
             VStack(spacing: 20) {
                 // Top Celebration Graphic
                 celebrationGraphicSection
@@ -80,14 +97,15 @@ struct ConfirmOrderScreen: View {
                 // Optional subtle support link (Call restaurant removed as requested)
                 supportFooterSection
 
-                // Bottom Safe Spacing
-                Color.clear.frame(height: 24)
+                // Bottom Safe Spacing (Clearance for TabBar & Home Indicator)
+                Color.clear.frame(height: 96)
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
         }
         .background(screenBg.edgesIgnoringSafeArea(.all))
         .navigationBarHidden(true)
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.65)) {
                 checkmarkScale = 1.0
@@ -98,11 +116,13 @@ struct ConfirmOrderScreen: View {
             }
         }
         .sheet(isPresented: $showTrackOrderSheet) {
-            OrderTrackingModal(
+            TrackOrderScreen(
                 orderNumber: orderNumber,
-                orderType: orderType,
-                estimatedArrival: estimatedArrival,
-                deliveryAddress: deliveryAddress
+                customerName: customerName,
+                deliveryAddress: deliveryAddress,
+                estimatedDeliveryTime: estimatedArrival,
+                totalBaseAmount: totalAmount,
+                pointsEarned: pointsEarned
             )
         }
         .actionSheet(isPresented: $showHelpSheet) {
@@ -451,7 +471,7 @@ struct ConfirmOrderScreen: View {
     // MARK: - Actions
 
     private func handleTrackOrder() {
-        showTrackOrderSheet = true
+        navigateToTrackOrder = true
     }
 
     private func handleBackToHome() {
