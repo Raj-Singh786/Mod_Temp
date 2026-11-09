@@ -12,6 +12,7 @@ struct MenuScreen: View {
     @State private var selectedDietary: DietaryFilter = .all
     @State private var selectedCategory: CategoryFilter = .all
     @State private var selectedTab: MenuTab = .classicPizzas
+    @State private var showMenuCustomization: Bool = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -121,7 +122,9 @@ struct MenuScreen: View {
                 .padding(.top, 2)
 
                 // 6. Create Your Own Pizza Hero Banner
-                CreateYourOwnBanner()
+                CreateYourOwnBanner(onStartBuilding: {
+                    showMenuCustomization = true
+                })
                     .padding(.horizontal, 16)
 
                 // 7. Classic Pizzas Section
@@ -206,6 +209,9 @@ struct MenuScreen: View {
         }
         .background(Color(red: 0.98, green: 0.98, blue: 0.99))
         .navigationBarHidden(true)
+        .fullScreenCover(isPresented: $showMenuCustomization) {
+            MenuCustomization()
+        }
     }
 
     // MARK: - Filter Logic
@@ -377,6 +383,8 @@ struct TriangleShape: Shape {
 // MARK: - Create Your Own Pizza Banner
 
 struct CreateYourOwnBanner: View {
+    var onStartBuilding: (() -> Void)? = nil
+
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             // Background Image
@@ -464,7 +472,9 @@ struct CreateYourOwnBanner: View {
 
                     Spacer()
 
-                    Button(action: {}) {
+                    Button(action: {
+                        onStartBuilding?()
+                    }) {
                         HStack(spacing: 4) {
                             Text("Start Building")
                                 .font(.system(size: 12, weight: .bold))
@@ -486,6 +496,9 @@ struct CreateYourOwnBanner: View {
         .cornerRadius(18)
         .clipped()
         .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .onTapGesture {
+            onStartBuilding?()
+        }
     }
 }
 
