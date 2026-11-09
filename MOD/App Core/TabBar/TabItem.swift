@@ -34,7 +34,7 @@ enum TabItems: String, CaseIterable {
         case .Orders:
              return OrderVC.instantiate(fromAppStoryboard: .Home)
         case .Sign:
-            return ProfileVC.instantiate(fromAppStoryboard: .Home)
+            return UIHostingController(rootView: ProfileScreen())
         }
     }
 
@@ -83,8 +83,7 @@ enum TabItems: String, CaseIterable {
     var displayTitle: String {
         switch self {
         case .Sign:
-            let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
-            return isGuest ? "Sign In" : "Profile"
+            return "Profile"
         default:
             return rawValue
         }
