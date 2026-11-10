@@ -15,220 +15,257 @@ struct MenuScreen: View {
     @State private var selectedDietary: DietaryFilter = .all
     @State private var selectedCategory: CategoryFilter = .all
     @State private var selectedTab: MenuTab = .classicPizzas
-    @State private var showMenuCustomization: Bool = false
+    @State private var selectedCustomizationPizza: MenuPizza? = nil
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 18) {
-                
-                // 1. Header (Menu + Delivery Location + Notification Bell)
-                HStack(alignment: .top, spacing: 12) {
-                    if showBackButton {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.black)
-                                .frame(width: 40, height: 40)
-                                .background(Color.white)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
-                        }
-                    }
+        VStack(spacing: 0) {
+            // 1. Fixed Header (Menu + Delivery Location + Notification Bell)
+            headerView
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Menu")
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundColor(.black)
-                        Text("Delivering to Silva Ave, Apt 4B")
-                            .font(.system(size: 13))
+            // Scrollable Content
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    // 2. Search Bar
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 16))
                             .foregroundColor(.gray)
-                    }
-                    
-                    Spacer()
-                    
-                    // Notification Button
-                    ZStack(alignment: .topTrailing) {
-                        Button(action: {}) {
-                            Image(systemName: "bell")
-                                .font(.system(size: 18))
-                                .foregroundColor(.black)
-                                .frame(width: 44, height: 44)
-                                .background(Color.white)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
-                        }
                         
-                        // Badge
-                        Text("3")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 18, height: 18)
-                            .background(Color.red)
-                            .clipShape(Circle())
-                            .offset(x: -2, y: 2)
+                        TextField("Search pizzas, sides, beverages...", text: $searchText)
+                            .font(.system(size: 14))
                     }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-
-                // 2. Search Bar
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 16))
-                        .foregroundColor(.gray)
-                    
-                    TextField("Search pizzas, sides, beverages...", text: $searchText)
-                        .font(.system(size: 14))
-                }
-                .padding(.horizontal, 14)
-                .frame(height: 44)
-                .background(Color(red: 0.96, green: 0.96, blue: 0.97))
-                .cornerRadius(12)
-                .padding(.horizontal, 16)
-
-                // 3. Filter Chips - Row 1 (Dietary)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(DietaryFilter.allCases, id: \.self) { filter in
-                            DietaryChip(filter: filter, isSelected: selectedDietary == filter) {
-                                selectedDietary = filter
-                            }
-                        }
-                    }
+                    .padding(.horizontal, 14)
+                    .frame(height: 44)
+                    .background(Color(red: 0.96, green: 0.96, blue: 0.97))
+                    .cornerRadius(12)
                     .padding(.horizontal, 16)
-                }
 
-                // 4. Filter Chips - Row 2 (Categories)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(CategoryFilter.allCases, id: \.self) { cat in
-                            CategoryChip(category: cat, isSelected: selectedCategory == cat) {
-                                selectedCategory = cat
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-
-                // 5. Section Tabs (Promotions & Deals, Classic Pizzas, Traditional & Specialty)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 24) {
-                        ForEach(MenuTab.allCases, id: \.self) { tab in
-                            VStack(spacing: 8) {
-                                Text(tab.rawValue)
-                                    .font(.system(size: 14, weight: selectedTab == tab ? .bold : .semibold))
-                                    .foregroundColor(selectedTab == tab ? .red : .gray)
-                                
-                                // Red Underline Indicator
-                                Rectangle()
-                                    .fill(selectedTab == tab ? Color.red : Color.clear)
-                                    .frame(height: 2.5)
-                                    .cornerRadius(1.5)
-                            }
-                            .onTapGesture {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    selectedTab = tab
+                    // 3. Filter Chips - Row 1 (Dietary)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(DietaryFilter.allCases, id: \.self) { filter in
+                                DietaryChip(filter: filter, isSelected: selectedDietary == filter) {
+                                    selectedDietary = filter
                                 }
                             }
                         }
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.horizontal, 16)
-                }
-                .padding(.top, 2)
 
-                // 6. Create Your Own Pizza Hero Banner
-                CreateYourOwnBanner(onStartBuilding: {
-                    showMenuCustomization = true
-                })
-                    .padding(.horizontal, 16)
-
-                // 7. Classic Pizzas Section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Classic Pizzas")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
-                        Spacer()
-                        Text("\(MenuMockData.classicPizzas.count) items")
-                            .font(.system(size: 13))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.horizontal, 16)
-
-                    VStack(spacing: 12) {
-                        ForEach(filteredClassicPizzas) { pizza in
-                            MenuPizzaCard(pizza: pizza)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-
-                // 8. Traditional Pizzas Section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Traditional Pizzas")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
-                        Spacer()
-                        Text("\(MenuMockData.traditionalPizzas.count) items")
-                            .font(.system(size: 13))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.horizontal, 16)
-
-                    VStack(spacing: 12) {
-                        ForEach(filteredTraditionalPizzas) { pizza in
-                            MenuPizzaCard(pizza: pizza)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-
-                // 9. Bundle Deals Section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
+                    // 4. Filter Chips - Row 2 (Categories)
+                    ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            Text("COMBO SAVER")
-                                .font(.system(size: 10, weight: .heavy))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.red)
-                                .cornerRadius(5)
+                            ForEach(CategoryFilter.allCases, id: \.self) { cat in
+                                CategoryChip(category: cat, isSelected: selectedCategory == cat) {
+                                    selectedCategory = cat
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
 
-                            Text("Bundle Deals")
+                    // 5. Section Tabs (Promotions & Deals, Classic Pizzas, Traditional & Specialty)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 24) {
+                            ForEach(MenuTab.allCases, id: \.self) { tab in
+                                VStack(spacing: 8) {
+                                    Text(tab.rawValue)
+                                        .font(.system(size: 14, weight: selectedTab == tab ? .bold : .semibold))
+                                        .foregroundColor(selectedTab == tab ? .red : .gray)
+                                    
+                                    // Red Underline Indicator
+                                    Rectangle()
+                                        .fill(selectedTab == tab ? Color.red : Color.clear)
+                                        .frame(height: 2.5)
+                                        .cornerRadius(1.5)
+                                }
+                                .onTapGesture {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        selectedTab = tab
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                    .padding(.top, 2)
+
+                    // 6. Create Your Own Pizza Hero Banner
+                    CreateYourOwnBanner(onStartBuilding: {
+                        selectedCustomizationPizza = MenuPizza(
+                            name: "Create Your Own Pizza",
+                            description: "Pick your crust, signature sauce, cheeses & infinite toppings freshly baked just for you.",
+                            price: "$13.99",
+                            imageName: "yourOwnPizza"
+                        )
+                    })
+                        .padding(.horizontal, 16)
+
+                    // 7. Classic Pizzas Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Classic Pizzas")
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.black)
+                            Spacer()
+                            Text("\(MenuMockData.classicPizzas.count) items")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
                         }
-                        
-                        Spacer()
-                        
-                        Text("Save up to 30%")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.horizontal, 16)
+                        .padding(.horizontal, 16)
 
-                    VStack(spacing: 14) {
-                        ForEach(MenuMockData.bundleDeals) { deal in
-                            BundleDealCard(deal: deal)
+                        VStack(spacing: 12) {
+                            ForEach(filteredClassicPizzas) { pizza in
+                                MenuPizzaCard(pizza: pizza, onAdd: {
+                                    selectedCustomizationPizza = pizza
+                                })
+                            }
                         }
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.horizontal, 16)
+
+                    // 8. Traditional Pizzas Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Traditional Pizzas")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.black)
+                            Spacer()
+                            Text("\(MenuMockData.traditionalPizzas.count) items")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.horizontal, 16)
+
+                        VStack(spacing: 12) {
+                            ForEach(filteredTraditionalPizzas) { pizza in
+                                MenuPizzaCard(pizza: pizza, onAdd: {
+                                    selectedCustomizationPizza = pizza
+                                })
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
+
+                    // 9. Bundle Deals Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            HStack(spacing: 8) {
+                                Text("COMBO SAVER")
+                                    .font(.system(size: 10, weight: .heavy))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.red)
+                                    .cornerRadius(5)
+
+                                Text("Bundle Deals")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
+                            
+                            Spacer()
+                            
+                            Text("Save up to 30%")
+                                .font(.system(size: 12))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.horizontal, 16)
+
+                        VStack(spacing: 14) {
+                            ForEach(MenuMockData.bundleDeals) { deal in
+                                BundleDealCard(deal: deal, onCustomize: {
+                                    selectedCustomizationPizza = MenuPizza(
+                                        name: deal.title,
+                                        description: deal.subtitle,
+                                        price: deal.price,
+                                        originalPrice: deal.originalPrice,
+                                        imageName: "pizza1"
+                                    )
+                                })
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                    
+                    // Bottom Spacing
+                    Color.clear.frame(height: 20)
+                }
+                .padding(.top, 4)
+                .padding(.bottom, 20)
+            }
+        }
+        .background(Color(red: 0.98, green: 0.98, blue: 0.99).edgesIgnoringSafeArea(.all))
+        .navigationBarHidden(true)
+        .fullScreenCover(item: $selectedCustomizationPizza) { pizza in
+            MenuCustomization(
+                pizzaName: pizza.name,
+                pizzaImageName: pizza.imageName,
+                basePrice: Double(pizza.price.replacingOccurrences(of: "$", with: "").trimmingCharacters(in: .whitespaces)) ?? 15.99,
+                pizzaDescription: pizza.description
+            )
+        }
+    }
+
+    // MARK: - Fixed Header View
+
+    private var headerView: some View {
+        HStack(alignment: .top, spacing: 12) {
+            if showBackButton {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 40, height: 40)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Menu")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundColor(.black)
+                Text("Delivering to Silva Ave, Apt 4B")
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            // Notification Button
+            ZStack(alignment: .topTrailing) {
+                Button(action: {}) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 18))
+                        .foregroundColor(.black)
+                        .frame(width: 44, height: 44)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
                 }
                 
-                // Bottom Spacing
-                Color.clear.frame(height: 20)
+                // Badge
+                Text("3")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 18, height: 18)
+                    .background(Color.red)
+                    .clipShape(Circle())
+                    .offset(x: -2, y: 2)
             }
-            .padding(.vertical, 10)
         }
-        .background(Color(red: 0.98, green: 0.98, blue: 0.99))
-        .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showMenuCustomization) {
-            MenuCustomization()
-        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(
+            Color(red: 0.98, green: 0.98, blue: 0.99)
+                .edgesIgnoringSafeArea(.top)
+        )
+        .zIndex(10)
     }
 
     // MARK: - Filter Logic
@@ -542,6 +579,7 @@ struct BannerTag: View {
 
 struct MenuPizzaCard: View {
     let pizza: MenuPizza
+    var onAdd: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -604,7 +642,9 @@ struct MenuPizzaCard: View {
                     Spacer()
 
                     // Add Button (+)
-                    Button(action: {}) {
+                    Button(action: {
+                        onAdd?()
+                    }) {
                         Image(systemName: "plus")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white)
@@ -612,6 +652,7 @@ struct MenuPizzaCard: View {
                             .background(Color.red)
                             .clipShape(Circle())
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
@@ -619,6 +660,10 @@ struct MenuPizzaCard: View {
         .background(Color.white)
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onAdd?()
+        }
     }
 }
 
@@ -626,6 +671,7 @@ struct MenuPizzaCard: View {
 
 struct BundleDealCard: View {
     let deal: BundleDeal
+    var onCustomize: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -695,7 +741,9 @@ struct BundleDealCard: View {
                 Spacer()
 
                 // Customize Button
-                Button(action: {}) {
+                Button(action: {
+                    onCustomize?()
+                }) {
                     Text("Customize")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(.black)
@@ -708,9 +756,12 @@ struct BundleDealCard: View {
                                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
                 }
+                .buttonStyle(PlainButtonStyle())
 
                 // Add Button (+)
-                Button(action: {}) {
+                Button(action: {
+                    onCustomize?()
+                }) {
                     Image(systemName: "plus")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
@@ -718,12 +769,17 @@ struct BundleDealCard: View {
                         .background(Color.red)
                         .clipShape(Circle())
                 }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(14)
         .background(Color.white)
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onCustomize?()
+        }
     }
 }
 
