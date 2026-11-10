@@ -213,8 +213,13 @@ struct MODRewardsScreen: View {
         .fullScreenCover(isPresented: $showWalletTopUp) {
             WalletTopUPScreen()
         }
-        .sheet(isPresented: $showSendPointsSheet) {
-            sendPointsSheetView
+        .fullScreenCover(isPresented: $showSendPointsSheet) {
+            SendRewardsScreen(
+                userPoints: userPoints,
+                onDone: {
+                    showSendPointsSheet = false
+                }
+            )
         }
         .sheet(isPresented: $showGiftPizzaSheet) {
             giftPizzaSheetView
