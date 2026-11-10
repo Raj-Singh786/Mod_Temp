@@ -12,6 +12,8 @@ struct HomeScreen: View {
     @State private var showStoreLocation: Bool = false
     @State private var showRewardsScreen: Bool = false
     @State private var selectedCustomizationPizza: Pizza? = nil
+    @State private var selectedCustomizationCombo: Combo? = nil
+    @State private var showMenuScreen: Bool = false
 
     init(isGuest: Bool? = nil) {
         self.isGuestOverride = isGuest
@@ -77,7 +79,9 @@ struct HomeScreen: View {
                     title: "Recommended for You",
                     subtitle: "Bestsellers based on your taste",
                     buttonTitle: "View menu",
-                    action: {}
+                    action: {
+                        showMenuScreen = true
+                    }
                 )
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
@@ -94,12 +98,16 @@ struct HomeScreen: View {
                     title: "Value Combos",
                     subtitle: "Pizza + Sides + Drinks combos",
                     buttonTitle: "View menu",
-                    action: {}
+                    action: {
+                        showMenuScreen = true
+                    }
                 )
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         ForEach(MockData.combos) { combo in
-                            ComboCardView(combo: combo)
+                            ComboCardView(combo: combo, onCustomize: {
+                                selectedCustomizationCombo = combo
+                            })
                         }
                     }.padding(.horizontal, 16)
                 }
@@ -121,6 +129,17 @@ struct HomeScreen: View {
                 basePrice: Double(pizza.price.replacingOccurrences(of: "$", with: "").trimmingCharacters(in: .whitespaces)) ?? 15.99,
                 pizzaDescription: pizza.description
             )
+        }
+        .fullScreenCover(item: $selectedCustomizationCombo) { combo in
+            MenuCustomization(
+                pizzaName: combo.displayName,
+                pizzaImageName: combo.imageName,
+                basePrice: Double(combo.price.replacingOccurrences(of: "$", with: "").trimmingCharacters(in: .whitespaces)) ?? 29.99,
+                pizzaDescription: combo.fullDescription
+            )
+        }
+        .fullScreenCover(isPresented: $showMenuScreen) {
+            MenuScreen(showBackButton: true)
         }
     }
 }
@@ -247,15 +266,7 @@ struct WelcomeLoyaltyCardView: View {
                         .foregroundColor(.red)
                         .cornerRadius(9)
                 }
-                Button(action: {}) {
-                    Text("Browse as guest")
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .foregroundColor(.white)
-                        .background(Color.white.opacity(0.18))
-                        .cornerRadius(9)
-                }
+               
             }
         }
         .padding(18)
@@ -638,6 +649,8 @@ struct PizzaCardView: View {
 
 struct ComboCardView: View {
     let combo: Combo
+    var onCustomize: (() -> Void)? = nil
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 8) {
@@ -676,7 +689,9 @@ struct ComboCardView: View {
             Spacer()
 
             // Customize Button
-            Button(action: {}) {
+            Button(action: {
+                onCustomize?()
+            }) {
                 Text("Customize")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(Color(red: 0.88, green: 0.12, blue: 0.18))
@@ -700,6 +715,10 @@ struct ComboCardView: View {
         )
         .cornerRadius(22)
         .shadow(color: Color(red: 0.88, green: 0.12, blue: 0.18).opacity(0.3), radius: 10, x: 0, y: 5)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onCustomize?()
+        }
     }
 }
 
@@ -782,6 +801,21 @@ struct Combo: Identifiable {
     let titleLine2: String
     let price: String
     let originalPrice: String
+    var imageName: String = "combo"
+    var description: String = ""
+
+    var displayName: String {
+        switch badge.uppercased() {
+        case "FAMILY MEAL DEAL": return "Family Meal Deal"
+        case "PARTY PACK": return "Party Pack Combo"
+        default: return "\(titleLine1) \(titleLine2)"
+        }
+    }
+
+    var fullDescription: String {
+        if !description.isEmpty { return description }
+        return "\(titleLine1) \(titleLine2)"
+    }
 }
 
 struct MockData {
@@ -878,14 +912,18 @@ struct MockData {
             titleLine1: "2 Mediums + Breadsticks +",
             titleLine2: "2L Soda",
             price: "$29.99",
-            originalPrice: "$39.99"
+            originalPrice: "$39.99",
+            imageName: "combo",
+            description: "2 Medium 2-Topping Pizzas, 10-pc Garlic Breadsticks & 2L Soda"
         ),
         Combo(
             badge: "PARTY PACK",
             titleLine1: "3 Large Pizzas + Sides +",
             titleLine2: "3L Soda",
             price: "$39.99",
-            originalPrice: "$49.99"
+            originalPrice: "$49.99",
+            imageName: "pizza2",
+            description: "3 Large Specialty Pizzas, Double Cheesy Bread & 3L Soda"
         )
     ]
 }

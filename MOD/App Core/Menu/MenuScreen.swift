@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct MenuScreen: View {
+    @Environment(\.dismiss) private var dismiss
+    var showBackButton: Bool = false
+
     @State private var searchText: String = ""
     @State private var selectedDietary: DietaryFilter = .all
     @State private var selectedCategory: CategoryFilter = .all
@@ -19,7 +22,21 @@ struct MenuScreen: View {
             VStack(alignment: .leading, spacing: 18) {
                 
                 // 1. Header (Menu + Delivery Location + Notification Bell)
-                HStack(alignment: .top) {
+                HStack(alignment: .top, spacing: 12) {
+                    if showBackButton {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.black)
+                                .frame(width: 40, height: 40)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
+                        }
+                    }
+
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Menu")
                             .font(.system(size: 26, weight: .bold))
