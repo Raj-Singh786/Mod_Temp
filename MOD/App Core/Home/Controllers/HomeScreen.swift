@@ -196,7 +196,15 @@ struct LocationHeaderView: View {
             
             // Pizza Tracker Button (Clicking navigates to MOD Rewards)
             Button(action: onSelectRewards) {
-                PizzaTrackerView(activeSlices: 6, totalSlices: 8, badgeCount: 2)
+                VStack(spacing:3) {
+                    PizzaTrackerView(activeSlices: 6, totalSlices: 8, badgeCount: 2)
+                    
+                    Text("\(420)/\(600)")
+                               .font(.system(size: 10, weight: .bold))
+                               .foregroundColor(.black.opacity(0.75))
+                               .lineLimit(1)
+                               .fixedSize()
+                }
             }
             .buttonStyle(PlainButtonStyle())
             
@@ -370,8 +378,8 @@ struct QuickFeaturesView: View {
         HStack(spacing: 12) {
             QuickFeatureCard(
                 iconName: "bolt.fill",
-                title: "Hot & Fresh",
-                subtitle: "30–min guarantee"
+                title: "Reorder",
+                subtitle: "Order Your Favourite Pizza"
             )
             QuickFeatureCard(
                 iconName: "mappin.and.ellipse",
@@ -380,7 +388,7 @@ struct QuickFeaturesView: View {
             )
             QuickFeatureCard(
                 iconName: "dollarsign.circle",
-                title: "Hut Rewards",
+                title: "Rewards",
                 subtitle: "Earn free pizza"
             )
         }
