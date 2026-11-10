@@ -29,6 +29,9 @@ class TabBarVC: UITabBarController {
 
         initialViewLoad()
 
+        NotificationCenter.default.addObserver(self, selector: #selector(handleCartBadgeUpdate), name: NSNotification.Name("CartCountUpdated"), object: nil)
+        updateCartBadge()
+
         DispatchQueue.main.async {
            // self.addTabbarIndicatorView(index: self.selectedIndex)
         }
@@ -39,6 +42,21 @@ class TabBarVC: UITabBarController {
 
         navigationItem.setHidesBackButton(true, animated: true)
         navigationController?.isNavigationBarHidden = true
+        updateCartBadge()
+    }
+
+    @objc private func handleCartBadgeUpdate() {
+        updateCartBadge()
+    }
+
+    func updateCartBadge() {
+        let count = CartManager.shared.totalItemCount
+        if count > 0 {
+            self.tabBar.items?[2].badgeValue = "\(count)"
+            self.tabBar.items?[2].badgeColor = AppColor.mod_red
+        } else {
+            self.tabBar.items?[2].badgeValue = nil
+        }
     }
 
     override func viewDidLayoutSubviews() {

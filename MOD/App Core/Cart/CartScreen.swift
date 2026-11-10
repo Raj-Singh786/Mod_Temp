@@ -6,42 +6,19 @@
 //
 
 import SwiftUI
+import Combine
+import UIKit
 
 struct CartScreen: View {
     @Environment(\.presentationMode) private var presentationMode
     
     // MARK: - Cart State
-    @State private var cartItems: [CartItem] = [
-        CartItem(
-            name: "Pepperoni & Cream",
-            subtitle: "Medium (6 slices)",
-            price: 17.90,
-            quantity: 1,
-            imageName: "pizza2",
-            customizations: [
-                CartCustomization(text: "Extra Bacon", isPositive: true),
-                CartCustomization(text: "No Onions", isPositive: false)
-            ]
-        ),
-        CartItem(
-            name: "Pepperoni Breadstic",
-            subtitle: "8 pieces",
-            price: 6.99,
-            quantity: 1,
-            imageName: "pizza1",
-            customizations: [
-                CartCustomization(text: "Add Marinara Sauce", isPositive: true)
-            ]
-        ),
-        CartItem(
-            name: "Coca-Cola Can",
-            subtitle: "12 fl oz (355ml) • Chilled",
-            price: 2.49,
-            quantity: 1,
-            imageName: "coke",
-            customizations: []
-        )
-    ]
+    @ObservedObject private var cartManager = CartManager.shared
+    @State private var itemToEdit: CartItem? = nil
+
+    private var cartItems: [CartItem] {
+        cartManager.items
+    }
     
     // Order Type (read from UserDefaults; defaults to .delivery)
     @State var orderType: CartOrderType = .delivery
@@ -59,7 +36,7 @@ struct CartScreen: View {
 
     // Calculations
     private var subtotal: Double {
-        cartItems.reduce(0) { $0 + ($1.price * Double($1.quantity)) }
+        cartManager.subtotal
     }
     
     private var discount: Double {
@@ -167,22 +144,33 @@ struct CartScreen: View {
                     .padding(.horizontal, 16)
 
                     // 3. Cart Items List
-                    if cartItems.isEmpty {
+                    if cartManager.items.isEmpty {
                         EmptyCartView()
                             .padding(.vertical, 30)
                     } else {
                         VStack(spacing: 14) {
-                            ForEach(cartItems) { item in
-                                if let index = cartItems.firstIndex(where: { $0.id == item.id }) {
-                                    CartItemCard(
-                                        item: $cartItems[index],
-                                        onDelete: {
-                                            withAnimation {
-                                                cartItems.removeAll { $0.id == item.id }
-                                            }
+                            ForEach(cartManager.items) { item in
+                                CartItemCard(
+                                    item: item,
+                                    onEdit: {
+                                        itemToEdit = item
+                                    },
+                                    onIncrement: {
+                                        withAnimation {
+                                            cartManager.incrementQuantity(for: item.id)
                                         }
-                                    )
-                                }
+                                    },
+                                    onDecrement: {
+                                        withAnimation {
+                                            cartManager.decrementQuantity(for: item.id)
+                                        }
+                                    },
+                                    onDelete: {
+                                        withAnimation {
+                                            cartManager.removeItem(id: item.id)
+                                        }
+                                    }
+                                )
                             }
                         }
                         .padding(.horizontal, 16)
@@ -434,9 +422,21 @@ struct CartScreen: View {
         .background(Color(red: 0.98, green: 0.98, blue: 0.99).edgesIgnoringSafeArea(.all))
         .fullScreenCover(isPresented: $showCheckoutScreen) {
             CheckoutScreen(
-                cartItems: cartItems,
+                cartItems: cartManager.items,
                 orderType: orderType,
                 scheduledTime: scheduledTime
+            )
+        }
+        .fullScreenCover(item: $itemToEdit) { item in
+            MenuCustomization(
+                cartItemId: item.id,
+                pizzaName: item.name,
+                pizzaImageName: item.imageName,
+                basePrice: item.price,
+                pizzaDescription: item.subtitle,
+                initialCustomizations: item.customizations,
+                isEditingCartItem: true,
+                quantity: item.quantity
             )
         }
         .alert(isPresented: $showClearAlert) {
@@ -445,7 +445,7 @@ struct CartScreen: View {
                 message: Text("Are you sure you want to remove all items from your cart?"),
                 primaryButton: .destructive(Text("Clear")) {
                     withAnimation {
-                        cartItems.removeAll()
+                        cartManager.clearCart()
                     }
                 },
                 secondaryButton: .cancel()
@@ -462,6 +462,7 @@ struct CartScreen: View {
         }
         .onAppear {
             loadOrderTypeFromDefaults()
+            cartManager.updateTabBarBadge()
         }
         .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
             loadOrderTypeFromDefaults()
@@ -638,20 +639,7 @@ struct CartScreen: View {
 
     private func addItem(name: String, price: Double, image: String) {
         withAnimation {
-            if let index = cartItems.firstIndex(where: { $0.name == name }) {
-                cartItems[index].quantity += 1
-            } else {
-                cartItems.append(
-                    CartItem(
-                        name: name,
-                        subtitle: "Standard Size",
-                        price: price,
-                        quantity: 1,
-                        imageName: image,
-                        customizations: []
-                    )
-                )
-            }
+            cartManager.addItem(name: name, subtitle: "Side / Extra", price: price, imageName: image)
         }
     }
 
@@ -663,7 +651,10 @@ struct CartScreen: View {
 // MARK: - Cart Item Card Component
 
 struct CartItemCard: View {
-    @Binding var item: CartItem
+    let item: CartItem
+    let onEdit: () -> Void
+    let onIncrement: () -> Void
+    let onDecrement: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -693,7 +684,7 @@ struct CartItemCard: View {
                         
                         Spacer()
                         
-                        Text("$\(String(format: "%.2f", item.price))")
+                        Text("$\(String(format: "%.2f", item.price * Double(item.quantity)))")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.red)
                     }
@@ -702,24 +693,26 @@ struct CartItemCard: View {
                         .font(.system(size: 12))
                         .foregroundColor(.gray)
 
-                    // Customization Pills
+                    // Customization / Toppings Display (Shows ALL selected toppings)
                     if !item.customizations.isEmpty {
-                        HStack(spacing: 6) {
-                            ForEach(item.customizations, id: \.text) { custom in
-                                HStack(spacing: 4) {
-                                    Circle()
-                                        .fill(custom.isPositive ? Color(red: 0.12, green: 0.65, blue: 0.38) : Color.red.opacity(0.8))
-                                        .frame(width: 5, height: 5)
-                                    Text(custom.text)
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(custom.isPositive ? Color(red: 0.12, green: 0.55, blue: 0.35) : Color.gray)
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(custom.isPositive ? Color(red: 0.90, green: 0.98, blue: 0.94) : Color(red: 0.95, green: 0.95, blue: 0.97))
-                                .cornerRadius(8)
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(alignment: .top, spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(Color(red: 0.12, green: 0.65, blue: 0.38))
+                                    .padding(.top, 2)
+
+                                Text(item.customizations.map(\.text).joined(separator: " • "))
+                                    .font(.system(size: 11.5, weight: .medium))
+                                    .foregroundColor(Color(red: 0.22, green: 0.25, blue: 0.3))
+                                    .lineSpacing(2)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(red: 0.95, green: 0.98, blue: 0.95))
+                        .cornerRadius(6)
                         .padding(.top, 2)
                     }
                 }
@@ -727,7 +720,7 @@ struct CartItemCard: View {
 
             // Edit Item & Stepper Control Row
             HStack {
-                Button(action: {}) {
+                Button(action: onEdit) {
                     HStack(spacing: 4) {
                         Image(systemName: "pencil")
                             .font(.system(size: 11, weight: .semibold))
@@ -742,10 +735,10 @@ struct CartItemCard: View {
                 // Stepper Pill (Trash/Minus, Count, Plus)
                 HStack(spacing: 12) {
                     Button(action: {
-                        if item.quantity > 1 {
-                            item.quantity -= 1
-                        } else {
+                        if item.quantity == 1 {
                             onDelete()
+                        } else {
+                            onDecrement()
                         }
                     }) {
                         Image(systemName: item.quantity == 1 ? "trash" : "minus")
@@ -758,9 +751,7 @@ struct CartItemCard: View {
                         .foregroundColor(.black)
                         .frame(minWidth: 16)
 
-                    Button(action: {
-                        item.quantity += 1
-                    }) {
+                    Button(action: onIncrement) {
                         Image(systemName: "plus")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.red)
@@ -971,19 +962,204 @@ struct EmptyCartView: View {
 
 // MARK: - Data Models
 
-struct CartItem: Identifiable {
-    let id = UUID()
-    let name: String
-    let subtitle: String
-    let price: Double
-    var quantity: Int
-    let imageName: String
-    var customizations: [CartCustomization]
-}
-
-struct CartCustomization {
+struct CartCustomization: Equatable, Identifiable {
+    var id: String { text }
     let text: String
     let isPositive: Bool
+
+    init(text: String, isPositive: Bool = true) {
+        self.text = text
+        self.isPositive = isPositive
+    }
+}
+
+struct CartItem: Identifiable, Equatable {
+    var id: UUID = UUID()
+    var name: String
+    var subtitle: String
+    var price: Double
+    var quantity: Int
+    var imageName: String
+    var customizations: [CartCustomization]
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        subtitle: String,
+        price: Double,
+        quantity: Int,
+        imageName: String,
+        customizations: [CartCustomization] = []
+    ) {
+        self.id = id
+        self.name = name
+        self.subtitle = subtitle
+        self.price = price
+        self.quantity = quantity
+        self.imageName = imageName
+        self.customizations = customizations
+    }
+
+    static func == (lhs: CartItem, rhs: CartItem) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+// MARK: - Global Cart Manager
+
+class CartManager: ObservableObject {
+    static let shared = CartManager()
+
+    @Published var items: [CartItem] = [
+        CartItem(
+            name: "Pepperoni & Cream",
+            subtitle: "Medium (6 slices)",
+            price: 17.90,
+            quantity: 1,
+            imageName: "pizza2",
+            customizations: [
+                CartCustomization(text: "Extra Bacon", isPositive: true),
+                CartCustomization(text: "No Onions", isPositive: false)
+            ]
+        ),
+        CartItem(
+            name: "Pepperoni Breadstic",
+            subtitle: "8 pieces",
+            price: 6.99,
+            quantity: 1,
+            imageName: "pizza1",
+            customizations: [
+                CartCustomization(text: "Add Marinara Sauce", isPositive: true)
+            ]
+        ),
+        CartItem(
+            name: "Coca-Cola Can",
+            subtitle: "12 fl oz (355ml) • Chilled",
+            price: 2.49,
+            quantity: 1,
+            imageName: "coke",
+            customizations: []
+        )
+    ]
+
+    var totalItemCount: Int {
+        items.reduce(0) { $0 + $1.quantity }
+    }
+
+    var subtotal: Double {
+        items.reduce(0) { $0 + ($1.price * Double($1.quantity)) }
+    }
+
+    func addItem(
+        name: String,
+        subtitle: String = "Standard Size",
+        price: Double,
+        imageName: String,
+        customizations: [CartCustomization] = [],
+        quantity: Int = 1
+    ) {
+        if let index = items.firstIndex(where: { $0.name == name && $0.customizations == customizations }) {
+            items[index].quantity += quantity
+        } else {
+            items.append(
+                CartItem(
+                    name: name,
+                    subtitle: subtitle,
+                    price: price,
+                    quantity: quantity,
+                    imageName: imageName,
+                    customizations: customizations
+                )
+            )
+        }
+        notifyChange()
+    }
+
+    func updateItem(
+        id: UUID,
+        newPrice: Double,
+        newCustomizations: [CartCustomization],
+        newSubtitle: String? = nil
+    ) {
+        if let index = items.firstIndex(where: { $0.id == id }) {
+            items[index].price = newPrice
+            items[index].customizations = newCustomizations
+            if let newSubtitle = newSubtitle {
+                items[index].subtitle = newSubtitle
+            }
+        }
+        notifyChange()
+    }
+
+    func removeItem(id: UUID) {
+        items.removeAll { $0.id == id }
+        notifyChange()
+    }
+
+    func incrementQuantity(for id: UUID) {
+        if let index = items.firstIndex(where: { $0.id == id }) {
+            items[index].quantity += 1
+        }
+        notifyChange()
+    }
+
+    func decrementQuantity(for id: UUID) {
+        if let index = items.firstIndex(where: { $0.id == id }) {
+            if items[index].quantity > 1 {
+                items[index].quantity -= 1
+            } else {
+                items.remove(at: index)
+            }
+        }
+        notifyChange()
+    }
+
+    func clearCart() {
+        items.removeAll()
+        notifyChange()
+    }
+
+    private func notifyChange() {
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+            NotificationCenter.default.post(
+                name: NSNotification.Name("CartCountUpdated"),
+                object: nil,
+                userInfo: ["count": self.totalItemCount]
+            )
+            self.updateTabBarBadge()
+        }
+    }
+
+    func updateTabBarBadge() {
+        let count = self.totalItemCount
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            for window in scene.windows {
+                if let root = window.rootViewController {
+                    if let tabBar = findTabBar(in: root) {
+                        if tabBar.items != nil && tabBar.items!.count > 2 {
+                            tabBar.items![2].badgeValue = count > 0 ? "\(count)" : nil
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func findTabBar(in vc: UIViewController) -> UITabBar? {
+        if let tab = vc as? UITabBarController {
+            return tab.tabBar
+        }
+        if let nav = vc as? UINavigationController, let top = nav.viewControllers.first {
+            return findTabBar(in: top)
+        }
+        for child in vc.children {
+            if let tab = findTabBar(in: child) {
+                return tab
+            }
+        }
+        return nil
+    }
 }
 
 enum CartOrderType: String, CaseIterable, Identifiable {

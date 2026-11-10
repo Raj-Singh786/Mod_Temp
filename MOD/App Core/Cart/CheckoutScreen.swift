@@ -383,12 +383,12 @@ struct CheckoutScreen: View {
             HStack(alignment: .top, spacing: 12) {
                 // Red square with white rotated tag icon
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: 12)
                         .fill(modRed)
-                        .frame(width: 38, height: 38)
+                        .frame(width: 42, height: 42)
 
                     Image(systemName: "tag.fill")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.white)
                         .rotationEffect(.degrees(-45))
                 }
@@ -396,11 +396,11 @@ struct CheckoutScreen: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Unlock $5.00 Off • Sign up to Save")
                         .font(.system(size: 15.5, weight: .bold))
-                        .foregroundColor(textDark)
+                        .foregroundColor(Color(red: 0.08, green: 0.10, blue: 0.20))
 
-                    Text("Promo codes like WELCOME10 require an account. Create one in 1-click!")
+                    (Text("Promo codes like ") + Text("WELCOME10").fontWeight(.bold) + Text(" require an account. Create one in 1-click!"))
                         .font(.system(size: 12.5))
-                        .foregroundColor(Color(red: 0.35, green: 0.35, blue: 0.42))
+                        .foregroundColor(Color(red: 0.38, green: 0.38, blue: 0.44))
                         .lineSpacing(2)
                 }
 
@@ -424,8 +424,8 @@ struct CheckoutScreen: View {
         .background(
             LinearGradient(
                 colors: [
-                    Color(red: 1.0, green: 0.94, blue: 0.94),
-                    Color(red: 1.0, green: 0.89, blue: 0.90)
+                    Color(red: 1.0, green: 0.95, blue: 0.95),
+                    Color(red: 1.0, green: 0.88, blue: 0.89)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -434,7 +434,7 @@ struct CheckoutScreen: View {
         .cornerRadius(18)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color(red: 0.98, green: 0.85, blue: 0.86), lineWidth: 1)
+                .stroke(Color(red: 0.98, green: 0.84, blue: 0.85), lineWidth: 1)
         )
     }
 
@@ -524,6 +524,13 @@ struct CheckoutScreen: View {
                             .foregroundColor(.gray)
                             .lineLimit(1)
                     }
+                }
+
+                if !item.customizations.isEmpty {
+                    Text(item.customizations.map(\.text).joined(separator: " • "))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color(red: 0.35, green: 0.35, blue: 0.4))
+                        .lineLimit(2)
                 }
 
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -1800,6 +1807,7 @@ struct CheckoutScreen: View {
             }
         }
 
+        CartManager.shared.clearCart()
         showConfirmOrderScreen = true
     }
 }

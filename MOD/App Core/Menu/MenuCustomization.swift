@@ -170,10 +170,15 @@ struct MenuCustomization: View {
     @Environment(\.dismiss) private var dismiss
 
     // MARK: - Customizable Pizza Parameters
+    var cartItemId: UUID? = nil
     var pizzaName: String = "Create Your Own Pizza"
+    var pizzaSubtitle: String = ""
     var pizzaImageName: String = "yourOwnPizza"
     var basePrice: Double = 15.99
     var pizzaDescription: String = "Craft your masterpiece, no extra charges"
+    var initialCustomizations: [CartCustomization] = []
+    var isEditingCartItem: Bool = false
+    var onSave: (([CartCustomization], Double) -> Void)? = nil
 
     // MARK: - Selections State
     @State private var selectedCrust: CrustOption = CustomizationMockData.crusts[0]
@@ -198,20 +203,111 @@ struct MenuCustomization: View {
     private let borderGray = Color(red: 0.90, green: 0.90, blue: 0.92)
 
     init(
+        cartItemId: UUID? = nil,
         pizzaName: String = "Create Your Own Pizza",
+        pizzaSubtitle: String = "",
+        pizzaPrice: Double? = nil,
         pizzaImageName: String = "yourOwnPizza",
         basePrice: Double = 15.99,
-        pizzaDescription: String = "Craft your masterpiece, no extra charges"
+        pizzaDescription: String = "Craft your masterpiece, no extra charges",
+        initialCustomizations: [CartCustomization] = [],
+        isEditingCartItem: Bool = false,
+        quantity: Int = 1,
+        onSave: (([CartCustomization], Double) -> Void)? = nil
     ) {
+        self.cartItemId = cartItemId
         self.pizzaName = pizzaName
+        self.pizzaSubtitle = pizzaSubtitle
         self.pizzaImageName = pizzaImageName
-        self.basePrice = basePrice
-        self.pizzaDescription = pizzaDescription
+        self.basePrice = pizzaPrice ?? basePrice
+        self.pizzaDescription = pizzaDescription.isEmpty ? "Craft your masterpiece, no extra charges" : pizzaDescription
+        self.initialCustomizations = initialCustomizations
+        self.isEditingCartItem = isEditingCartItem
+        self.onSave = onSave
 
+        _quantity = State(initialValue: max(quantity, 1))
         _selectedCrust = State(initialValue: CustomizationMockData.crusts[0])
-        _selectedSauces = State(initialValue: [:])
-        _selectedToppings = State(initialValue: [:])
-        _selectedFinishingSauces = State(initialValue: [:])
+
+        var initialSauces: [UUID: PortionOption] = [:]
+        var initialToppings: [UUID: PortionOption] = [:]
+        var initialFinishings: [UUID: PlacementOption] = [:]
+
+        // Check if any toppings or sauces match initialCustomizations
+        for custom in initialCustomizations {
+            let lower = custom.text.lowercased()
+
+            // Check toppings
+            for topping in CustomizationMockData.toppings {
+                let tLower = topping.name.lowercased()
+                if lower.contains(tLower) || tLower.contains(lower.replacingOccurrences(of: "extra ", with: "").replacingOccurrences(of: "no ", with: "")) {
+                    if lower.contains("no ") {
+                        // explicitly omitted
+                    } else if lower.contains("extra") {
+                        initialToppings[topping.id] = .extra
+                    } else if lower.contains("light") {
+                        initialToppings[topping.id] = .light
+                    } else {
+                        initialToppings[topping.id] = .regular
+                    }
+                }
+            }
+
+            // Check sauces
+            for sauce in CustomizationMockData.sauces {
+                let sLower = sauce.name.lowercased()
+                if lower.contains(sLower) || (lower.contains("marinara") && sLower.contains("tomato")) {
+                    initialSauces[sauce.id] = .regular
+                }
+            }
+
+            // Check finishing sauces
+            for finish in CustomizationMockData.finishingSauces {
+                if lower.contains(finish.name.lowercased()) {
+                    initialFinishings[finish.id] = .onTop
+                }
+            }
+        }
+
+        // If initialToppings is empty and pizza name suggests toppings, pre-select sensible defaults:
+        if initialToppings.isEmpty {
+            let pLower = pizzaName.lowercased()
+            for topping in CustomizationMockData.toppings {
+                if pLower.contains(topping.name.lowercased()) {
+                    initialToppings[topping.id] = .regular
+                }
+            }
+            if pLower.contains("pepperoni") {
+                if let pep = CustomizationMockData.toppings.first(where: { $0.name == "Pepperoni" }) {
+                    initialToppings[pep.id] = .regular
+                }
+                if let moz = CustomizationMockData.toppings.first(where: { $0.name.contains("Mozzarella") }) {
+                    initialToppings[moz.id] = .regular
+                }
+            }
+            if pLower.contains("chicken") {
+                if let chick = CustomizationMockData.toppings.first(where: { $0.name.contains("Chicken") }) {
+                    initialToppings[chick.id] = .regular
+                }
+                if let moz = CustomizationMockData.toppings.first(where: { $0.name.contains("Mozzarella") }) {
+                    initialToppings[moz.id] = .regular
+                }
+            }
+            if pLower.contains("sausage") {
+                if let moz = CustomizationMockData.toppings.first(where: { $0.name.contains("Mozzarella") }) {
+                    initialToppings[moz.id] = .regular
+                }
+            }
+        }
+
+        if initialSauces.isEmpty {
+            if let tom = CustomizationMockData.sauces.first(where: { $0.name.contains("Tomato") }) {
+                initialSauces[tom.id] = .regular
+            }
+        }
+
+        _selectedSauces = State(initialValue: initialSauces)
+        _selectedToppings = State(initialValue: initialToppings)
+        _selectedFinishingSauces = State(initialValue: initialFinishings)
         _isSauceNoneSelected = State(initialValue: false)
         _isToppingsNoneSelected = State(initialValue: false)
         _isFinishingNoneSelected = State(initialValue: false)
@@ -1248,16 +1344,73 @@ struct MenuCustomization: View {
             .padding(.horizontal, 20)
             .padding(.top, 10)
 
-            // Row 2: Add To Cart Button
+            // Row 2: Add To Cart / Update Button
             Button(action: {
+                // Build customizations
+                var newCustomizations: [CartCustomization] = []
+
+                // Add sauces
+                for sauce in CustomizationMockData.sauces {
+                    if let portion = selectedSauces[sauce.id] {
+                        let text = portion == .extra ? "Extra \(sauce.name)" : (portion == .light ? "Light \(sauce.name)" : sauce.name)
+                        newCustomizations.append(CartCustomization(text: text, isPositive: true))
+                    }
+                }
+
+                // Add toppings
+                for topping in CustomizationMockData.toppings {
+                    if let portion = selectedToppings[topping.id] {
+                        let text = portion == .extra ? "Extra \(topping.name)" : (portion == .light ? "Light \(topping.name)" : topping.name)
+                        newCustomizations.append(CartCustomization(text: text, isPositive: true))
+                    }
+                }
+
+                // Add finishing sauces
+                for finish in CustomizationMockData.finishingSauces {
+                    if let placement = selectedFinishingSauces[finish.id] {
+                        let text = "\(finish.name) (\(placement.rawValue))"
+                        newCustomizations.append(CartCustomization(text: text, isPositive: true))
+                    }
+                }
+
+                // Add cooking option if selected
+                if let cooking = selectedCookingOption {
+                    newCustomizations.append(CartCustomization(text: cooking, isPositive: true))
+                }
+
+                // Add side salad if selected
+                if let saladId = selectedSalad,
+                   let salad = CustomizationMockData.sideSalads.first(where: { $0.id == saladId }) {
+                    newCustomizations.append(CartCustomization(text: salad.name, isPositive: true))
+                }
+
+                if isEditingCartItem, let id = cartItemId {
+                    CartManager.shared.updateItem(
+                        id: id,
+                        newPrice: unitPrice,
+                        newCustomizations: newCustomizations,
+                        newSubtitle: selectedCrust.name
+                    )
+                    onSave?(newCustomizations, unitPrice)
+                } else {
+                    CartManager.shared.addItem(
+                        name: pizzaName,
+                        subtitle: selectedCrust.name,
+                        price: unitPrice,
+                        imageName: pizzaImageName,
+                        customizations: newCustomizations,
+                        quantity: quantity
+                    )
+                }
+
                 withAnimation {
                     showAddedToast = true
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
                     dismiss()
                 }
             }) {
-                Text("ADD TO CART - $\(String(format: "%.2f", totalPrice))")
+                Text(isEditingCartItem ? "UPDATE ITEM - $\(String(format: "%.2f", totalPrice))" : "ADD TO CART - $\(String(format: "%.2f", totalPrice))")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -1299,7 +1452,7 @@ struct MenuCustomization: View {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.white)
-                        Text("Added to Cart!")
+                        Text(isEditingCartItem ? "Item Updated!" : "Added to Cart!")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white)
                     }
