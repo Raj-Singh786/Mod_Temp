@@ -30,8 +30,7 @@ struct ConfirmOrderScreen: View {
     @State private var checkmarkOpacity: Double = 0.0
     @State private var haloPulsing: Bool = false
     @State private var showHelpSheet: Bool = false
-    @State private var showTrackOrderSheet: Bool = false
-    @State private var navigateToTrackOrder: Bool = false
+    @State private var showTrackOrderScreen: Bool = false
 
     // App Colors
     private let modRed = Color(red: 0.78, green: 0.08, blue: 0.18)
@@ -62,22 +61,6 @@ struct ConfirmOrderScreen: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            // Push Navigation to Track Order Screen
-            NavigationLink(
-                destination: TrackOrderScreen(
-                    orderNumber: orderNumber,
-                    customerName: customerName,
-                    deliveryAddress: deliveryAddress,
-                    estimatedDeliveryTime: "5:30 PM",
-                    totalBaseAmount: totalAmount,
-                    pointsEarned: pointsEarned
-                ),
-                isActive: $navigateToTrackOrder
-            ) {
-                EmptyView()
-            }
-            .hidden()
-
             VStack(spacing: 20) {
                 // Top Celebration Graphic
                 celebrationGraphicSection
@@ -115,7 +98,7 @@ struct ConfirmOrderScreen: View {
                 haloPulsing = true
             }
         }
-        .sheet(isPresented: $showTrackOrderSheet) {
+        .fullScreenCover(isPresented: $showTrackOrderScreen) {
             TrackOrderScreen(
                 orderNumber: orderNumber,
                 customerName: customerName,
@@ -471,7 +454,7 @@ struct ConfirmOrderScreen: View {
     // MARK: - Actions
 
     private func handleTrackOrder() {
-        navigateToTrackOrder = true
+        showTrackOrderScreen = true
     }
 
     private func handleBackToHome() {
