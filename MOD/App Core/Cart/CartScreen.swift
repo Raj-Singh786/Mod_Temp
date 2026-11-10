@@ -79,22 +79,8 @@ struct CartScreen: View {
     }
 
     var body: some View {
-        NavigationView {
-            ZStack(alignment: .bottom) {
-                // Push Navigation to CheckoutScreen
-                NavigationLink(
-                    destination: CheckoutScreen(
-                        cartItems: cartItems,
-                        orderType: orderType,
-                        scheduledTime: scheduledTime
-                    ),
-                    isActive: $showCheckoutScreen
-                ) {
-                    EmptyView()
-                }
-                .hidden()
-
-                ScrollView(.vertical, showsIndicators: false) {
+        ZStack(alignment: .bottom) {
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
                     
                     // 1. Navigation Header
@@ -420,7 +406,7 @@ struct CartScreen: View {
             }
 
             // MARK: - Bottom Floating Checkout Button
-            VStack {
+            VStack(spacing: 0) {
                 Button(action: handleCheckout) {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -450,20 +436,30 @@ struct CartScreen: View {
                 .disabled(cartItems.isEmpty)
                 .opacity(cartItems.isEmpty ? 0.6 : 1.0)
                 .padding(.horizontal, 16)
+                .padding(.top, 10)
                 .padding(.bottom, 12)
             }
             .background(
                 LinearGradient(
-                    gradient: Gradient(colors: [Color.white.opacity(0.0), Color.white.opacity(0.95), Color.white]),
+                    gradient: Gradient(colors: [
+                        Color(red: 0.98, green: 0.98, blue: 0.99).opacity(0.0),
+                        Color(red: 0.98, green: 0.98, blue: 0.99).opacity(0.95),
+                        Color(red: 0.98, green: 0.98, blue: 0.99)
+                    ]),
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 85)
                 .allowsHitTesting(false)
             )
         }
-        .background(Color(red: 0.98, green: 0.98, blue: 0.99))
-        .navigationBarHidden(true)
+        .background(Color(red: 0.98, green: 0.98, blue: 0.99).edgesIgnoringSafeArea(.all))
+        .fullScreenCover(isPresented: $showCheckoutScreen) {
+            CheckoutScreen(
+                cartItems: cartItems,
+                orderType: orderType,
+                scheduledTime: scheduledTime
+            )
+        }
         .alert(isPresented: $showClearAlert) {
             Alert(
                 title: Text("Clear Cart"),
@@ -485,9 +481,6 @@ struct CartScreen: View {
         .sheet(isPresented: $showTimeOptionsSheet) {
             TimePickerSheet(selectedTime: $scheduledTime)
         }
-        }
-        .navigationViewStyle(StackNavigationViewStyle())
-        .navigationBarHidden(true)
         .onAppear {
             loadOrderTypeFromDefaults()
         }

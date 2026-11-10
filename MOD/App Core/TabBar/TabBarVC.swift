@@ -130,7 +130,7 @@ extension TabBarVC {
         )
 
 
-        // MARK: Services
+        // MARK: Services (Cart - direct hosting controller without BaseNavigationVC to prevent double safe-area insets)
 
         let serviceVC = tabItems[2].viewController
 
@@ -138,10 +138,6 @@ extension TabBarVC {
             title: tabItems[2].displayTitle,
             image: tabItems[2].unSelectedIcon,
             selectedImage: tabItems[2].selectedIcon
-        )
-
-        let nav3 = BaseNavigationVC(
-            rootViewController: serviceVC
         )
 
 
@@ -175,7 +171,7 @@ extension TabBarVC {
         viewControllers = [
             nav1,
             nav2,
-            nav3,
+            serviceVC,
             nav4,
             nav5
         ]
@@ -248,8 +244,9 @@ class BaseNavigationVC: UINavigationController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = .white
-        self.view.layer.cornerRadius = 16.0
+        self.view.backgroundColor = UIColor(red: 0.98, green: 0.98, blue: 0.99, alpha: 1.0)
+        self.view.layer.cornerRadius = 0
+        self.view.layer.masksToBounds = false
        
         // Do any additional setup after loading the view.
     }

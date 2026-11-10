@@ -183,26 +183,6 @@ struct CheckoutScreen: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Push Navigation to Order Confirmation Screen
-            NavigationLink(
-                destination: ConfirmOrderScreen(
-                    orderNumber: "PH-89421",
-                    customerName: customerName.isEmpty ? "Alex" : customerName,
-                    contactNumber: contactNumber,
-                    deliveryAddress: deliveryAddress,
-                    orderType: orderType,
-                    itemCount: cartItems.count,
-                    paymentMethod: paymentMethodDisplayName,
-                    totalAmount: totalToPay,
-                    estimatedArrival: orderType == .pickup ? "5:45 PM" : "10:15 PM",
-                    pointsEarned: 140
-                ),
-                isActive: $showConfirmOrderScreen
-            ) {
-                EmptyView()
-            }
-            .hidden()
-
             VStack(spacing: 0) {
                 // 1. Navigation Header
                 navigationHeader
@@ -238,6 +218,20 @@ struct CheckoutScreen: View {
             stickyBottomBar
         }
         .edgesIgnoringSafeArea(.bottom)
+        .fullScreenCover(isPresented: $showConfirmOrderScreen) {
+            ConfirmOrderScreen(
+                orderNumber: "PH-89421",
+                customerName: customerName.isEmpty ? "Alex" : customerName,
+                contactNumber: contactNumber,
+                deliveryAddress: deliveryAddress,
+                orderType: orderType,
+                itemCount: cartItems.count,
+                paymentMethod: paymentMethodDisplayName,
+                totalAmount: totalToPay,
+                estimatedArrival: orderType == .pickup ? "5:45 PM" : "10:15 PM",
+                pointsEarned: 140
+            )
+        }
         .alert(item: $activeAlert) { alert in
             switch alert {
             case .success:
