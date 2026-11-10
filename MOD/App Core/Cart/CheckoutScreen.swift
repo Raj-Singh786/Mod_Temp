@@ -28,6 +28,30 @@ enum DigitalPayApp: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum PickupPreference: String, CaseIterable, Identifiable {
+    case counter = "Counter"
+    case curbside = "Curbside"
+    case driveThru = "Drive–Thru"
+
+    var id: String { rawValue }
+
+    var subtitle: String {
+        switch self {
+        case .counter: return "Grab & Go"
+        case .curbside: return "Bay #1–4"
+        case .driveThru: return "Express Lane"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .counter: return "door.left.hand.open"
+        case .curbside: return "car.fill"
+        case .driveThru: return "car.side.fill"
+        }
+    }
+}
+
 enum ActiveCheckoutAlert: Identifiable {
     case success
     case changeAddress
@@ -82,6 +106,7 @@ struct CheckoutScreen: View {
     @State private var selectedPaymentMethod: PaymentMethodType = .modWallet
     @State private var selectedDigitalApp: DigitalPayApp = .gpay
     @State private var isContactless: Bool = false
+    @State private var selectedPickupPreference: PickupPreference = .curbside
 
     // Gift Card State
     @State private var giftCardNumber: String = ""
@@ -95,11 +120,13 @@ struct CheckoutScreen: View {
 
     // User / Guest State & Recipient Details
     @State private var isGuest: Bool = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
+    @State private var activeOrderType: CartOrderType = .delivery
     @State private var customerName: String = ""
     @State private var contactNumber: String = ""
     @State private var activeAlert: ActiveCheckoutAlert? = nil
     @State private var deliveryAddress: String = "450 Sutter St, Apt 8B, San Francisco, CA 94108"
     @State private var showConfirmOrderScreen: Bool = false
+    @State private var showSignUpScreen: Bool = false
 
     // Colors
     private let modRed = Color(red: 0.78, green: 0.08, blue: 0.18)
@@ -107,6 +134,7 @@ struct CheckoutScreen: View {
     private let borderGray = Color(red: 0.90, green: 0.90, blue: 0.92)
     private let successGreen = Color(red: 0.12, green: 0.65, blue: 0.38)
     private let pillPink = Color(red: 1.0, green: 0.92, blue: 0.93)
+    private let textDark = Color(red: 0.10, green: 0.12, blue: 0.18)
 
     // MARK: - Calculations
 
@@ -118,7 +146,7 @@ struct CheckoutScreen: View {
     }
 
     private var deliveryFee: Double {
-        orderType == .pickup ? 0.0 : 2.99
+        activeOrderType == .pickup ? 0.0 : 2.99
     }
 
     private var promoDiscount: Double {
@@ -149,6 +177,9 @@ struct CheckoutScreen: View {
     // Dynamic Pay Button Title
     private var payButtonTitle: String {
         let formatted = String(format: "%.2f", totalToPay)
+        if isGuest && selectedPaymentMethod == .modWallet {
+            return "SIGN IN TO PAY • $\(formatted)"
+        }
         switch selectedPaymentMethod {
         case .modWallet:
             return "PAY $\(formatted) WITH MOD WALLET"
@@ -190,8 +221,18 @@ struct CheckoutScreen: View {
                 // 2. Scrollable Checkout Content
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
+                        // Guest Sign Up to Save Promo Card (Snap 1 - Only for Guest User)
+                        if isGuest {
+                            guestSignUpPromoCard
+                        }
+
                         // Section 1: Order Items
                         orderItemsSection
+
+                        // Pickup Method Section (Snap 1 - Shown when Order Type is Pickup)
+                        if activeOrderType == .pickup {
+                            pickupMethodSection
+                        }
 
                         // Section 2: Delivery / Pickup Address
                         fulfillmentAddressSection
@@ -203,7 +244,9 @@ struct CheckoutScreen: View {
                         paymentMethodSection
 
                         // Section 5: Contactless Delivery Toggle
-                        contactlessRow
+                        if activeOrderType == .delivery {
+                            contactlessRow
+                        }
 
                         // Bottom Space so content isn't covered by bottom sticky bar
                         Color.clear.frame(height: 100)
@@ -221,16 +264,22 @@ struct CheckoutScreen: View {
         .fullScreenCover(isPresented: $showConfirmOrderScreen) {
             ConfirmOrderScreen(
                 orderNumber: "PH-89421",
-                customerName: customerName.isEmpty ? "Alex" : customerName,
-                contactNumber: contactNumber,
-                deliveryAddress: deliveryAddress,
-                orderType: orderType,
+                customerName: customerName.isEmpty ? (isGuest ? "Guest" : "Alex Morgan") : customerName,
+                contactNumber: contactNumber.isEmpty ? (isGuest ? "" : "(555) 234-5678") : contactNumber,
+                deliveryAddress: activeOrderType == .pickup ? (selectedPickupPreference.rawValue + " • Downtown Hut #1204") : deliveryAddress,
+                orderType: activeOrderType,
                 itemCount: cartItems.count,
                 paymentMethod: paymentMethodDisplayName,
                 totalAmount: totalToPay,
-                estimatedArrival: orderType == .pickup ? "5:45 PM" : "10:15 PM",
+                estimatedArrival: activeOrderType == .pickup ? "5:45 PM" : "10:15 PM",
                 pointsEarned: 140
             )
+        }
+        .fullScreenCover(isPresented: $showSignUpScreen) {
+            SignupView()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            syncUserDefaults()
         }
         .alert(item: $activeAlert) { alert in
             switch alert {
@@ -257,18 +306,39 @@ struct CheckoutScreen: View {
             }
         }
         .onAppear {
-            let guest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
-            self.isGuest = guest
-            if !guest {
-                if customerName.isEmpty {
-                    customerName = "Alex Morgan"
-                }
-                if contactNumber.isEmpty {
-                    contactNumber = "(555) 234-5678"
-                }
-            }
+            syncUserDefaults()
         }
         .navigationBarHidden(true)
+    }
+
+    private func syncUserDefaults() {
+        let guest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
+        self.isGuest = guest
+
+        let savedOrderType = UserDefaults.standard.string(forKey: "selectedOrderType")
+        if savedOrderType == "pickup" {
+            self.activeOrderType = .pickup
+        } else if savedOrderType == "delivery" {
+            self.activeOrderType = .delivery
+        } else {
+            self.activeOrderType = self.orderType
+        }
+
+        if !guest {
+            if customerName.isEmpty {
+                customerName = "Alex Morgan"
+            }
+            if contactNumber.isEmpty {
+                contactNumber = "(555) 234-5678"
+            }
+            if selectedPaymentMethod == .digitalPay {
+                selectedPaymentMethod = .modWallet
+            }
+        } else {
+            if selectedPaymentMethod == .modWallet {
+                selectedPaymentMethod = .digitalPay
+            }
+        }
     }
 
     // MARK: - 1. Navigation Header
@@ -304,6 +374,68 @@ struct CheckoutScreen: View {
         .padding(.bottom, 10)
         .background(Color.white)
         .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 2)
+    }
+
+    // MARK: - Guest Sign-up Promo Card (Snap 1, Top)
+
+    private var guestSignUpPromoCard: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                // Red square with white rotated tag icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(modRed)
+                        .frame(width: 38, height: 38)
+
+                    Image(systemName: "tag.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .rotationEffect(.degrees(-45))
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Unlock $5.00 Off • Sign up to Save")
+                        .font(.system(size: 15.5, weight: .bold))
+                        .foregroundColor(textDark)
+
+                    Text("Promo codes like WELCOME10 require an account. Create one in 1-click!")
+                        .font(.system(size: 12.5))
+                        .foregroundColor(Color(red: 0.35, green: 0.35, blue: 0.42))
+                        .lineSpacing(2)
+                }
+
+                Spacer()
+            }
+
+            Button(action: {
+                showSignUpScreen = true
+            }) {
+                Text("Sign Up to Save $5.00")
+                    .font(.system(size: 14.5, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(modRed)
+                    .cornerRadius(22)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(16)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(red: 1.0, green: 0.94, blue: 0.94),
+                    Color(red: 1.0, green: 0.89, blue: 0.90)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .cornerRadius(18)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color(red: 0.98, green: 0.85, blue: 0.86), lineWidth: 1)
+        )
     }
 
     // MARK: - Section 1: Order Items
@@ -413,16 +545,6 @@ struct CheckoutScreen: View {
             }
 
             Spacer()
-
-            // Pencil Edit Icon
-            Button(action: {
-                dismiss()
-            }) {
-                Image(systemName: "pencil")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(modRed)
-                    .padding(8)
-            }
         }
         .padding(12)
         .background(Color.white)
@@ -433,13 +555,98 @@ struct CheckoutScreen: View {
         )
     }
 
+    // MARK: - Pickup Method Section (Snap 1, Bottom)
+
+    private var pickupMethodSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header Row
+            HStack {
+                Text("Pickup Method")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(textDark)
+
+                Spacer()
+
+                Text("Choose preference")
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundColor(Color(red: 0.42, green: 0.42, blue: 0.48))
+            }
+            .padding(.top, 4)
+
+            // 3 Pickup Cards in HStack
+            HStack(spacing: 10) {
+                ForEach(PickupPreference.allCases) { preference in
+                    pickupPreferenceCard(preference: preference)
+                }
+            }
+            .padding(.top, 6)
+        }
+    }
+
+    private func pickupPreferenceCard(preference: PickupPreference) -> some View {
+        let isSelected = selectedPickupPreference == preference
+        let isPopular = (preference == .curbside)
+
+        return Button(action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedPickupPreference = preference
+            }
+        }) {
+            ZStack(alignment: .top) {
+                VStack(spacing: 8) {
+                    // Circular Icon Container
+                    ZStack {
+                        Circle()
+                            .fill(isSelected ? Color(red: 1.0, green: 0.91, blue: 0.93) : Color(red: 0.93, green: 0.95, blue: 0.99))
+                            .frame(width: 44, height: 44)
+
+                        Image(systemName: preference.iconName)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(isSelected ? modRed : Color(red: 0.25, green: 0.28, blue: 0.35))
+                    }
+
+                    // Title
+                    Text(preference.rawValue)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(isSelected ? modRed : textDark)
+
+                    // Subtitle
+                    Text(preference.subtitle)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.5))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.white)
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(isSelected ? modRed : borderGray, lineWidth: isSelected ? 1.8 : 1)
+                )
+
+                // POPULAR Badge (on Curbside)
+                if isPopular {
+                    Text("POPULAR")
+                        .font(.system(size: 9.5, weight: .heavy))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(modRed)
+                        .cornerRadius(6)
+                        .offset(y: -9)
+                }
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
     // MARK: - Section 2: Delivery / Pickup Address
 
     private var fulfillmentAddressSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             // Header Row
             HStack {
-                Text(orderType == .pickup ? "Pickup Location" : "Delivery Address")
+                Text(activeOrderType == .pickup ? "Pickup Location" : "Delivery Address")
                     .font(.system(size: 17, weight: .bold))
                     .foregroundColor(.black)
 
@@ -468,18 +675,18 @@ struct CheckoutScreen: View {
                             .fill(pillPink)
                             .frame(width: 36, height: 36)
 
-                        Image(systemName: orderType == .pickup ? "storefront.fill" : "house.fill")
+                        Image(systemName: activeOrderType == .pickup ? "storefront.fill" : "house.fill")
                             .font(.system(size: 16))
                             .foregroundColor(modRed)
                     }
 
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 6) {
-                            Text(orderType == .pickup ? "Downtown Hut #1204" : "Home")
+                            Text(activeOrderType == .pickup ? "Downtown Hut #1204" : "Home")
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.black)
 
-                            Text(orderType == .pickup ? "STORE" : "DEFAULT")
+                            Text(activeOrderType == .pickup ? "STORE" : "DEFAULT")
                                 .font(.system(size: 9.5, weight: .heavy))
                                 .foregroundColor(modRed)
                                 .padding(.horizontal, 6)
@@ -498,7 +705,7 @@ struct CheckoutScreen: View {
                             }
                         }
 
-                        Text(orderType == .pickup ? "452 Market St, San Francisco, CA (0.8 mi away)" : deliveryAddress)
+                        Text(activeOrderType == .pickup ? "452 Market St, San Francisco, CA (0.8 mi away)" : deliveryAddress)
                             .font(.system(size: 13))
                             .foregroundColor(.gray)
                             .lineLimit(2)
@@ -519,73 +726,121 @@ struct CheckoutScreen: View {
                     }
                 }
 
-                Divider()
+                // Name & Address input options shown ONLY for Guest User, NOT for Logged In User
+                if isGuest {
+                    Divider()
 
-                // Two Rows Below Address: Name & Contact Number (Optional for Guest User)
-                VStack(spacing: 10) {
-                    // Row 1: Full Name (Required)
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(pillPink)
-                                .frame(width: 32, height: 32)
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(modRed)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Guest Details")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(textDark)
+
+                        // If delivery, show address input field for guest
+                        if activeOrderType == .delivery {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(pillPink)
+                                        .frame(width: 32, height: 32)
+                                    Image(systemName: "mappin.and.ellipse")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(modRed)
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 4) {
+                                        Text("Delivery Address")
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundColor(.gray)
+                                        Text("*")
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundColor(modRed)
+                                    }
+
+                                    TextField("Enter delivery street address, apt, suite", text: $deliveryAddress)
+                                        .font(.system(size: 13.5, weight: .medium))
+                                        .foregroundColor(.black)
+                                }
+
+                                if !deliveryAddress.isEmpty {
+                                    Button(action: { deliveryAddress = "" }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray.opacity(0.5))
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.98, green: 0.98, blue: 0.99))
+                            .cornerRadius(10)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(borderGray.opacity(0.8), lineWidth: 1)
+                            )
                         }
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 4) {
-                                Text("Name")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(.gray)
-                                Text("*")
-                                    .font(.system(size: 11, weight: .bold))
+                        // Full Name (Required for Guest)
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(pillPink)
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 13))
                                     .foregroundColor(modRed)
                             }
 
-                            TextField("Enter your full name", text: $customerName)
-                                .font(.system(size: 13.5, weight: .medium))
-                                .foregroundColor(.black)
-                                .autocapitalization(.words)
-                                .disableAutocorrection(true)
-                        }
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 4) {
+                                    Text("Name")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.gray)
+                                    Text("*")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(modRed)
+                                }
 
-                        if !customerName.isEmpty {
-                            Button(action: { customerName = "" }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray.opacity(0.5))
+                                TextField("Enter your full name", text: $customerName)
+                                    .font(.system(size: 13.5, weight: .medium))
+                                    .foregroundColor(.black)
+                                    .autocapitalization(.words)
+                                    .disableAutocorrection(true)
+                            }
+
+                            if !customerName.isEmpty {
+                                Button(action: { customerName = "" }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.gray.opacity(0.5))
+                                }
                             }
                         }
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(Color(red: 0.98, green: 0.98, blue: 0.99))
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(borderGray.opacity(0.8), lineWidth: 1)
-                    )
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(Color(red: 0.98, green: 0.98, blue: 0.99))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(borderGray.opacity(0.8), lineWidth: 1)
+                        )
 
-                    // Row 2: Contact Number (Optional for Guest User)
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(pillPink)
-                                .frame(width: 32, height: 32)
-                            Image(systemName: "phone.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(modRed)
-                        }
+                        // Contact Number (Optional for Guest)
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(pillPink)
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "phone.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(modRed)
+                            }
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 5) {
-                                Text("Contact Number")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(.gray)
-
-                                if isGuest {
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 5) {
+                                    Text("Contact Number")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.gray)
                                     Text("(Optional)")
                                         .font(.system(size: 10, weight: .semibold))
                                         .foregroundColor(Color.gray)
@@ -593,35 +848,55 @@ struct CheckoutScreen: View {
                                         .padding(.vertical, 1)
                                         .background(Color.black.opacity(0.05))
                                         .cornerRadius(4)
-                                } else {
-                                    Text("*")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundColor(modRed)
+                                }
+
+                                TextField("Enter contact number (optional)", text: $contactNumber)
+                                    .font(.system(size: 13.5, weight: .medium))
+                                    .foregroundColor(.black)
+                                    .keyboardType(.phonePad)
+                            }
+
+                            if !contactNumber.isEmpty {
+                                Button(action: { contactNumber = "" }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.gray.opacity(0.5))
                                 }
                             }
-
-                            TextField(isGuest ? "Enter contact number (optional)" : "Enter contact number", text: $contactNumber)
-                                .font(.system(size: 13.5, weight: .medium))
-                                .foregroundColor(.black)
-                                .keyboardType(.phonePad)
                         }
-
-                        if !contactNumber.isEmpty {
-                            Button(action: { contactNumber = "" }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray.opacity(0.5))
-                            }
-                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(Color(red: 0.98, green: 0.98, blue: 0.99))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(borderGray.opacity(0.8), lineWidth: 1)
+                        )
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(Color(red: 0.98, green: 0.98, blue: 0.99))
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(borderGray.opacity(0.8), lineWidth: 1)
-                    )
+                } else {
+                    // For Logged In User: No name/address text fields! Show saved account recipient info
+                    Divider()
+
+                    HStack(spacing: 8) {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 15))
+                            .foregroundColor(modRed)
+
+                        Text("Deliver to: Alex Morgan • (555) 234-5678")
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundColor(Color(red: 0.25, green: 0.25, blue: 0.3))
+
+                        Spacer()
+
+                        Text("Verified")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(successGreen)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(red: 0.90, green: 0.98, blue: 0.94))
+                            .cornerRadius(4)
+                    }
+                    .padding(.vertical, 2)
                 }
 
                 Divider()
@@ -633,7 +908,7 @@ struct CheckoutScreen: View {
                             .font(.system(size: 12))
                             .foregroundColor(successGreen)
 
-                        Text(orderType == .pickup ? "Estimated Ready: 10–15 min • Hot & Fresh" : "Estimated 25–35 min • Hot & Fresh")
+                        Text(activeOrderType == .pickup ? "Estimated Ready: 10–15 min • Hot & Fresh" : "Estimated 25–35 min • Hot & Fresh")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(successGreen)
                     }
@@ -644,9 +919,9 @@ struct CheckoutScreen: View {
                         Text("Fee:")
                             .font(.system(size: 12))
                             .foregroundColor(.gray)
-                        Text(orderType == .pickup ? "FREE" : "$2.99")
+                        Text(activeOrderType == .pickup ? "FREE" : "$2.99")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(orderType == .pickup ? successGreen : .black)
+                            .foregroundColor(activeOrderType == .pickup ? successGreen : .black)
                     }
                 }
             }
@@ -818,8 +1093,12 @@ struct CheckoutScreen: View {
 
             // Payment Options List
             VStack(spacing: 12) {
-                // 1. MOD Wallet (Selected Card Style)
-                modWalletCard
+                // 1. MOD Wallet (Guest card with Sign In button vs Logged-In active wallet)
+                if isGuest {
+                    guestModWalletCard
+                } else {
+                    modWalletCard
+                }
 
                 // 2. Digital Pay / UPI
                 digitalPayCard
@@ -841,7 +1120,115 @@ struct CheckoutScreen: View {
 
     // MARK: - Payment Cards
 
-    // 1. MOD Wallet Card
+    // Guest MOD Wallet Card (Snap 2)
+    private var guestModWalletCard: some View {
+        VStack(spacing: 12) {
+            // Top Row
+            HStack(alignment: .top, spacing: 12) {
+                // Pinkish rounded rectangle with red wallet icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(red: 1.0, green: 0.93, blue: 0.93))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: "wallet.pass")
+                        .font(.system(size: 20))
+                        .foregroundColor(modRed)
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 7) {
+                        Text("MOD Wallet")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(textDark)
+
+                        // Amber "SIGN IN REQUIRED" badge
+                        HStack(spacing: 3) {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 9, weight: .bold))
+                            Text("SIGN IN REQUIRED")
+                                .font(.system(size: 9.5, weight: .heavy))
+                        }
+                        .foregroundColor(Color(red: 0.65, green: 0.38, blue: 0.05))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color(red: 1.0, green: 0.97, blue: 0.88))
+                        .cornerRadius(5)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(Color(red: 0.92, green: 0.78, blue: 0.45), lineWidth: 1)
+                        )
+                    }
+
+                    HStack(spacing: 5) {
+                        Image(systemName: "banknote")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(modRed)
+
+                        Text("Up to 15% Cashback + 2x Points")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(modRed)
+                    }
+                }
+
+                Spacer()
+
+                // Lock Circle on Top Right
+                ZStack {
+                    Circle()
+                        .stroke(Color.gray.opacity(0.35), lineWidth: 1.2)
+                        .frame(width: 26, height: 26)
+
+                    Image(systemName: "lock")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color.gray.opacity(0.6))
+                }
+            }
+
+            // Inner Sub-box with Sign In Button
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 14))
+                    .foregroundColor(Color.gray.opacity(0.65))
+
+                Text("Sign in to earn 15% cashback")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundColor(Color(red: 0.35, green: 0.38, blue: 0.45))
+
+                Spacer()
+
+                Button(action: {
+                    showSignUpScreen = true
+                }) {
+                    Text("Sign In")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 7)
+                        .background(modRed)
+                        .cornerRadius(10)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Color(red: 0.97, green: 0.97, blue: 0.98))
+            .cornerRadius(12)
+        }
+        .padding(14)
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(borderGray, lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            showSignUpScreen = true
+        }
+    }
+
+    // 1. MOD Wallet Card (Logged In User)
     private var modWalletCard: some View {
         let isSelected = selectedPaymentMethod == .modWallet
         return VStack(alignment: .leading, spacing: 10) {
@@ -1391,17 +1778,24 @@ struct CheckoutScreen: View {
     // MARK: - Order Validation & Placement
 
     private func validateAndProceedOrder() {
-        let trimmedName = customerName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedName.isEmpty {
-            activeAlert = .validation("Please enter your full name to proceed with the order.")
-            return
-        }
+        if isGuest {
+            // For Guest Users: validate name and (if delivery) delivery address
+            let trimmedName = customerName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedName.isEmpty {
+                activeAlert = .validation("Please enter your full name to proceed with the order.")
+                return
+            }
 
-        // Contact number is required for logged-in users, but optional for guest users
-        if !isGuest {
-            let trimmedPhone = contactNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmedPhone.isEmpty {
-                activeAlert = .validation("Please enter your contact phone number to proceed with the order.")
+            if activeOrderType == .delivery {
+                let trimmedAddress = deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmedAddress.isEmpty {
+                    activeAlert = .validation("Please enter your delivery address to proceed with the order.")
+                    return
+                }
+            }
+
+            if selectedPaymentMethod == .modWallet {
+                showSignUpScreen = true
                 return
             }
         }

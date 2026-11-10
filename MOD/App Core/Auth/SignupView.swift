@@ -72,7 +72,7 @@ struct SignupView: View {
                     // 1. Full Name
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Full Name")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.appFont(.jakartaMedium, size: 14))
                             .foregroundColor(.black)
                         
                         HStack(spacing: 12) {
@@ -97,7 +97,7 @@ struct SignupView: View {
                     // 2. Email Address
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Email Address")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.appFont(.jakartaMedium, size: 14))
                             .foregroundColor(.black)
                         
                         HStack(spacing: 12) {
@@ -125,7 +125,7 @@ struct SignupView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("Mobile Phone")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.appFont(.jakartaMedium, size: 14))
                                 .foregroundColor(.black)
                             Spacer()
                             HStack(spacing: 4) {
@@ -166,7 +166,7 @@ struct SignupView: View {
                     // 4. Create Password
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Create Password")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.appFont(.jakartaMedium, size: 14))
                             .foregroundColor(.black)
                         
                         HStack(spacing: 12) {

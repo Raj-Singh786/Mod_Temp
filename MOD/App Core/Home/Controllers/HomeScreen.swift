@@ -745,11 +745,10 @@ struct ComboCardView: View {
                 // Multi-line Title
                 VStack(alignment: .leading, spacing: 2) {
                     Text(combo.titleLine1)
-                        .font(.system(size: 18, weight: .heavy))
+                        .font(.appFont(.jakartaBold, size: 14))
                         .foregroundColor(.white)
                     Text(combo.titleLine2)
-                        .font(.system(size: 18, weight: .heavy))
-                        .foregroundColor(.white)
+                        .font(.appFont(.jakartaBold, size: 14)).foregroundColor(.white)
                 }
 
                 // Price Row
