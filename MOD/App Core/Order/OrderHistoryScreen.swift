@@ -74,11 +74,18 @@ struct HistoryOrder: Identifiable {
 struct OrderHistoryScreen: View {
     @Environment(\.dismiss) private var dismiss
 
+    var initialTab: OrderHistoryTab = .active
+
     // Tab & Filter States
     @State private var selectedTab: OrderHistoryTab = .active
     @State private var selectedFilter: CompletedOrderFilter = .all
     @State private var searchText: String = ""
     @State private var isSearching: Bool = false
+
+    init(initialTab: OrderHistoryTab = .active) {
+        self.initialTab = initialTab
+        _selectedTab = State(initialValue: initialTab)
+    }
 
     // Navigation & Sheet States
     @State private var selectedOrderToTrack: HistoryOrder? = nil
@@ -264,6 +271,9 @@ struct OrderHistoryScreen: View {
             }
             .background(screenBg.edgesIgnoringSafeArea(.all))
             .navigationBarHidden(true)
+            .onAppear {
+                selectedTab = initialTab
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .navigationBarHidden(true)

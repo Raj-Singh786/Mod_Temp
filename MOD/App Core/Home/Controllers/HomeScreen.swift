@@ -11,6 +11,8 @@ struct HomeScreen: View {
     @State private var selectedPromoIndex: Int = 0
     @State private var showStoreLocation: Bool = false
     @State private var showRewardsScreen: Bool = false
+    @State private var showOrderHistoryScreen: Bool = false
+    @State private var orderHistoryInitialTab: OrderHistoryTab = .active
     @State private var selectedCustomizationPizza: Pizza? = nil
     @State private var selectedCustomizationCombo: Combo? = nil
     @State private var showMenuScreen: Bool = false
@@ -80,9 +82,30 @@ struct HomeScreen: View {
 
                 // 4. Feature Section (Guest: QuickFeaturesView | Logged-in: RecentOrderView)
                 if isGuest {
-                    QuickFeaturesView()
+                    QuickFeaturesView(
+                        onReorder: {
+                            orderHistoryInitialTab = .completed
+                            showOrderHistoryScreen = true
+                        },
+                        onTrackOrder: {
+                            orderHistoryInitialTab = .active
+                            showOrderHistoryScreen = true
+                        },
+                        onRewards: {
+                            showRewardsScreen = true
+                        }
+                    )
                 } else {
-                    RecentOrderView()
+                    RecentOrderView(
+                        onReorder: {
+                            orderHistoryInitialTab = .completed
+                            showOrderHistoryScreen = true
+                        },
+                        onViewAll: {
+                            orderHistoryInitialTab = .active
+                            showOrderHistoryScreen = true
+                        }
+                    )
                 }
 
                 // 5. Recommended for You (Horizontal)
@@ -134,6 +157,9 @@ struct HomeScreen: View {
         }
         .fullScreenCover(isPresented: $showRewardsScreen) {
             MODRewardsScreen()
+        }
+        .fullScreenCover(isPresented: $showOrderHistoryScreen) {
+            OrderHistoryScreen(initialTab: orderHistoryInitialTab)
         }
         .fullScreenCover(isPresented: $showSignUpScreen) {
             SignupView()
@@ -388,25 +414,32 @@ struct PromoCardView: View {
     }
 }
 
-// MARK: - Quick Features (Hot & Fresh, Live Tracking, Hut Rewards)
+// MARK: - Quick Features (Reorder, Track Order, Rewards)
 
 struct QuickFeaturesView: View {
+    var onReorder: () -> Void = {}
+    var onTrackOrder: () -> Void = {}
+    var onRewards: () -> Void = {}
+
     var body: some View {
         HStack(spacing: 12) {
             QuickFeatureCard(
                 iconName: "bolt.fill",
                 title: "Reorder",
-                subtitle: "Order Your Favourite Pizza"
+                subtitle: "Order Your Favourite Pizza",
+                action: onReorder
             )
             QuickFeatureCard(
                 iconName: "mappin.and.ellipse",
-                title: "Live Tracking",
-                subtitle: "Oven to door"
+                title: "Track Order",
+                subtitle: "Oven to door",
+                action: onTrackOrder
             )
             QuickFeatureCard(
                 iconName: "dollarsign.circle",
                 title: "Rewards",
-                subtitle: "Earn free pizza"
+                subtitle: "Earn free pizza",
+                action: onRewards
             )
         }
         .padding(.horizontal, 16)
@@ -417,37 +450,43 @@ struct QuickFeatureCard: View {
     let iconName: String
     let title: String
     let subtitle: String
+    var action: (() -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(Color.red.opacity(0.1))
-                    .frame(width: 44, height: 44)
-                Image(systemName: iconName)
-                    .font(.system(size: 19, weight: .semibold))
-                    .foregroundColor(.red)
+        Button(action: {
+            action?()
+        }) {
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.1))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: iconName)
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundColor(.red)
+                }
+                .padding(.top, 4)
+
+                Text(title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+
+                Text(subtitle)
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .padding(.top, 4)
-
-            Text(title)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.black)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-
-            Text(subtitle)
-                .font(.system(size: 12))
-                .foregroundColor(.gray)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 6)
+            .frame(maxWidth: .infinity)
+            .background(Color.white)
+            .cornerRadius(18)
+            .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 6)
-        .frame(maxWidth: .infinity)
-        .background(Color.white)
-        .cornerRadius(18)
-        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
