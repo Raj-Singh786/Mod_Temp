@@ -287,7 +287,7 @@ struct ProfileScreen: View {
         .background(Color(red: 0.98, green: 0.98, blue: 0.99).ignoresSafeArea())
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showRewardsScreen) {
-            MODRewardsScreen()
+            MODRewardsScreen(userPoints: 445)
         }
         .fullScreenCover(isPresented: $showOrdersHistoryScreen) {
             OrderHistoryScreen()
@@ -552,66 +552,72 @@ private struct ModWalletCardView: View {
             
             // Middle Two Stat Cards (Available Balance & MOD Points)
             HStack(spacing: 10) {
-                // Available Balance Card
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Available Balance")
-                        .font(.system(size: 11))
-                        .foregroundColor(Color.white.opacity(0.65))
-                    
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("$48.50")
-                            .font(.system(size: 20, weight: .heavy))
-                            .foregroundColor(.white)
-                        Text("USD")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(Color.white.opacity(0.6))
-                    }
-                    
-                    HStack(spacing: 4) {
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 9))
-                        Text("Auto-reload active")
-                            .font(.system(size: 10, weight: .medium))
-                    }
-                    .foregroundColor(Color(red: 0.2, green: 0.82, blue: 0.55))
-                    .padding(.top, 2)
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white.opacity(0.08))
-                .cornerRadius(12)
-                
-                // MOD Points Card
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("MOD Points")
+                // Available Balance Card (Opens Wallet Top Up)
+                Button(action: onTopUp) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Available Balance")
                             .font(.system(size: 11))
                             .foregroundColor(Color.white.opacity(0.65))
-                        Spacer()
-                        Circle()
-                            .fill(Color(red: 0.98, green: 0.76, blue: 0.2))
-                            .frame(width: 6, height: 6)
-                    }
-                    
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("420")
-                            .font(.system(size: 20, weight: .heavy))
-                            .foregroundColor(Color(red: 0.98, green: 0.76, blue: 0.2))
-                        Text("pts")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(Color(red: 0.98, green: 0.76, blue: 0.2))
-                    }
-                    
-                    Text("Redeem free medium...")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.white.opacity(0.6))
-                        .lineLimit(1)
+                        
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("$48.50")
+                                .font(.system(size: 20, weight: .heavy))
+                                .foregroundColor(.white)
+                            Text("USD")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(Color.white.opacity(0.6))
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.system(size: 9))
+                            Text("Auto-reload active")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(Color(red: 0.2, green: 0.82, blue: 0.55))
                         .padding(.top, 2)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.white.opacity(0.08))
+                    .cornerRadius(12)
                 }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white.opacity(0.08))
-                .cornerRadius(12)
+                .buttonStyle(PlainButtonStyle())
+                
+                // MOD Points Card (Clicking opens MOD Rewards Screen)
+                Button(action: onRewards) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("MOD Points")
+                                .font(.system(size: 11))
+                                .foregroundColor(Color.white.opacity(0.65))
+                            Spacer()
+                            Circle()
+                                .fill(Color(red: 0.98, green: 0.76, blue: 0.2))
+                                .frame(width: 6, height: 6)
+                        }
+                        
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("420")
+                                .font(.system(size: 20, weight: .heavy))
+                                .foregroundColor(Color(red: 0.98, green: 0.76, blue: 0.2))
+                            Text("pts")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(Color(red: 0.98, green: 0.76, blue: 0.2))
+                        }
+                        
+                        Text("Redeem free medium...")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color.white.opacity(0.6))
+                            .lineLimit(1)
+                            .padding(.top, 2)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.white.opacity(0.08))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
             
             // Cashback Promo Banner

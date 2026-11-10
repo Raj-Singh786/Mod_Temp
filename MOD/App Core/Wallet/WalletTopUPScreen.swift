@@ -62,6 +62,8 @@ struct WalletTopUPScreen: View {
     // Sheet & Alert States
     @State private var showCustomAmountSheet: Bool = false
     @State private var showAddPaymentSheet: Bool = false
+    @State private var showReceiptScreen: Bool = false
+    @State private var lastPreviousBalance: Double = 48.50
     @State private var showSupportAlert: Bool = false
     @State private var showSuccessAlert: Bool = false
     @State private var isProcessing: Bool = false
@@ -161,6 +163,22 @@ struct WalletTopUPScreen: View {
         }
         .sheet(isPresented: $showAddPaymentSheet) {
             addPaymentMethodSheetView
+        }
+        .fullScreenCover(isPresented: $showReceiptScreen) {
+            TopUpReceiptScreen(
+                transactionId: "TXN-MOD-\(Int.random(in: 100000...999999))",
+                reloadAmount: selectedAmount,
+                previousBalance: lastPreviousBalance,
+                newBalance: currentBalance,
+                paymentMethodName: selectedPaymentMethod.rawValue,
+                pointsEarned: bonusPointsEarned,
+                isAutoReloadEnabled: isAutoReloadEnabled,
+                dateString: "Today, 10:15 AM",
+                onDone: {
+                    showReceiptScreen = false
+                    dismiss()
+                }
+            )
         }
         .alert(isPresented: $showSupportAlert) {
             Alert(
@@ -757,9 +775,13 @@ struct WalletTopUPScreen: View {
             // Big Red Primary Top-Up Button
             Button(action: {
                 isProcessing = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     isProcessing = false
-                    showSuccessAlert = true
+                    lastPreviousBalance = currentBalance
+                    currentBalance = newBalance
+                    hutPoints += bonusPointsEarned
+                    UserDefaults.standard.set(newBalance, forKey: "walletBalance")
+                    showReceiptScreen = true
                 }
             }) {
                 HStack(spacing: 8) {
