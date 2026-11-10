@@ -80,42 +80,20 @@ struct CartScreen: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
-                    
-                    // 1. Navigation Header
-                    HStack {
-                     
-                        
-                        Spacer()
-                        Spacer()
-                        
-                        VStack(spacing: 2) {
-                            Text("My Cart")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.black)
-                            Text("\(cartItems.reduce(0, { $0 + $1.quantity })) delicious items")
-                                .font(.system(size: 12))
-                                .foregroundColor(.gray)
-                        }
-                        
-                        Spacer()
-                        
-                        // Clear Cart Button
-                        Button(action: { showClearAlert = true }) {
-                            Text("Clear")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(.red)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 6)
-                                .background(Color.red.opacity(0.08))
-                                .cornerRadius(16)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
+            VStack(spacing: 0) {
+                // 1. Fixed Navigation Header (Stays pinned at top while content scrolls)
+                cartHeaderView
+                    .padding(.bottom, 8)
+                    .background(
+                        Color(red: 0.98, green: 0.98, blue: 0.99)
+                            .edgesIgnoringSafeArea(.top)
+                    )
+                    .zIndex(10)
 
-                    // 2. Fulfillment Details (Adjusted per Order Type: Pickup vs Delivery)
+                // Scrollable Content
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 18) {
+                        // 2. Fulfillment Details (Adjusted per Order Type: Pickup vs Delivery)
                     VStack(alignment: .leading, spacing: 12) {
                         // Location Header Row (Pickup at / Delivery to)
                         HStack {
@@ -404,6 +382,7 @@ struct CartScreen: View {
                 }
                 .padding(.vertical, 10)
             }
+            }
 
             // MARK: - Bottom Floating Checkout Button
             VStack(spacing: 0) {
@@ -420,7 +399,7 @@ struct CartScreen: View {
                         Spacer()
                         
                         HStack(spacing: 6) {
-                            Text(orderType == .pickup ? "Proceed to Pickup" : "Proceed to Checkout")
+                            Text(orderType == .pickup ? "Proceed to Checkout" : "Proceed to Checkout")
                                 .font(.system(size: 15, weight: .bold))
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 14, weight: .bold))
@@ -487,6 +466,39 @@ struct CartScreen: View {
         .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
             loadOrderTypeFromDefaults()
         }
+    }
+
+    // MARK: - 1. Fixed Navigation Header View
+
+    private var cartHeaderView: some View {
+        HStack {
+            Spacer()
+            Spacer()
+            
+            VStack(spacing: 2) {
+                Text("My Cart")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.black)
+                Text("\(cartItems.reduce(0, { $0 + $1.quantity })) delicious items")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            // Clear Cart Button
+            Button(action: { showClearAlert = true }) {
+                Text("Clear")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.red.opacity(0.08))
+                    .cornerRadius(16)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
     }
 
     // MARK: - Pickup Location Details Card (Snap Design)

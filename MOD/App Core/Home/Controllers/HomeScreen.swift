@@ -11,6 +11,7 @@ struct HomeScreen: View {
     @State private var selectedPromoIndex: Int = 0
     @State private var showStoreLocation: Bool = false
     @State private var showRewardsScreen: Bool = false
+    @State private var showPizzaTrackerRewards: Bool = false
     @State private var showOrderHistoryScreen: Bool = false
     @State private var orderHistoryInitialTab: OrderHistoryTab = .active
     @State private var selectedCustomizationPizza: Pizza? = nil
@@ -29,6 +30,8 @@ struct HomeScreen: View {
                 showStoreLocation = true
             }, onSelectRewards: {
                 showRewardsScreen = true
+            }, onSelectPizzaTracker: {
+                showPizzaTrackerRewards = true
             })
             .padding(.bottom, 8)
             .background(
@@ -158,6 +161,9 @@ struct HomeScreen: View {
         .fullScreenCover(isPresented: $showRewardsScreen) {
             MODRewardsScreen()
         }
+        .fullScreenCover(isPresented: $showPizzaTrackerRewards) {
+            PizzaTrackerRewardsScreen()
+        }
         .fullScreenCover(isPresented: $showOrderHistoryScreen) {
             OrderHistoryScreen(initialTab: orderHistoryInitialTab)
         }
@@ -192,6 +198,7 @@ struct LocationHeaderView: View {
     var isGuest: Bool = false
     var onSelectLocation: () -> Void = {}
     var onSelectRewards: () -> Void = {}
+    var onSelectPizzaTracker: (() -> Void)? = nil
     @State private var address: String = ""
 
     var body: some View {
@@ -236,19 +243,27 @@ struct LocationHeaderView: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            // Pizza Tracker Button (Clicking navigates to MOD Rewards)
-            Button(action: onSelectRewards) {
-                VStack(spacing:3) {
-                    PizzaTrackerView(activeSlices: 6, totalSlices: 8, badgeCount: 2)
-                    
-                    Text("\(420)/\(600)")
-                               .font(.system(size: 10, weight: .bold))
-                               .foregroundColor(.black.opacity(0.75))
-                               .lineLimit(1)
-                               .fixedSize()
+            // Pizza Tracker Button (Clicking navigates to MOD Rewards) - Only shown for logged-in users
+            if !isGuest {
+                Button(action: {
+                    if let onSelectPizzaTracker = onSelectPizzaTracker {
+                        onSelectPizzaTracker()
+                    } else {
+                        onSelectRewards()
+                    }
+                }) {
+                    VStack(spacing:3) {
+                        PizzaTrackerView(activeSlices: 6, totalSlices: 8, badgeCount: 2)
+                        
+                        Text("\(420)/\(600)")
+                                   .font(.system(size: 10, weight: .bold))
+                                   .foregroundColor(.black.opacity(0.75))
+                                   .lineLimit(1)
+                                   .fixedSize()
+                    }
                 }
+                .buttonStyle(PlainButtonStyle())
             }
-            .buttonStyle(PlainButtonStyle())
             
             // Notification Button
             ZStack(alignment: .topTrailing) {

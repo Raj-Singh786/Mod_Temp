@@ -19,22 +19,29 @@ struct ProfileScreen: View {
     @State private var showLogoutDialog: Bool = false
     
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 20) {
-                
-                // 1. Navigation Header
-                ProfileHeaderView(
-                    onPizzaTapped: {
-                        showRewardsScreen = true
-                    },
-                    onMoreTapped: {
-                        triggerAlert(title: "Profile Options", message: "Account settings and quick actions.")
-                    }
-                )
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                
-                // 2. User Info Card (Avatar, Name, VIP status, Edit button)
+        VStack(spacing: 0) {
+            // 1. Fixed Navigation Header (Stays pinned at top while content scrolls)
+            ProfileHeaderView(
+                onPizzaTapped: {
+                    showRewardsScreen = true
+                },
+                onMoreTapped: {
+                    triggerAlert(title: "Profile Options", message: "Account settings and quick actions.")
+                }
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 10)
+            .background(
+                Color(red: 0.98, green: 0.98, blue: 0.99)
+                    .edgesIgnoringSafeArea(.top)
+            )
+            .zIndex(10)
+
+            // Scrollable Content
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    // 2. User Info Card (Avatar, Name, VIP status, Edit button)
                 UserInfoCardView(
                     onEditProfile: {
                         triggerAlert(title: "Edit Profile", message: "Edit profile details feature coming soon.")
@@ -283,6 +290,7 @@ struct ProfileScreen: View {
                     .padding(.top, 4)
                     .padding(.bottom, 28)
             }
+        }
         }
         .background(Color(red: 0.98, green: 0.98, blue: 0.99).ignoresSafeArea())
         .navigationBarHidden(true)

@@ -348,8 +348,12 @@ struct OrderHistoryScreen: View {
         .padding(.horizontal, 16)
         .padding(.top, 10)
         .padding(.bottom, 8)
-        .background(Color.white)
+        .background(
+            Color.white
+                .edgesIgnoringSafeArea(.top)
+        )
         .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 2)
+        .zIndex(10)
     }
 
     // MARK: - 2. Segmented Tab Selector
