@@ -14,27 +14,38 @@ struct HomeScreen: View {
     @State private var selectedCustomizationPizza: Pizza? = nil
     @State private var selectedCustomizationCombo: Combo? = nil
     @State private var showMenuScreen: Bool = false
+    @State private var showSignUpScreen: Bool = false
 
     init(isGuest: Bool? = nil) {
         self.isGuestOverride = isGuest
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 22) {
-                // 1. Location Header (Adapts to Guest vs Logged-In)
-                LocationHeaderView(isGuest: isGuest, onSelectLocation: {
-                    showStoreLocation = true
-                }, onSelectRewards: {
-                    showRewardsScreen = true
-                })
+        VStack(spacing: 0) {
+            // 1. Fixed / Pinned Location Header (Stays fixed at the top while below content scrolls)
+            LocationHeaderView(isGuest: isGuest, onSelectLocation: {
+                showStoreLocation = true
+            }, onSelectRewards: {
+                showRewardsScreen = true
+            })
+            .padding(.bottom, 8)
+            .background(
+                Color(.systemGroupedBackground)
+                    .edgesIgnoringSafeArea(.top)
+            )
+            .zIndex(10)
 
-                // 2. Main Loyalty Card (Only for guest user)
-                if isGuest {
-                    WelcomeLoyaltyCardView(onSelectRewards: {
-                        showRewardsScreen = true
-                    })
-                }
+            // Scrollable Body Content
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    // 2. Main Loyalty Card (Only for guest user)
+                    if isGuest {
+                        WelcomeLoyaltyCardView(onSelectRewards: {
+                            showRewardsScreen = true
+                        }, onClaimLoyalty: {
+                            showSignUpScreen = true
+                        })
+                    }
 
                 // 3. Promotions & Deals Section (Wide card + page indicator)
                 VStack(alignment: .leading, spacing: 12) {
@@ -112,7 +123,9 @@ struct HomeScreen: View {
                     }.padding(.horizontal, 16)
                 }
             }
-            .padding(.vertical, 18)
+            .padding(.top, 6)
+            .padding(.bottom, 24)
+        }
         }
         .background(Color(.systemGroupedBackground))
         .navigationBarHidden(true)
@@ -121,6 +134,9 @@ struct HomeScreen: View {
         }
         .fullScreenCover(isPresented: $showRewardsScreen) {
             MODRewardsScreen()
+        }
+        .fullScreenCover(isPresented: $showSignUpScreen) {
+            SignupView()
         }
         .fullScreenCover(item: $selectedCustomizationPizza) { pizza in
             MenuCustomization(
@@ -237,6 +253,7 @@ struct LocationHeaderView: View {
 
 struct WelcomeLoyaltyCardView: View {
     var onSelectRewards: () -> Void = {}
+    var onClaimLoyalty: () -> Void = {}
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -265,7 +282,7 @@ struct WelcomeLoyaltyCardView: View {
                 PillView(text: "Zero Delivery Fee")
             }
             HStack(spacing: 14) {
-                Button(action: onSelectRewards) {
+                Button(action: onClaimLoyalty) {
                     Text("Claim Loyalty")
                         .font(.system(size: 15, weight: .semibold))
                         .frame(maxWidth: .infinity)
