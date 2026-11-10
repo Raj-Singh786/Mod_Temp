@@ -169,6 +169,12 @@ struct CustomizationMockData {
 struct MenuCustomization: View {
     @Environment(\.dismiss) private var dismiss
 
+    // MARK: - Customizable Pizza Parameters
+    var pizzaName: String = "Create Your Own Pizza"
+    var pizzaImageName: String = "yourOwnPizza"
+    var basePrice: Double = 15.99
+    var pizzaDescription: String = "Craft your masterpiece, no extra charges"
+
     // MARK: - Selections State
     @State private var selectedCrust: CrustOption = CustomizationMockData.crusts[0]
     @State private var selectedSauces: [UUID: PortionOption] = [:]
@@ -191,8 +197,18 @@ struct MenuCustomization: View {
     private let screenBg = Color(red: 0.98, green: 0.98, blue: 0.99)
     private let borderGray = Color(red: 0.90, green: 0.90, blue: 0.92)
 
-    init() {
-        // No default selection for toppings items! Keep only size.
+    init(
+        pizzaName: String = "Create Your Own Pizza",
+        pizzaImageName: String = "yourOwnPizza",
+        basePrice: Double = 15.99,
+        pizzaDescription: String = "Craft your masterpiece, no extra charges"
+    ) {
+        self.pizzaName = pizzaName
+        self.pizzaImageName = pizzaImageName
+        self.basePrice = basePrice
+        self.pizzaDescription = pizzaDescription
+
+        _selectedCrust = State(initialValue: CustomizationMockData.crusts[0])
         _selectedSauces = State(initialValue: [:])
         _selectedToppings = State(initialValue: [:])
         _selectedFinishingSauces = State(initialValue: [:])
@@ -237,7 +253,8 @@ struct MenuCustomization: View {
     }
 
     private var unitPrice: Double {
-        var price = selectedCrust.price
+        let crustExtra = max(selectedCrust.price - CustomizationMockData.crusts[0].price, 0.0)
+        var price = basePrice + crustExtra
         if let saladId = selectedSalad,
            let salad = CustomizationMockData.sideSalads.first(where: { $0.id == saladId }) {
             price += salad.price
@@ -334,9 +351,10 @@ struct MenuCustomization: View {
 
             Spacer()
 
-            Text("Create Your Own Pizza")
+            Text(pizzaName)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.black)
+                .lineLimit(1)
 
             Spacer()
 
@@ -366,13 +384,15 @@ struct MenuCustomization: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("1 Flat Price • Unlimited Free Toppings")
+                Text(pizzaName == "Create Your Own Pizza" ? "1 Flat Price • Unlimited Free Toppings" : "Customize \(pizzaName)")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.black)
+                    .lineLimit(1)
 
-                Text("Craft your masterpiece, no extra charges")
+                Text(pizzaDescription)
                     .font(.system(size: 12))
                     .foregroundColor(.gray)
+                    .lineLimit(2)
 
                 Text("100% FREE ADD-ONS")
                     .font(.system(size: 9.5, weight: .heavy))
@@ -397,7 +417,15 @@ struct MenuCustomization: View {
         VStack(spacing: 12) {
             // Pizza Image
             ZStack {
-                if let _ = UIImage(named: "yourOwnPizza") {
+                if let _ = UIImage(named: pizzaImageName) {
+                    Image(pizzaImageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 200)
+                        .clipped()
+                        .cornerRadius(16)
+                } else if let _ = UIImage(named: "yourOwnPizza") {
                     Image("yourOwnPizza")
                         .resizable()
                         .scaledToFill()
@@ -419,7 +447,7 @@ struct MenuCustomization: View {
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(modRed)
 
-                Text("Size: \(selectedCrust.name)")
+                Text("\(pizzaName) • \(selectedCrust.name)")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.black)
                     .lineLimit(1)
@@ -513,7 +541,8 @@ struct MenuCustomization: View {
 
             // Price & Calories (Notice: Upgrade text has been removed as per user requirement!)
             VStack(alignment: .trailing, spacing: 2) {
-                Text("$\(String(format: "%.2f", crust.price))")
+                let crustPrice = basePrice + max(crust.price - CustomizationMockData.crusts[0].price, 0.0)
+                Text("$\(String(format: "%.2f", crustPrice))")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.black)
 

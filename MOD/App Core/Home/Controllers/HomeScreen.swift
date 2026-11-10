@@ -11,6 +11,7 @@ struct HomeScreen: View {
     @State private var selectedPromoIndex: Int = 0
     @State private var showStoreLocation: Bool = false
     @State private var showRewardsScreen: Bool = false
+    @State private var selectedCustomizationPizza: Pizza? = nil
 
     init(isGuest: Bool? = nil) {
         self.isGuestOverride = isGuest
@@ -81,7 +82,9 @@ struct HomeScreen: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         ForEach(MockData.recommended) { pizza in
-                            PizzaCardView(pizza: pizza)
+                            PizzaCardView(pizza: pizza, onAdd: {
+                                selectedCustomizationPizza = pizza
+                            })
                         }
                     }.padding(.horizontal, 16)
                 }
@@ -110,6 +113,14 @@ struct HomeScreen: View {
         }
         .fullScreenCover(isPresented: $showRewardsScreen) {
             MODRewardsScreen()
+        }
+        .fullScreenCover(item: $selectedCustomizationPizza) { pizza in
+            MenuCustomization(
+                pizzaName: pizza.name,
+                pizzaImageName: pizza.imageName,
+                basePrice: Double(pizza.price.replacingOccurrences(of: "$", with: "").trimmingCharacters(in: .whitespaces)) ?? 15.99,
+                pizzaDescription: pizza.description
+            )
         }
     }
 }
@@ -549,6 +560,8 @@ struct RecentOrderView: View {
 
 struct PizzaCardView: View {
     let pizza: Pizza
+    var onAdd: (() -> Void)? = nil
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Image with Badge
@@ -599,7 +612,9 @@ struct PizzaCardView: View {
 
                 Spacer()
 
-                Button(action: {}) {
+                Button(action: {
+                    onAdd?()
+                }) {
                     Image(systemName: "plus")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white)
@@ -614,6 +629,10 @@ struct PizzaCardView: View {
         .background(Color.white)
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onAdd?()
+        }
     }
 }
 
@@ -827,7 +846,7 @@ struct MockData {
     static let recommended = [
         Pizza(
             name: "Pepperoni Lovers",
-            description: "Signature red sauce,...",
+            description: "Signature red sauce, mozzarella & double pepperoni",
             price: "$15.99",
             imageName: "pizza1",
             badge: "Popular",
@@ -835,8 +854,8 @@ struct MockData {
             badgeTextColor: .white
         ),
         Pizza(
-            name: "Pepperoni &...",
-            description: "Cream cheese swirl lattice",
+            name: "Pepperoni & Cream",
+            description: "Cream cheese swirl lattice with savory pepperoni",
             price: "$16.99",
             imageName: "pizza2",
             badge: "Special",
@@ -845,7 +864,7 @@ struct MockData {
         ),
         Pizza(
             name: "Classic Veggie",
-            description: "Smoked artisan sausage...",
+            description: "Smoked artisan sausage, bell peppers & fresh mushrooms",
             price: "$14.50",
             imageName: "pizza3",
             badge: nil,
