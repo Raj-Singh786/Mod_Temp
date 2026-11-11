@@ -280,7 +280,7 @@ baked at 800° perfection within minutes.</string>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jjh-6L-FH3">
                                         <rect key="frame" x="0.0" y="0.0" width="353" height="45"/>
-                                        <color key="backgroundColor" name="mod_red"/>
+                                        <color key="backgroundColor" name="Button_red"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="45" id="YKD-1r-A2x"/>
                                         </constraints>
@@ -448,6 +448,9 @@ baked at 800° perfection within minutes.</string>
         <image name="envelope" catalog="system" width="128" height="85"/>
         <image name="onboard1" width="1911" height="1757"/>
         <image name="shield-icon" width="64" height="64"/>
+        <namedColor name="Button_red">
+            <color red="0.81176470588235294" green="0.1803921568627451" blue="0.1803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <namedColor name="Colors">
             <color red="0.99607843137254903" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

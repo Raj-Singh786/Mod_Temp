@@ -7,10 +7,15 @@
 
 import Foundation
 import UIKit
+import SwiftUI
 
 enum AppColor {
-    static var  mod_red: UIColor{ UIColor.init(named: "mod_red")!}
-    static var text_gray: UIColor{ UIColor.init(named: "text_gray")!}
+    static var mod_red: UIColor { UIColor(named: "mod_red") ?? .systemRed }
+    static var text_gray: UIColor { UIColor(named: "text_gray") ?? .systemGray }
+    static var button_red: UIColor { UIColor(named: "Button_red") ?? .systemRed }
+    
+    // SwiftUI Color
+    static var button_red_color: Color { Color("Button_red") }
 //    static var primary_black: UIColor { UIColor.init(named: "primary_black")! }
 //    static var primary_light_gray: UIColor { UIColor.init(named: "primary_light_gray")! }
 //    static var primary_dark_gray: UIColor { UIColor.init(named: "primary_dark_gray")! }
@@ -25,4 +30,8 @@ enum AppColor {
    
     
   
+}
+
+extension Color {
+    static let buttonRed = Color("Button_red")
 }

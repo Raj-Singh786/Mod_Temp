@@ -63,7 +63,7 @@ class OTPVerificationViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle("Login", for: .normal)
         button.titleLabel?.font = .boldSystemFont(ofSize: 17)
-        button.backgroundColor = UIColor.systemBlue
+        button.backgroundColor = AppColor.button_red
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 22.5
         button.isEnabled = false
@@ -218,7 +218,7 @@ class OTPVerificationViewController: UIViewController {
     private func updateLoginButtonState() {
         let ready = otp.count == otpLength
         loginButton.isEnabled = ready
-        loginButton.backgroundColor = ready ? AppColor.mod_red : UIColor.systemGray4
+        loginButton.backgroundColor = ready ? AppColor.button_red : UIColor.systemGray4
     }
 
     // MARK: - OTP helpers
