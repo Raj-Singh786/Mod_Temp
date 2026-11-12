@@ -224,7 +224,7 @@ baked at 800° perfection within minutes.</string>
                                 <rect key="frame" x="0.0" y="118" width="393" height="60"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Cnp-QC-c7H">
-                                        <rect key="frame" x="123.33333333333333" y="15" width="146.33333333333337" height="30"/>
+                                        <rect key="frame" x="125.00000000000001" y="15" width="143.33333333333337" height="30"/>
                                         <subviews>
                                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="shield-icon" translatesAutoresizingMaskIntoConstraints="NO" id="fhR-SP-syT">
                                                 <rect key="frame" x="0.0" y="0.0" width="30" height="30"/>
@@ -233,8 +233,8 @@ baked at 800° perfection within minutes.</string>
                                                     <constraint firstAttribute="height" constant="30" id="zvi-1R-5Od"/>
                                                 </constraints>
                                             </imageView>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MOD - Log In" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="n86-id-TdW">
-                                                <rect key="frame" x="38.000000000000021" y="0.0" width="108.33333333333331" height="30"/>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MOD  Log-In" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="n86-id-TdW">
+                                                <rect key="frame" x="37.999999999999993" y="0.0" width="105.33333333333331" height="30"/>
                                                 <fontDescription key="fontDescription" name="PlusJakartaSans-Bold" family="Plus Jakarta Sans" pointSize="17"/>
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
@@ -242,7 +242,7 @@ baked at 800° perfection within minutes.</string>
                                         </subviews>
                                     </stackView>
                                 </subviews>
-                                <color key="backgroundColor" name="mod_back"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="60" id="Nou-dZ-LE1"/>
                                     <constraint firstItem="Cnp-QC-c7H" firstAttribute="centerY" secondItem="4tK-fy-Qfy" secondAttribute="centerY" id="lIF-8u-a4p"/>
@@ -252,12 +252,9 @@ baked at 800° perfection within minutes.</string>
                                     <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
                                         <color key="value" name="text_gray"/>
                                     </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
-                                        <real key="value" value="0.5"/>
-                                    </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </view>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Welcome Back" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="YlL-S0-YEn">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Welcome User" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="YlL-S0-YEn">
                                 <rect key="frame" x="20" y="198" width="353" height="29"/>
                                 <fontDescription key="fontDescription" name="PlusJakartaSans-Bold" family="Plus Jakarta Sans" pointSize="24"/>
                                 <color key="textColor" name="black_bold"/>
@@ -276,7 +273,7 @@ baked at 800° perfection within minutes.</string>
                                 <nil key="highlightedColor"/>
                             </label>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="NUG-9r-cfV">
-                                <rect key="frame" x="20" y="454.66666666666669" width="353" height="123.33333333333331"/>
+                                <rect key="frame" x="20" y="366.66666666666669" width="353" height="123.33333333333331"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jjh-6L-FH3">
                                         <rect key="frame" x="0.0" y="0.0" width="353" height="45"/>
@@ -291,7 +288,7 @@ baked at 800° perfection within minutes.</string>
                                         </state>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                <real key="value" value="20"/>
+                                                <real key="value" value="12"/>
                                             </userDefinedRuntimeAttribute>
                                         </userDefinedRuntimeAttributes>
                                         <connections>
@@ -334,31 +331,11 @@ baked at 800° perfection within minutes.</string>
                                     </button>
                                 </subviews>
                             </stackView>
-                            <stackView opaque="NO" contentMode="scaleToFill" spacing="1" translatesAutoresizingMaskIntoConstraints="NO" id="FUq-KX-sGt">
-                                <rect key="frame" x="30" y="354.66666666666669" width="333" height="20"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Don't have an account? " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DUx-s4-QzQ">
-                                        <rect key="frame" x="0.0" y="0.0" width="156" height="20"/>
-                                        <fontDescription key="fontDescription" name="PlusJakartaSans-Regular" family="Plus Jakarta Sans" pointSize="14"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Sign Up &amp; Claim $20 Perks" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KUl-bf-80Y">
-                                        <rect key="frame" x="157" y="0.0" width="176" height="20"/>
-                                        <fontDescription key="fontDescription" name="PlusJakartaSans-SemiBold" family="Plus Jakarta Sans" pointSize="14"/>
-                                        <color key="textColor" name="mod_red"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="20" id="Uji-ZC-5sj"/>
-                                </constraints>
-                            </stackView>
                             <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gXn-c1-FJb">
                                 <rect key="frame" x="20" y="301.66666666666669" width="343" height="45"/>
                                 <subviews>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Enter Email or Mobile Number" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="uPS-DL-r00">
-                                        <rect key="frame" x="40" y="12" width="279" height="21"/>
+                                        <rect key="frame" x="36" y="12" width="283" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no"/>
                                         <userDefinedRuntimeAttributes>
@@ -371,12 +348,12 @@ baked at 800° perfection within minutes.</string>
                                         </userDefinedRuntimeAttributes>
                                     </textField>
                                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="kcA-vk-zUO">
-                                        <rect key="frame" x="10" y="12.666666666666629" width="20" height="20"/>
+                                        <rect key="frame" x="10" y="16" width="16" height="13"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="20" id="C6y-kh-lEo"/>
-                                            <constraint firstAttribute="height" constant="18" id="oBY-U5-Hze"/>
+                                            <constraint firstAttribute="width" constant="16" id="C6y-kh-lEo"/>
+                                            <constraint firstAttribute="height" constant="13" id="oBY-U5-Hze"/>
                                         </constraints>
-                                        <imageReference key="image" image="envelope" catalog="system" symbolScale="large" renderingMode="hierarchical">
+                                        <imageReference key="image" image="email" symbolScale="large" renderingMode="hierarchical">
                                             <hierarchicalColors>
                                                 <color systemColor="labelColor"/>
                                                 <color systemColor="secondaryLabelColor"/>
@@ -406,36 +383,42 @@ baked at 800° perfection within minutes.</string>
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="FvB-DN-R3L">
+                                <rect key="frame" x="0.0" y="178" width="393" height="1"/>
+                                <color key="backgroundColor" name="text_gray"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="1" id="1Xx-ak-bOZ"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Ire-cd-0qN"/>
-                        <color key="backgroundColor" name="mod_back"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
-                            <constraint firstItem="FUq-KX-sGt" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="30" id="4fQ-Ds-g6a"/>
                             <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="NUG-9r-cfV" secondAttribute="trailing" constant="20" id="64q-f3-iDL"/>
                             <constraint firstItem="gXn-c1-FJb" firstAttribute="top" secondItem="tD4-tW-JA8" secondAttribute="bottom" constant="8" id="7dC-yz-sVP"/>
                             <constraint firstItem="EpG-ft-g3f" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="9s3-h6-bpq"/>
                             <constraint firstItem="YlL-S0-YEn" firstAttribute="top" secondItem="4tK-fy-Qfy" secondAttribute="bottom" constant="20" id="Chn-Oq-yZr"/>
+                            <constraint firstItem="FvB-DN-R3L" firstAttribute="trailing" secondItem="4tK-fy-Qfy" secondAttribute="trailing" id="GuK-T0-lQv"/>
                             <constraint firstItem="EpG-ft-g3f" firstAttribute="top" secondItem="YlL-S0-YEn" secondAttribute="bottom" constant="5" id="LIQ-eV-JwL"/>
                             <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="YlL-S0-YEn" secondAttribute="trailing" constant="20" id="MOy-JB-iAi"/>
                             <constraint firstItem="4tK-fy-Qfy" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" id="Oup-l1-1zN"/>
                             <constraint firstItem="4tK-fy-Qfy" firstAttribute="trailing" secondItem="Ire-cd-0qN" secondAttribute="trailing" id="QQ9-dv-xHf"/>
+                            <constraint firstItem="FvB-DN-R3L" firstAttribute="top" secondItem="4tK-fy-Qfy" secondAttribute="bottom" id="QQC-Wt-aXf"/>
                             <constraint firstItem="gXn-c1-FJb" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="R5S-5s-s6F"/>
                             <constraint firstItem="YlL-S0-YEn" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="V2S-Hn-Aqh"/>
-                            <constraint firstItem="FUq-KX-sGt" firstAttribute="top" secondItem="gXn-c1-FJb" secondAttribute="bottom" constant="8" id="c6B-xs-FO4"/>
-                            <constraint firstItem="NUG-9r-cfV" firstAttribute="top" secondItem="FUq-KX-sGt" secondAttribute="bottom" constant="80" id="eR4-zE-SeS"/>
                             <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="EpG-ft-g3f" secondAttribute="trailing" constant="20" id="guZ-wd-uDv"/>
-                            <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="FUq-KX-sGt" secondAttribute="trailing" constant="30" id="hit-Ma-04g"/>
+                            <constraint firstItem="NUG-9r-cfV" firstAttribute="top" secondItem="gXn-c1-FJb" secondAttribute="bottom" constant="20" id="hYU-ff-BjL"/>
                             <constraint firstItem="4tK-fy-Qfy" firstAttribute="top" secondItem="Ire-cd-0qN" secondAttribute="top" id="jpB-LJ-huO"/>
                             <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="gXn-c1-FJb" secondAttribute="trailing" constant="30" id="n9a-iv-L7s"/>
                             <constraint firstItem="tD4-tW-JA8" firstAttribute="top" secondItem="EpG-ft-g3f" secondAttribute="bottom" constant="30" id="nG9-wr-KOz"/>
                             <constraint firstItem="tD4-tW-JA8" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="r8V-PA-urr"/>
                             <constraint firstItem="Ire-cd-0qN" firstAttribute="trailing" secondItem="tD4-tW-JA8" secondAttribute="trailing" constant="20" id="sdb-Xo-Xwb"/>
                             <constraint firstItem="NUG-9r-cfV" firstAttribute="leading" secondItem="Ire-cd-0qN" secondAttribute="leading" constant="20" id="usL-Y1-rBQ"/>
+                            <constraint firstItem="FvB-DN-R3L" firstAttribute="leading" secondItem="4tK-fy-Qfy" secondAttribute="leading" id="wPS-PY-VzC"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="loginField" destination="uPS-DL-r00" id="wuP-BQ-ydW"/>
-                        <outlet property="signupLbl" destination="KUl-bf-80Y" id="rjh-OB-mw7"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="q5G-o6-Te0" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -445,7 +428,7 @@ baked at 800° perfection within minutes.</string>
     </scenes>
     <resources>
         <image name="arrow.right" catalog="system" width="128" height="95"/>
-        <image name="envelope" catalog="system" width="128" height="85"/>
+        <image name="email" width="5.6666665077209473" height="4.6666665077209473"/>
         <image name="onboard1" width="1911" height="1757"/>
         <image name="shield-icon" width="64" height="64"/>
         <namedColor name="Button_red">
@@ -456,9 +439,6 @@ baked at 800° perfection within minutes.</string>
         </namedColor>
         <namedColor name="black_bold">
             <color red="0.094117647058823528" green="0.094117647058823528" blue="0.10588235294117647" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
-        <namedColor name="mod_back">
-            <color red="0.97647058823529409" green="0.97647058823529409" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="mod_red">
             <color red="0.72549019607843135" green="0.0" blue="0.15294117647058825" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

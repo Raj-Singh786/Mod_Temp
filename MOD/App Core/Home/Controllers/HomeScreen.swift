@@ -153,7 +153,7 @@ struct HomeScreen: View {
             .padding(.bottom, 24)
         }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Color(.white))
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showStoreLocation) {
             StoreLocationScreen()
@@ -201,6 +201,10 @@ struct LocationHeaderView: View {
     var onSelectPizzaTracker: (() -> Void)? = nil
     @State private var address: String = ""
 
+    // Shared styling so all three header elements match
+    private let borderColor = Color.black.opacity(0.06)
+    private let shadowColor = Color.black.opacity(0.10)
+
     var body: some View {
         HStack(spacing: 10) {
             // Main Location Container
@@ -215,7 +219,7 @@ struct LocationHeaderView: View {
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.red)
                     }
-                    
+
                     // Labels
                     VStack(alignment: .leading, spacing: 2) {
                         Text(isGuest ? "Set delivery address" : "772 Silva Ave, Apt 4B")
@@ -227,9 +231,9 @@ struct LocationHeaderView: View {
                             .foregroundColor(.gray)
                             .lineLimit(1)
                     }
-                    
+
                     Spacer()
-                    
+
                     // Chevron
                     Image(systemName: "chevron.down")
                         .font(.system(size: 13, weight: .semibold))
@@ -238,12 +242,16 @@ struct LocationHeaderView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(Color.white)
-                .cornerRadius(28)
-                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(borderColor, lineWidth: 1)
+                )
+                .shadow(color: shadowColor, radius: 8, x: 0, y: 3)
             }
             .buttonStyle(PlainButtonStyle())
-            
-            // Pizza Tracker Button (Clicking navigates to MOD Rewards) - Only shown for logged-in users
+
+            // Pizza Tracker Button - only shown for logged-in users
             if !isGuest {
                 Button(action: {
                     if let onSelectPizzaTracker = onSelectPizzaTracker {
@@ -252,19 +260,19 @@ struct LocationHeaderView: View {
                         onSelectRewards()
                     }
                 }) {
-                    VStack(spacing:3) {
+                    VStack(spacing: 3) {
                         PizzaTrackerView(activeSlices: 6, totalSlices: 8, badgeCount: 2)
-                        
+
                         Text("\(420)/\(600)")
-                                   .font(.system(size: 10, weight: .bold))
-                                   .foregroundColor(.black.opacity(0.75))
-                                   .lineLimit(1)
-                                   .fixedSize()
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.black.opacity(0.75))
+                            .lineLimit(1)
+                            .fixedSize()
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
             }
-            
+
             // Notification Button
             ZStack(alignment: .topTrailing) {
                 Button(action: {}) {
@@ -274,9 +282,12 @@ struct LocationHeaderView: View {
                         .frame(width: 44, height: 44)
                         .background(Color.white)
                         .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
+                        .overlay(
+                            Circle().stroke(borderColor, lineWidth: 1)
+                        )
+                        .shadow(color: shadowColor, radius: 8, x: 0, y: 3)
                 }
-                
+
                 // Badge
                 Text("3")
                     .font(.system(size: 10, weight: .bold))
@@ -289,6 +300,11 @@ struct LocationHeaderView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
+        .padding(.bottom, 8)
+        .background(
+            Color.white
+                .ignoresSafeArea(edges: .top)   // white behind the status bar / Dynamic Island
+        )
     }
 }
 

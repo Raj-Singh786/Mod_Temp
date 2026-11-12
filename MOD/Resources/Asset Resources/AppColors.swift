@@ -32,6 +32,4 @@ enum AppColor {
   
 }
 
-extension Color {
-   // static let buttonRed = Color("Button_red")
-}
+

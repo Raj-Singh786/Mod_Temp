@@ -9,6 +9,34 @@ import SwiftUI
 
 // MARK: - Enums & Models
 
+enum SideOption: String, CaseIterable, Identifiable {
+    case left = "Left 1/2"
+    case whole = "Whole"
+    case right = "Right 1/2"
+
+    var id: String { rawValue }
+
+    var iconName: String {
+        switch self {
+        case .left: return "circle.lefthalf.filled"
+        case .whole: return "circle.fill"
+        case .right: return "circle.righthalf.filled"
+        }
+    }
+
+    var calorieMultiplier: Double {
+        switch self {
+        case .left, .right: return 0.5
+        case .whole: return 1.0
+        }
+    }
+}
+
+struct ToppingSelection: Equatable {
+    var portion: PortionOption = .regular
+    var side: SideOption = .whole
+}
+
 enum PortionOption: String, CaseIterable, Identifiable {
     case light = "Light"
     case regular = "Regular"
@@ -182,8 +210,8 @@ struct MenuCustomization: View {
 
     // MARK: - Selections State
     @State private var selectedCrust: CrustOption = CustomizationMockData.crusts[0]
-    @State private var selectedSauces: [UUID: PortionOption] = [:]
-    @State private var selectedToppings: [UUID: PortionOption] = [:]
+    @State private var selectedSauces: [UUID: ToppingSelection] = [:]
+    @State private var selectedToppings: [UUID: ToppingSelection] = [:]
     @State private var selectedFinishingSauces: [UUID: PlacementOption] = [:]
     @State private var isSauceNoneSelected: Bool = false
     @State private var isToppingsNoneSelected: Bool = false
@@ -228,8 +256,8 @@ struct MenuCustomization: View {
         _quantity = State(initialValue: max(quantity, 1))
         _selectedCrust = State(initialValue: CustomizationMockData.crusts[0])
 
-        var initialSauces: [UUID: PortionOption] = [:]
-        var initialToppings: [UUID: PortionOption] = [:]
+        var initialSauces: [UUID: ToppingSelection] = [:]
+        var initialToppings: [UUID: ToppingSelection] = [:]
         var initialFinishings: [UUID: PlacementOption] = [:]
 
         // Check if any toppings or sauces match initialCustomizations
@@ -239,15 +267,25 @@ struct MenuCustomization: View {
             // Check toppings
             for topping in CustomizationMockData.toppings {
                 let tLower = topping.name.lowercased()
-                if lower.contains(tLower) || tLower.contains(lower.replacingOccurrences(of: "extra ", with: "").replacingOccurrences(of: "no ", with: "")) {
+                if lower.contains(tLower) || tLower.contains(lower.replacingOccurrences(of: "extra ", with: "").replacingOccurrences(of: "no ", with: "").replacingOccurrences(of: "light ", with: "")) {
                     if lower.contains("no ") {
                         // explicitly omitted
-                    } else if lower.contains("extra") {
-                        initialToppings[topping.id] = .extra
-                    } else if lower.contains("light") {
-                        initialToppings[topping.id] = .light
                     } else {
-                        initialToppings[topping.id] = .regular
+                        var portion: PortionOption = .regular
+                        if lower.contains("extra") {
+                            portion = .extra
+                        } else if lower.contains("light") {
+                            portion = .light
+                        }
+
+                        var side: SideOption = .whole
+                        if lower.contains("left") {
+                            side = .left
+                        } else if lower.contains("right") {
+                            side = .right
+                        }
+
+                        initialToppings[topping.id] = ToppingSelection(portion: portion, side: side)
                     }
                 }
             }
@@ -256,14 +294,32 @@ struct MenuCustomization: View {
             for sauce in CustomizationMockData.sauces {
                 let sLower = sauce.name.lowercased()
                 if lower.contains(sLower) || (lower.contains("marinara") && sLower.contains("tomato")) {
-                    initialSauces[sauce.id] = .regular
+                    var portion: PortionOption = .regular
+                    if lower.contains("extra") {
+                        portion = .extra
+                    } else if lower.contains("light") {
+                        portion = .light
+                    }
+
+                    var side: SideOption = .whole
+                    if lower.contains("left") {
+                        side = .left
+                    } else if lower.contains("right") {
+                        side = .right
+                    }
+
+                    initialSauces[sauce.id] = ToppingSelection(portion: portion, side: side)
                 }
             }
 
             // Check finishing sauces
             for finish in CustomizationMockData.finishingSauces {
                 if lower.contains(finish.name.lowercased()) {
-                    initialFinishings[finish.id] = .onTop
+                    var placement: PlacementOption = .onTop
+                    if lower.contains("side cup") {
+                        placement = .sideCup
+                    }
+                    initialFinishings[finish.id] = placement
                 }
             }
         }
@@ -273,35 +329,35 @@ struct MenuCustomization: View {
             let pLower = pizzaName.lowercased()
             for topping in CustomizationMockData.toppings {
                 if pLower.contains(topping.name.lowercased()) {
-                    initialToppings[topping.id] = .regular
+                    initialToppings[topping.id] = ToppingSelection(portion: .regular, side: .whole)
                 }
             }
             if pLower.contains("pepperoni") {
                 if let pep = CustomizationMockData.toppings.first(where: { $0.name == "Pepperoni" }) {
-                    initialToppings[pep.id] = .regular
+                    initialToppings[pep.id] = ToppingSelection(portion: .regular, side: .whole)
                 }
                 if let moz = CustomizationMockData.toppings.first(where: { $0.name.contains("Mozzarella") }) {
-                    initialToppings[moz.id] = .regular
+                    initialToppings[moz.id] = ToppingSelection(portion: .regular, side: .whole)
                 }
             }
             if pLower.contains("chicken") {
                 if let chick = CustomizationMockData.toppings.first(where: { $0.name.contains("Chicken") }) {
-                    initialToppings[chick.id] = .regular
+                    initialToppings[chick.id] = ToppingSelection(portion: .regular, side: .whole)
                 }
                 if let moz = CustomizationMockData.toppings.first(where: { $0.name.contains("Mozzarella") }) {
-                    initialToppings[moz.id] = .regular
+                    initialToppings[moz.id] = ToppingSelection(portion: .regular, side: .whole)
                 }
             }
             if pLower.contains("sausage") {
                 if let moz = CustomizationMockData.toppings.first(where: { $0.name.contains("Mozzarella") }) {
-                    initialToppings[moz.id] = .regular
+                    initialToppings[moz.id] = ToppingSelection(portion: .regular, side: .whole)
                 }
             }
         }
 
         if initialSauces.isEmpty {
             if let tom = CustomizationMockData.sauces.first(where: { $0.name.contains("Tomato") }) {
-                initialSauces[tom.id] = .regular
+                initialSauces[tom.id] = ToppingSelection(portion: .regular, side: .whole)
             }
         }
 
@@ -323,14 +379,14 @@ struct MenuCustomization: View {
         var cals = selectedCrust.calories
 
         for sauce in CustomizationMockData.sauces {
-            if let portion = selectedSauces[sauce.id] {
-                cals += Int(Double(sauce.calories) * portion.calorieMultiplier)
+            if let selection = selectedSauces[sauce.id] {
+                cals += Int(round(Double(sauce.calories) * selection.portion.calorieMultiplier * selection.side.calorieMultiplier))
             }
         }
 
         for topping in CustomizationMockData.toppings {
-            if let portion = selectedToppings[topping.id] {
-                cals += Int(Double(topping.calories) * portion.calorieMultiplier)
+            if let selection = selectedToppings[topping.id] {
+                cals += Int(round(Double(topping.calories) * selection.portion.calorieMultiplier * selection.side.calorieMultiplier))
             }
         }
 
@@ -703,27 +759,39 @@ struct MenuCustomization: View {
 
                 ForEach(CustomizationMockData.sauces) { sauce in
                     let isSelected = selectedSauces[sauce.id] != nil
-                    let portion = selectedSauces[sauce.id] ?? .regular
+                    let selection = selectedSauces[sauce.id] ?? ToppingSelection(portion: .regular, side: .whole)
 
                     sauceOrToppingCell(
                         name: sauce.name,
                         calories: sauce.calories,
                         imageName: sauce.imageName,
                         isSelected: isSelected,
-                        selectedPortion: portion,
+                        selectedPortion: selection.portion,
+                        selectedSide: selection.side,
                         onToggle: {
                             withAnimation(.easeInOut(duration: 0.25)) {
                                 if isSelected {
                                     selectedSauces.removeValue(forKey: sauce.id)
                                 } else {
                                     isSauceNoneSelected = false
-                                    selectedSauces[sauce.id] = .regular
+                                    selectedSauces[sauce.id] = ToppingSelection(portion: .regular, side: .whole)
+                                }
+                            }
+                        },
+                        onSideSelected: { newSide in
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                if var curr = selectedSauces[sauce.id] {
+                                    curr.side = newSide
+                                    selectedSauces[sauce.id] = curr
                                 }
                             }
                         },
                         onPortionSelected: { newPortion in
                             withAnimation(.easeInOut(duration: 0.15)) {
-                                selectedSauces[sauce.id] = newPortion
+                                if var curr = selectedSauces[sauce.id] {
+                                    curr.portion = newPortion
+                                    selectedSauces[sauce.id] = curr
+                                }
                             }
                         }
                     )
@@ -767,27 +835,39 @@ struct MenuCustomization: View {
 
                 ForEach(CustomizationMockData.toppings) { topping in
                     let isSelected = selectedToppings[topping.id] != nil
-                    let portion = selectedToppings[topping.id] ?? .regular
+                    let selection = selectedToppings[topping.id] ?? ToppingSelection(portion: .regular, side: .whole)
 
                     sauceOrToppingCell(
                         name: topping.name,
                         calories: topping.calories,
                         imageName: topping.imageName,
                         isSelected: isSelected,
-                        selectedPortion: portion,
+                        selectedPortion: selection.portion,
+                        selectedSide: selection.side,
                         onToggle: {
                             withAnimation(.easeInOut(duration: 0.25)) {
                                 if isSelected {
                                     selectedToppings.removeValue(forKey: topping.id)
                                 } else {
                                     isToppingsNoneSelected = false
-                                    selectedToppings[topping.id] = .regular
+                                    selectedToppings[topping.id] = ToppingSelection(portion: .regular, side: .whole)
+                                }
+                            }
+                        },
+                        onSideSelected: { newSide in
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                if var curr = selectedToppings[topping.id] {
+                                    curr.side = newSide
+                                    selectedToppings[topping.id] = curr
                                 }
                             }
                         },
                         onPortionSelected: { newPortion in
                             withAnimation(.easeInOut(duration: 0.15)) {
-                                selectedToppings[topping.id] = newPortion
+                                if var curr = selectedToppings[topping.id] {
+                                    curr.portion = newPortion
+                                    selectedToppings[topping.id] = curr
+                                }
                             }
                         }
                     )
@@ -915,7 +995,7 @@ struct MenuCustomization: View {
         }
     }
 
-    // MARK: - Reusable Sauce & Topping Cell (Opens Light / Regular / Extra on selection)
+    // MARK: - Reusable Sauce & Topping Cell (Opens Left 1/2 | Whole | Right 1/2 and Light | Regular | Extra on selection)
 
     private func sauceOrToppingCell(
         name: String,
@@ -923,7 +1003,9 @@ struct MenuCustomization: View {
         imageName: String,
         isSelected: Bool,
         selectedPortion: PortionOption,
+        selectedSide: SideOption,
         onToggle: @escaping () -> Void,
+        onSideSelected: @escaping (SideOption) -> Void,
         onPortionSelected: @escaping (PortionOption) -> Void
     ) -> some View {
         VStack(spacing: 12) {
@@ -938,9 +1020,23 @@ struct MenuCustomization: View {
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.black)
 
-                    Text("\(calories) Cals")
-                        .font(.system(size: 13))
-                        .foregroundColor(.gray)
+                    HStack(spacing: 6) {
+                        let effCals = isSelected
+                            ? Int(round(Double(calories) * selectedPortion.calorieMultiplier * selectedSide.calorieMultiplier))
+                            : calories
+                        Text("\(effCals) Cals")
+                            .font(.system(size: 13))
+                            .foregroundColor(.gray)
+
+                        if isSelected {
+                            Text("•")
+                                .font(.system(size: 11))
+                                .foregroundColor(.gray.opacity(0.6))
+                            Text("\(selectedSide.rawValue), \(selectedPortion.rawValue)")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(modRed)
+                        }
+                    }
                 }
 
                 Spacer()
@@ -962,10 +1058,13 @@ struct MenuCustomization: View {
                 onToggle()
             }
 
-            // Expandable Sub-options: Light | Regular | Extra (Only visible on selection!)
+            // Expandable Sub-options: Left 1/2 | Whole | Right 1/2 AND Light | Regular | Extra (Only visible on selection!)
             if isSelected {
-                portionSegmentControl(selectedPortion: selectedPortion, onSelect: onPortionSelected)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                VStack(spacing: 8) {
+                    sideSegmentControl(selectedSide: selectedSide, onSelect: onSideSelected)
+                    portionSegmentControl(selectedPortion: selectedPortion, onSelect: onPortionSelected)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(14)
@@ -1038,6 +1137,38 @@ struct MenuCustomization: View {
     }
 
     // MARK: - Segment Controls
+
+    private func sideSegmentControl(
+        selectedSide: SideOption,
+        onSelect: @escaping (SideOption) -> Void
+    ) -> some View {
+        HStack(spacing: 0) {
+            ForEach(SideOption.allCases) { side in
+                let isCurrent = side == selectedSide
+                Button(action: {
+                    onSelect(side)
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: side.iconName)
+                            .font(.system(size: 12.5, weight: isCurrent ? .bold : .regular))
+
+                        Text(side.rawValue)
+                            .font(.system(size: 13, weight: isCurrent ? .bold : .medium))
+                    }
+                    .foregroundColor(isCurrent ? .white : .black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 38)
+                    .background(isCurrent ? modRed : Color.clear)
+                }
+            }
+        }
+        .background(Color.white)
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(borderGray, lineWidth: 1)
+        )
+    }
 
     private func portionSegmentControl(
         selectedPortion: PortionOption,
@@ -1351,16 +1482,22 @@ struct MenuCustomization: View {
 
                 // Add sauces
                 for sauce in CustomizationMockData.sauces {
-                    if let portion = selectedSauces[sauce.id] {
-                        let text = portion == .extra ? "Extra \(sauce.name)" : (portion == .light ? "Light \(sauce.name)" : sauce.name)
+                    if let selection = selectedSauces[sauce.id] {
+                        let portion = selection.portion
+                        let side = selection.side
+                        let baseText = portion == .extra ? "Extra \(sauce.name)" : (portion == .light ? "Light \(sauce.name)" : sauce.name)
+                        let text = side == .whole ? baseText : "\(baseText) (\(side.rawValue))"
                         newCustomizations.append(CartCustomization(text: text, isPositive: true))
                     }
                 }
 
                 // Add toppings
                 for topping in CustomizationMockData.toppings {
-                    if let portion = selectedToppings[topping.id] {
-                        let text = portion == .extra ? "Extra \(topping.name)" : (portion == .light ? "Light \(topping.name)" : topping.name)
+                    if let selection = selectedToppings[topping.id] {
+                        let portion = selection.portion
+                        let side = selection.side
+                        let baseText = portion == .extra ? "Extra \(topping.name)" : (portion == .light ? "Light \(topping.name)" : topping.name)
+                        let text = side == .whole ? baseText : "\(baseText) (\(side.rawValue))"
                         newCustomizations.append(CartCustomization(text: text, isPositive: true))
                     }
                 }

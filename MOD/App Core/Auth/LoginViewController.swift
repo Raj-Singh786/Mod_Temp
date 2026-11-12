@@ -15,14 +15,13 @@ import SwiftUI
 class LoginViewController: UIViewController {
 
     @IBOutlet weak var loginField: UITextField!
-    @IBOutlet weak var signupLbl: UILabel!
 
     private let maxInputLength = 17   // e.g. "+91 98765 43210"
 
     override func viewDidLoad() {
         super.viewDidLoad()
         configureTextField()
-        configureSignupLabel()
+        //configureSignupLabel()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -41,32 +40,31 @@ class LoginViewController: UIViewController {
         
     }
 
-    private func configureSignupLabel() {
-        signupLbl.isUserInteractionEnabled = true   // labels ignore touches by default
-        let tap = UITapGestureRecognizer(target: self, action: #selector(didTapSignupLabel))
-        signupLbl.addGestureRecognizer(tap)
-    }
+   
 
     // MARK: - Actions
 
     @IBAction func didTapOnLoginBtn(_ sender: UIButton) {
+
         view.endEditing(true)
 
         let text = loginField.text?.trimmingCharacters(in: .whitespaces) ?? ""
 
+        // Empty field: Alert only, no red border
         guard !text.isEmpty else {
-            showError("Please enter your mobile number.")
+            showError("Please enter your mobile number.", showBorder: false)
             return
         }
 
+        // Invalid number: Alert + red border
         guard let result = PhoneValidator.validate(text) else {
-            showError("Please enter a valid Indian or US mobile number.")
+            showError("Please enter a valid Indian or US mobile number.", showBorder: true)
             return
         }
 
         setFieldError(false)
+
         print("Valid \(result.region.rawValue) number:", result.number)
-        // TODO: call your login / OTP API with result.number
 
         let otpVC = OTPVerificationViewController(phoneNumber: result.number)
         navigationController?.pushViewController(otpVC, animated: false)
@@ -103,13 +101,21 @@ class LoginViewController: UIViewController {
 
     // MARK: - Error UI
 
-    private func showError(_ message: String) {
-        setFieldError(true)
-        let alert = UIAlertController(title: "Invalid Number", message: message, preferredStyle: .alert)
+    private func showError(_ message: String, showBorder: Bool) {
+
+        setFieldError(showBorder)
+
+        let alert = UIAlertController(
+            title: "Invalid Number",
+            message: message,
+            preferredStyle: .alert
+        )
+
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
-
+    
+    
     private func setFieldError(_ hasError: Bool) {
         loginField.layer.borderWidth = hasError ? 1 : 0
         loginField.layer.borderColor = UIColor.systemRed.cgColor

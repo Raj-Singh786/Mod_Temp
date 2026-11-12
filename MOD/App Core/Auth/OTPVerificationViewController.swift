@@ -88,16 +88,28 @@ class OTPVerificationViewController: UIViewController {
         view.backgroundColor = .white
 
         if navigationController != nil {
-            let backButton = UIBarButtonItem(
-                image: UIImage(systemName: "chevron.left"),
-                style: .plain,
-                target: self,
-                action: #selector(didTapChange)
-            )
-            backButton.tintColor = .gray
-            navigationItem.leftBarButtonItem = backButton
-        }
 
+            let backButton = UIButton(type: .custom)
+
+            let config = UIImage.SymbolConfiguration(
+                pointSize: 24,
+                weight: .regular
+            )
+
+            let arrowImage = UIImage(systemName: "arrow.left", withConfiguration: config)?
+                .withTintColor(.black, renderingMode: .alwaysOriginal)
+
+            backButton.setImage(arrowImage, for: .normal)
+            backButton.frame = CGRect(x: 0, y: 0, width: 44, height: 44)
+
+            backButton.addTarget(
+                self,
+                action: #selector(didTapChange),
+                for: .touchUpInside
+            )
+
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        }
         setupLayout()
         setupOTPFields()
         wireActions()
@@ -115,6 +127,7 @@ class OTPVerificationViewController: UIViewController {
         appearance.backgroundColor = .white
         navigationItem.standardAppearance = appearance
         navigationItem.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.tintColor = .black
     }
 
     override func viewDidDisappear(_ animated: Bool) {
