@@ -74,22 +74,7 @@ class LoginViewController: UIViewController {
         kSharedAppDelegate?.moveToTabBar(isGuest: true)
     }
 
-    @objc private func didTapSignupLabel() {
-        let signupView = SignupView(onDismiss: { [weak self] in
-            if let nav = self?.navigationController {
-                nav.popViewController(animated: true)
-            } else {
-                self?.dismiss(animated: true)
-            }
-        })
-        let hostingController = UIHostingController(rootView: signupView)
-        hostingController.modalPresentationStyle = .fullScreen
-        if let nav = navigationController {
-            nav.pushViewController(hostingController, animated: true)
-        } else {
-            present(hostingController, animated: true)
-        }
-    }
+   
 
     @objc private func textDidChange() {
         setFieldError(false)   // clear the red border while typing

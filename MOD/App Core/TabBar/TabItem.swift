@@ -21,20 +21,24 @@ enum TabItems: String, CaseIterable {
         switch self {
         case .Home:
             let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
-            return UIHostingController(rootView: HomeScreen(isGuest: isGuest))
-             
+           // return UIHostingController(rootView: HomeScreen(isGuest: isGuest))
+             return(UIViewController())
 
         case .Menu:
-            return UIHostingController(rootView: MenuScreen())
-            
+            //return UIHostingController(rootView: MenuScreen())
+            return(UIViewController())
+
 
         case .Cart:
-            return UIHostingController(rootView: CartScreen())
+            //return UIHostingController(rootView: CartScreen())
+            return(UIViewController())
 
         case .Orders:
-            return UIHostingController(rootView: OrderHistoryScreen())
+           // return UIHostingController(rootView: OrderHistoryScreen())
+            return(UIViewController())
         case .Sign:
-            return UIHostingController(rootView: ProfileScreen())
+           // return UIHostingController(rootView: ProfileScreen())
+            return(UIViewController())
         }
     }
 
