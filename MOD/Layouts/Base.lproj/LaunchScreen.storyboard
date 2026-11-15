@@ -17,7 +17,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="2026_modshield_singlecolor_white_01" translatesAutoresizingMaskIntoConstraints="NO" id="3IZ-fN-BhG" userLabel="splas_15">
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="2026_modshield_singlecolor_white_01 1" translatesAutoresizingMaskIntoConstraints="NO" id="3IZ-fN-BhG" userLabel="splas_15">
                                 <rect key="frame" x="121.66666666666669" y="351" width="150" height="150"/>
                             </imageView>
                         </subviews>
@@ -37,7 +37,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="2026_modshield_singlecolor_white_01" width="3000" height="3000"/>
+        <image name="2026_modshield_singlecolor_white_01 1" width="3000" height="3000"/>
         <namedColor name="Button_red">
             <color red="0.65098039215686276" green="0.098039215686274508" blue="0.19607843137254902" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

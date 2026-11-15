@@ -32,6 +32,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         let navigationController = UINavigationController(rootViewController: onboardingVC)
+        navigationController.isNavigationBarHidden = true
 
         let window = UIWindow(windowScene: windowScene)
 

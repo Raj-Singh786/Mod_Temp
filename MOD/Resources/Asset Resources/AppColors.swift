@@ -10,13 +10,40 @@ import UIKit
 import SwiftUI
 
 enum AppColor {
-    static var mod_red: UIColor { UIColor(named: "mod_red") ?? .systemRed }
-    static var text_gray: UIColor { UIColor(named: "text_gray") ?? .systemGray }
-    static var button_red: UIColor { UIColor(named: "Button_red") ?? .systemRed }
+    // MARK: - UIKit Colors
+    static var mod_red: UIColor {
+        UIColor(named: "mod_red") ?? UIColor(named: "Button_red") ?? .systemRed
+    }
     
-   
+    static var text_gray: UIColor {
+        UIColor(named: "text_gray") ?? UIColor(named: "text_gary") ?? .systemGray
+    }
     
-  
+    static var button_red: UIColor {
+        UIColor(named: "Button_red") ?? .systemRed
+    }
+    
+    static var pizza_found: UIColor {
+        UIColor(named: "pizza_found") ?? UIColor(red: 0xF3/255.0, green: 0xE8/255.0, blue: 0xD7/255.0, alpha: 1.0)
+    }
+    
+    static var app_black: UIColor {
+        UIColor(named: "app_black") ?? .black
+    }
+    
+    static var app_white: UIColor {
+        UIColor(named: "app_white") ?? .white
+    }
+    
+    static var mod_back: UIColor {
+        UIColor(named: "mod_back") ?? UIColor(red: 0xF9/255.0, green: 0xF9/255.0, blue: 0xFF/255.0, alpha: 1.0)
+    }
+    
+    // MARK: - SwiftUI Colors
+    static var buttonRedColor: Color { Color("Button_red") }
+    static var pizzaFoundColor: Color { Color("pizza_found") }
+    static var appBlackColor: Color { Color("app_black") }
+    static var appWhiteColor: Color { Color("app_white") }
+    static var textGrayColor: Color { Color("text_gary") }
+    static var modBackColor: Color { Color("mod_back") }
 }
-
-

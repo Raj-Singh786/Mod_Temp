@@ -1,214 +1,65 @@
+//
+//  OnboardingViewController.swift
+//  MOD
+//
+//  Created by Rajpal singh on 06/11/26.
+//
 
 import UIKit
+import SwiftUI
 
 class OnboardingViewController: UIViewController {
-    @IBOutlet weak var pageControl: UIPageControl!
-    @IBOutlet weak var startedBtn: UIButton!
-    @IBOutlet weak var skipBtn: UIButton!
-    @IBOutlet weak var scrollView: UIScrollView!
-    @IBOutlet weak var blackBgView: UIView!
-
-    // NEW outlets: connect these to the labels inside blackBgView
-    @IBOutlet weak var badgeLabel: UILabel!
-    @IBOutlet weak var titleLabel: UILabel!
-    @IBOutlet weak var descLabel: UILabel!
-
-    private let gradientLayer = CAGradientLayer()
-    private var slideImageViews: [UIImageView] = []
-    private let pillControl = PillPageControl()
-
-    var slideArray: [SlideStruct] = [
-        SlideStruct(
-            image: "veg",
-            title: "MADE YOUR WAY",
-            desc: "Pile on unlimited toppings, split it half and half, and save your favourite builds."
-        )
-    ]
-
-    var currentPage = 0
-    private var builtWidth: CGFloat = 0
+    
+    // MARK: - Storyboard Outlets (Preserved for IB compatibility)
+    @IBOutlet weak var pageControl: UIPageControl?
+    @IBOutlet weak var startedBtn: UIButton?
+    @IBOutlet weak var skipBtn: UIButton?
+    @IBOutlet weak var scrollView: UIScrollView?
+    @IBOutlet weak var blackBgView: UIView?
+    @IBOutlet weak var badgeLabel: UILabel?
+    @IBOutlet weak var titleLabel: UILabel?
+    @IBOutlet weak var descLabel: UILabel?
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        configureBlackBackground()
-        configureScrollView()
-        configurePageControl()
-        titleLabel.numberOfLines = 0
-        descLabel.numberOfLines = 0
-        updateContent(for: 0, animated: false)
-        configureBtn()
-        skipBtn.addTarget(self, action: #selector(didTapOnstartBtn), for: .touchUpInside)
+        setupSwiftUIOnboarding()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        gradientLayer.frame = blackBgView.bounds
-        startedBtn.layer.cornerRadius = startedBtn.frame.height / 2
-        buildSlidesIfNeeded()
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
     }
 
-    
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-    }
-    
-    //All button action
-    
-    @IBAction func didTapOnstartBtn(_ sender: UIButton) {
-        openLoginVC()
-    }
-    
-    // MARK: - Setup
-    private func configureBlackBackground() {
-        blackBgView.backgroundColor = .clear
-
-        gradientLayer.colors = [
-            UIColor.black.withAlphaComponent(0.0).cgColor,
-            UIColor.black.withAlphaComponent(0.65).cgColor,
-            UIColor.black.withAlphaComponent(0.95).cgColor
-        ]
-        gradientLayer.locations = [0.0, 0.4, 1.0]
-        gradientLayer.startPoint = CGPoint(x: 0.5, y: 0)
-        gradientLayer.endPoint   = CGPoint(x: 0.5, y: 1)
-        blackBgView.layer.insertSublayer(gradientLayer, at: 0)
-
-        view.bringSubviewToFront(blackBgView)
-    }
-    
-    private func configureBtn() {
-        startedBtn.semanticContentAttribute = .forceRightToLeft
-       var configuration = startedBtn.configuration
-            ?? UIButton.Configuration.plain()
-        
-        configuration.imagePadding = 8
-        configuration.baseForegroundColor = .white
-        configuration.titleTextAttributesTransformer =
-            UIConfigurationTextAttributesTransformer { attributes in
-                
-                var updatedAttributes = attributes
-                updatedAttributes.font =
-                    AppFonts.barlowMedium.withSize(16)
-                
-                return updatedAttributes
+    // MARK: - SwiftUI Hosting
+    private func setupSwiftUIOnboarding() {
+        let onboardingView = OnboardingView(
+            onSkip: { [weak self] in
+                self?.openLoginVC()
+            },
+            onFinish: { [weak self] in
+                self?.openLoginVC()
             }
-        
-        startedBtn.configuration = configuration
-    }
+        )
 
-    private func configureScrollView() {
-        scrollView.delegate = self
-        scrollView.isPagingEnabled = true
-        scrollView.showsHorizontalScrollIndicator = false
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.bounces = false
-        scrollView.contentInsetAdjustmentBehavior = .never   // image goes under the status bar
-    }
-
-    private func configurePageControl() {
-        pageControl.alpha = 0            // invisible, but still takes space in the stack
-        pageControl.isUserInteractionEnabled = false
-
-        pillControl.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(pillControl)
+        let hostingController = UIHostingController(rootView: onboardingView)
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            pillControl.centerXAnchor.constraint(equalTo: pageControl.centerXAnchor),
-            pillControl.centerYAnchor.constraint(equalTo: pageControl.centerYAnchor),
-            pillControl.heightAnchor.constraint(equalToConstant: 20)
+            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
-        pillControl.numberOfPages = slideArray.count
-        pillControl.setProgress(0)
-        pillControl.onPageSelected = { [weak self] page in
-            self?.goToPage(page)
-        }
+        hostingController.didMove(toParent: self)
     }
 
-    // Build the image views once the scroll view has its real size
-    private func buildSlidesIfNeeded() {
-        let size = scrollView.bounds.size
-        guard size.width > 0, builtWidth != size.width else { return }
-        builtWidth = size.width
-
-        // remove only the image views created by this method
-        slideImageViews.forEach { $0.removeFromSuperview() }
-        slideImageViews.removeAll()
-
-        for (index, slide) in slideArray.enumerated() {
-            let imageView = UIImageView(frame: CGRect(x: CGFloat(index) * size.width,
-                                                      y: 0,
-                                                      width: size.width,
-                                                      height: size.height))
-            imageView.image = UIImage(named: slide.image)
-            imageView.contentMode = .scaleAspectFill
-            imageView.clipsToBounds = true
-            scrollView.addSubview(imageView)
-            slideImageViews.append(imageView)
-        }
-
-        scrollView.contentSize = CGSize(width: size.width * CGFloat(slideArray.count),
-                                        height: size.height)
-        scrollView.setContentOffset(CGPoint(x: size.width * CGFloat(currentPage), y: 0), animated: false)
+    // MARK: - Navigation
+    func openLoginVC() {
+        let vc = LoginViewController.instantiate(fromAppStoryboard: .Main)
+        self.navigationController?.pushViewController(vc, animated: true)
     }
-
-    // MARK: - Content
-    private func updateContent(for page: Int, animated: Bool = true) {
-        guard slideArray.indices.contains(page) else { return }
-        let slide = slideArray[page]
-
-        let changes = {
-            self.badgeLabel.text = "  \(slide.badge)  "
-            self.titleLabel.text = slide.title
-            self.descLabel.text  = slide.desc
-        }
-
-        if animated {
-            UIView.transition(with: blackBgView, duration: 0.25,
-                              options: [.transitionCrossDissolve, .allowUserInteraction],
-                              animations: changes)
-        } else {
-            changes()
-        }
-        // Button title is intentionally NOT changed
-    }
-
-    private func goToPage(_ page: Int, animated: Bool = true) {
-        let x = scrollView.bounds.width * CGFloat(page)
-        scrollView.setContentOffset(CGPoint(x: x, y: 0), animated: animated)
-    }
-
-   
-}
-
-// MARK: - UIScrollViewDelegate
-extension OnboardingViewController: UIScrollViewDelegate {
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        let width = scrollView.bounds.width
-        guard width > 0 else { return }
-
-        pillControl.setProgress(scrollView.contentOffset.x / width)
-
-        let page = Int(round(scrollView.contentOffset.x / width))
-        guard page != currentPage, slideArray.indices.contains(page) else { return }
-        currentPage = page
-        updateContent(for: page)
-    }
-}
-
-
-//MARK: - Open another controller
-extension OnboardingViewController {
-func openLoginVC() {
-            let vc = LoginViewController.instantiate(fromAppStoryboard: .Main)
-            self.navigationController?.pushViewController(vc, animated: true)
-    }
-}
-
-struct SlideStruct {
-    let image: String
-    var badge: String?
-    let title: String
-    let desc: String
 }

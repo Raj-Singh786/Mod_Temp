@@ -160,4 +160,32 @@ extension Font {
     ) -> Font {
         return font.swiftUIFont(size: size)
     }
+    
+    static func oswaldMedium(size: CGFloat) -> Font {
+        .appFont(.oswaldMedium, size: size)
+    }
+    
+    static func oswaldBold(size: CGFloat) -> Font {
+        .appFont(.oswaldBold, size: size)
+    }
+    
+    static func oswaldRegular(size: CGFloat) -> Font {
+        .appFont(.oswaldRegular, size: size)
+    }
+    
+    static func barlowRegular(size: CGFloat) -> Font {
+        .appFont(.barlowRegular, size: size)
+    }
+    
+    static func barlowMedium(size: CGFloat) -> Font {
+        .appFont(.barlowMedium, size: size)
+    }
+    
+    static func barlowSemiBold(size: CGFloat) -> Font {
+        .appFont(.barlowSemiBold, size: size)
+    }
+    
+    static func barlowBold(size: CGFloat) -> Font {
+        .appFont(.barlowBold, size: size)
+    }
 }
