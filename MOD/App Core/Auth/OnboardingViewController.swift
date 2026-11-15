@@ -19,22 +19,9 @@ class OnboardingViewController: UIViewController {
 
     var slideArray: [SlideStruct] = [
         SlideStruct(
-            image: "onboard1",
-            badge: "STONE-DECK OVEN",
-            title: "Freshly Baked Pizza\nStraight to Your Door 🍕",
-            desc: "Savor piping hot, artisanal hand-tossed pizzas baked at 800° perfection within minutes."
-        ),
-        SlideStruct(
-            image: "onboard2",
-            badge: "INSTANT PERKS • 100 PTS ON SIGNUP",
-            title: "Earn Loyalty, Gifts\n& Vouchers On Every Order 🎁",
-            desc: "Collect pizza reward stamps, enjoy exclusive discounts, free toppings, and redeem treats with every bite!"
-        ),
-        SlideStruct(
-            image: "onboard3",
-            badge: "UNLIMITED TOPPINGS • 1 PRICE",
-            title: "Customize It Exactly\nTo Your Preference 👨‍🍳",
-            desc: "Choose your favorite crust, sauces, fresh cheeses, and unlimited meats & veggies with zero extra cost."
+            image: "veg",
+            title: "MADE YOUR WAY",
+            desc: "Pile on unlimited toppings, split it half and half, and save your favourite builds."
         )
     ]
 
@@ -102,7 +89,7 @@ class OnboardingViewController: UIViewController {
                 
                 var updatedAttributes = attributes
                 updatedAttributes.font =
-                    AppFonts.jakartaMedium.withSize(16)
+                    AppFonts.barlowMedium.withSize(16)
                 
                 return updatedAttributes
             }
@@ -221,7 +208,7 @@ func openLoginVC() {
 
 struct SlideStruct {
     let image: String
-    let badge: String
+    var badge: String?
     let title: String
     let desc: String
 }

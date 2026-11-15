@@ -84,7 +84,7 @@ extension TabBarVC {
 
         appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
             .foregroundColor: AppColor.text_gray,
-            .font: AppFonts.jakartaSemiBold.withSize(12)
+            .font: AppFonts.barlowMedium.withSize(12)
         ]
 
         // Selected
@@ -93,7 +93,7 @@ extension TabBarVC {
 
         appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
             .foregroundColor: AppColor.mod_red,
-            .font: AppFonts.jakartaSemiBold.withSize(12)
+            .font: AppFonts.barlowMedium.withSize(12)
         ]
 
         tabBar.standardAppearance = appearance

@@ -11,11 +11,11 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <customFonts key="customFonts">
+        <array key="Oswald-Medium.ttf">
+            <string>Oswald-Medium</string>
+        </array>
         <array key="PlusJakartaSans-Bold.ttf">
             <string>PlusJakartaSans-Bold</string>
-        </array>
-        <array key="PlusJakartaSans-ExtraBold.ttf">
-            <string>PlusJakartaSans-ExtraBold</string>
         </array>
         <array key="PlusJakartaSans-Regular.ttf">
             <string>PlusJakartaSans-Regular</string>
@@ -39,7 +39,7 @@
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="2o5-T3-0k5">
                                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                                         <subviews>
-                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="onboard1" translatesAutoresizingMaskIntoConstraints="NO" id="Qf4-aQ-Ksi">
+                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Qf4-aQ-Ksi">
                                                 <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                                             </imageView>
                                         </subviews>
@@ -94,24 +94,24 @@
                                                 </userDefinedRuntimeAttributes>
                                             </view>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="P6D-ga-Wff">
-                                                <rect key="frame" x="39.333333333333343" y="28" width="274.66666666666663" height="60"/>
+                                                <rect key="frame" x="63" y="28" width="227" height="60"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="60" id="Q0Q-SE-0PF"/>
                                                 </constraints>
                                                 <string key="text">Freshly Baked Pizza
 Straight to Your Door 🍕</string>
-                                                <fontDescription key="fontDescription" name="PlusJakartaSans-ExtraBold" family="Plus Jakarta Sans" pointSize="24"/>
-                                                <color key="textColor" name="Colors"/>
+                                                <fontDescription key="fontDescription" name="Oswald-Medium" family="Oswald" pointSize="24"/>
+                                                <color key="textColor" name="app_black"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="A8y-st-dMC">
-                                                <rect key="frame" x="36.666666666666657" y="96" width="279.66666666666674" height="40"/>
+                                                <rect key="frame" x="31.666666666666657" y="96" width="289.66666666666674" height="40"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="40" id="xPf-M2-eVg"/>
                                                 </constraints>
                                                 <string key="text">Savor piping hot, artisanal hand-tossed pizzas
 baked at 800° perfection within minutes.</string>
-                                                <fontDescription key="fontDescription" name="PlusJakartaSans-Regular" family="Plus Jakarta Sans" pointSize="13"/>
+                                                <fontDescription key="fontDescription" name="PlusJakartaSans-Regular" family="Plus Jakarta Sans" pointSize="14"/>
                                                 <color key="textColor" name="text_gray"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
@@ -155,7 +155,7 @@ baked at 800° perfection within minutes.</string>
                                         </constraints>
                                     </stackView>
                                 </subviews>
-                                <color key="backgroundColor" name="black_bold"/>
+                                <color key="backgroundColor" name="pizza_found"/>
                                 <constraints>
                                     <constraint firstAttribute="trailing" secondItem="iYX-vp-3e5" secondAttribute="trailing" constant="20" id="9Ns-MG-hnb"/>
                                     <constraint firstItem="iYX-vp-3e5" firstAttribute="leading" secondItem="Awo-hg-BXR" secondAttribute="leading" constant="20" id="McB-nM-F2W"/>
@@ -224,7 +224,7 @@ baked at 800° perfection within minutes.</string>
                                 <rect key="frame" x="0.0" y="118" width="393" height="60"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Cnp-QC-c7H">
-                                        <rect key="frame" x="125.00000000000001" y="15" width="143.33333333333337" height="30"/>
+                                        <rect key="frame" x="128.33333333333337" y="15" width="136.66666666666663" height="30"/>
                                         <subviews>
                                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="shield-icon" translatesAutoresizingMaskIntoConstraints="NO" id="fhR-SP-syT">
                                                 <rect key="frame" x="0.0" y="0.0" width="30" height="30"/>
@@ -234,7 +234,7 @@ baked at 800° perfection within minutes.</string>
                                                 </constraints>
                                             </imageView>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MOD  Log-In" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="n86-id-TdW">
-                                                <rect key="frame" x="37.999999999999993" y="0.0" width="105.33333333333331" height="30"/>
+                                                <rect key="frame" x="38.000000000000007" y="0.0" width="98.666666666666686" height="30"/>
                                                 <fontDescription key="fontDescription" name="PlusJakartaSans-Bold" family="Plus Jakarta Sans" pointSize="17"/>
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
@@ -255,25 +255,25 @@ baked at 800° perfection within minutes.</string>
                                 </userDefinedRuntimeAttributes>
                             </view>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Welcome User" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="YlL-S0-YEn">
-                                <rect key="frame" x="20" y="198" width="353" height="29"/>
+                                <rect key="frame" x="20" y="198" width="353" height="28"/>
                                 <fontDescription key="fontDescription" name="PlusJakartaSans-Bold" family="Plus Jakarta Sans" pointSize="24"/>
                                 <color key="textColor" name="black_bold"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Access your perks, saved pizzas &amp; points balance" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="EpG-ft-g3f">
-                                <rect key="frame" x="20" y="232" width="353" height="17"/>
+                                <rect key="frame" x="20" y="231" width="353" height="16.333333333333343"/>
                                 <fontDescription key="fontDescription" name="PlusJakartaSans-Regular" family="Plus Jakarta Sans" pointSize="14"/>
                                 <color key="textColor" name="black_bold"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Email or Mobile Number" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tD4-tW-JA8">
-                                <rect key="frame" x="20" y="279" width="353" height="14.666666666666686"/>
+                                <rect key="frame" x="20" y="277.33333333333331" width="353" height="14"/>
                                 <fontDescription key="fontDescription" name="PlusJakartaSans-SemiBold" family="Plus Jakarta Sans" pointSize="12"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="NUG-9r-cfV">
-                                <rect key="frame" x="20" y="366.66666666666669" width="353" height="123.33333333333331"/>
+                                <rect key="frame" x="20" y="364.33333333333331" width="353" height="123"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jjh-6L-FH3">
                                         <rect key="frame" x="0.0" y="0.0" width="353" height="45"/>
@@ -297,13 +297,13 @@ baked at 800° perfection within minutes.</string>
                                         </connections>
                                     </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="OR" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="oeh-tr-WOW">
-                                        <rect key="frame" x="0.0" y="55" width="353" height="13.333333333333329"/>
+                                        <rect key="frame" x="0.0" y="55" width="353" height="13"/>
                                         <fontDescription key="fontDescription" name="PlusJakartaSans-Bold" family="Plus Jakarta Sans" pointSize="11"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="B8w-9g-iUW">
-                                        <rect key="frame" x="0.0" y="78.333333333333314" width="353" height="45"/>
+                                        <rect key="frame" x="0.0" y="78" width="353" height="45"/>
                                         <color key="backgroundColor" name="Colors"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="45" id="h4p-ID-GvQ"/>
@@ -332,7 +332,7 @@ baked at 800° perfection within minutes.</string>
                                 </subviews>
                             </stackView>
                             <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gXn-c1-FJb">
-                                <rect key="frame" x="20" y="301.66666666666669" width="343" height="45"/>
+                                <rect key="frame" x="20" y="299.33333333333331" width="343" height="45"/>
                                 <subviews>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Enter Email or Mobile Number" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="uPS-DL-r00">
                                         <rect key="frame" x="36" y="12" width="283" height="21"/>
@@ -429,13 +429,15 @@ baked at 800° perfection within minutes.</string>
     <resources>
         <image name="arrow.right" catalog="system" width="128" height="95"/>
         <image name="email" width="5.6666665077209473" height="4.6666665077209473"/>
-        <image name="onboard1" width="1911" height="1757"/>
         <image name="shield-icon" width="64" height="64"/>
         <namedColor name="Button_red">
-            <color red="0.81176470588235294" green="0.1803921568627451" blue="0.1803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.65098039215686276" green="0.098039215686274508" blue="0.19607843137254902" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="Colors">
             <color red="0.99607843137254903" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="app_black">
+            <color red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="black_bold">
             <color red="0.094117647058823528" green="0.094117647058823528" blue="0.10588235294117647" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -445,6 +447,9 @@ baked at 800° perfection within minutes.</string>
         </namedColor>
         <namedColor name="onboard_back">
             <color red="0.97647058823529409" green="0.95686274509803926" blue="0.90980392156862744" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="pizza_found">
+            <color red="0.95294117647058818" green="0.90980392156862744" blue="0.84313725490196079" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="text_gray">
             <color red="0.83921568627450982" green="0.82745098039215681" blue="0.81960784313725488" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
