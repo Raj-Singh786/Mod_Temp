@@ -12,9 +12,9 @@ import SwiftUI
 struct OnboardingSlideItem: Identifiable, Equatable {
     let id: Int
     let image: String
-    let badgeTop: String
-    let badgeMiddle: String
-    let badgeBottom: String
+    let badgeTop: String?
+    let badgeMiddle: String?
+    let badgeBottom: String?
     let title: String
     let description: String
 }
@@ -58,12 +58,10 @@ struct OnboardingView: View {
                 VStack(spacing: 0) {
                     // Top Navigation Bar
                     headerBar
-                        .padding(.top, 8)
+                        .padding(.top, geometry.safeAreaInsets.top > 0 ? 4 : 12)
                         .padding(.horizontal, 24)
                     
-                    Spacer(minLength: 12)
-                    
-                    // Paged Slide Content
+                    // Paged Slide Content (Flexibly takes available vertical space)
                     TabView(selection: $currentPage) {
                         ForEach(slides.indices, id: \.self) { index in
                             slideView(for: slides[index], geometry: geometry)
@@ -71,18 +69,17 @@ struct OnboardingView: View {
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
-                    .frame(height: geometry.size.height * 0.62)
                     
-                    Spacer(minLength: 8)
-                    
-                    // Page Indicator Dots
-                    pageIndicator
-                        .padding(.bottom, 22)
-                    
-                    // Bottom Action Button
-                    actionButton
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? 12 : 24)
+                    // Bottom Navigation Controls
+                    VStack(spacing: 18) {
+                        // Page Indicator Dots
+                        pageIndicator
+                        
+                        // Action Button ("NEXT >")
+                        actionButton
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? 8 : 20)
                 }
             }
         }
@@ -96,7 +93,7 @@ struct OnboardingView: View {
             Image("app_logo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 40, height: 44)
+                .frame(width: 35, height: 42)
                 .accessibilityLabel("MOD Pizza Logo")
             
             Spacer()
@@ -106,7 +103,7 @@ struct OnboardingView: View {
                 onSkip?()
             }) {
                 Text("Skip")
-                    .font(.barlowBold(size: 15))
+                    .font(.barlowSemiBold(size: 16))
                     .foregroundColor(Color(red: 0x4A / 255.0, green: 0x45 / 255.0, blue: 0x40 / 255.0))
                     .padding(.vertical, 8)
                     .padding(.horizontal, 4)
@@ -117,79 +114,175 @@ struct OnboardingView: View {
     // MARK: - Slide View
     
     private func slideView(for slide: OnboardingSlideItem, geometry: GeometryProxy) -> some View {
-        let pizzaSize = min(geometry.size.width * 0.68, 260.0)
-        let backgroundDiscSize = pizzaSize * 1.34
+        let screenWidth = geometry.size.width
+        let screenHeight = geometry.size.height
+        
+        // Dynamically scaled hero graphic: generous circular disc following the design snap
+        let pizzaSize = min(screenWidth * 0.54, screenHeight * 0.26, 215.0)
+        let backgroundDiscSize = pizzaSize * 1.55
         
         return VStack(spacing: 0) {
-            // Hero Graphic Area
-            ZStack {
-                // Background Soft Disc
-                Circle()
-                    .fill(Color.white.opacity(0.35))
-                    .frame(width: backgroundDiscSize, height: backgroundDiscSize)
+            Spacer(minLength: 4)
+            
+            // 3D Hero Graphic Area
+            heroGraphic(for: slide, pizzaSize: pizzaSize, discSize: backgroundDiscSize)
+                .padding(.top, 2)
+                .padding(.bottom, 6)
+            
+            Spacer(minLength: 10)
+            
+            // Slide Title & Description (Protected against truncation)
+            VStack(spacing: 10) {
+                Text(slide.title)
+                    .font(.oswaldMedium(size: min(screenWidth * 0.08, 30.0)))
+                    .foregroundColor(Color("app_black"))
+                    .tracking(0.6)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .minimumScaleFactor(0.85)
                 
-                // Pizza Image
-                Image(slide.image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: pizzaSize, height: pizzaSize)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.18), radius: 18, x: 0, y: 10)
-                
-                // Floating Badge Sticker (Bottom Right)
-                badgeSticker(top: slide.badgeTop, middle: slide.badgeMiddle, bottom: slide.badgeBottom)
-                    .offset(x: pizzaSize * 0.38, y: pizzaSize * 0.32)
+                Text(slide.description)
+                    .font(.barlowRegular(size: 15))
+                    .foregroundColor(Color("text_gary"))
+                    .lineSpacing(4)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 28)
             }
-            .frame(height: backgroundDiscSize + 20)
+            .padding(.horizontal, 16)
             
-            Spacer(minLength: 16)
-            
-            // Slide Title
-            Text(slide.title)
-                .font(.oswaldMedium(size: 32))
-                .foregroundColor(Color("app_black"))
-                .tracking(0.6)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-            
-            // Slide Description
-            Text(slide.description)
-                .font(.barlowRegular(size: 16))
-                .foregroundColor(Color("text_gary"))
-                .lineSpacing(4)
-                .multilineTextAlignment(.center)
-                .padding(.top, 10)
-                .padding(.horizontal, 32)
+            Spacer(minLength: 12)
         }
     }
     
-    // MARK: - Floating Badge Sticker
+    // MARK: - 3D Hero Graphic Area
     
-    private func badgeSticker(top: String, middle: String, bottom: String) -> some View {
+    private func heroGraphic(for slide: OnboardingSlideItem, pizzaSize: CGFloat, discSize: CGFloat) -> some View {
         ZStack {
-            // Sticker White Base
+            // 1. 3D Background Circular Plateau / Disc with Multi-Layer Sketch Shadows
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0xF7 / 255.0, green: 0xEE / 255.0, blue: 0xDE / 255.0),
+                            Color(red: 0xEB / 255.0, green: 0xDC / 255.0, blue: 0xC6 / 255.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: discSize, height: discSize)
+                .overlay(
+                    // Subtle 3D Top-Light Bevel Stroke
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.85),
+                                    Color(red: 0xD6 / 255.0, green: 0xC4 / 255.0, blue: 0xAE / 255.0).opacity(0.35)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.5
+                        )
+                )
+                // Layer 1: Ambient warm reddish/coral glow shadow at bottom (matching mockup)
+                .shadow(
+                    color: Color("Button_red").opacity(0.18),
+                    radius: 28,
+                    x: 0,
+                    y: 18
+                )
+                // Layer 2: Soft warm dark ambient shadow
+                .shadow(
+                    color: Color(red: 0x3A / 255.0, green: 0x24 / 255.0, blue: 0x16 / 255.0).opacity(0.12),
+                    radius: 14,
+                    x: 0,
+                    y: 8
+                )
+                // Layer 3: Crisp contact drop shadow
+                .shadow(
+                    color: Color.black.opacity(0.04),
+                    radius: 4,
+                    x: 0,
+                    y: 2
+                )
+            
+            // 2. Elevated 3D Pizza with Deep Shadow onto the Disc
+            Image(slide.image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: pizzaSize, height: pizzaSize)
+                .clipShape(Circle())
+                // Layer 1: Primary deep drop shadow
+                .shadow(
+                    color: Color(red: 0x22 / 255.0, green: 0x11 / 255.0, blue: 0x06 / 255.0).opacity(0.36),
+                    radius: 18,
+                    x: 0,
+                    y: 12
+                )
+                // Layer 2: Crisp contact shadow
+                .shadow(
+                    color: Color.black.opacity(0.18),
+                    radius: 6,
+                    x: 0,
+                    y: 3
+                )
+            
+            // 3. Floating Sticker Badge (Tilted at 4:30 position, outside the pizza on the 3D disc)
+            if let top = slide.badgeTop, let middle = slide.badgeMiddle, let bottom = slide.badgeBottom {
+                tiltedBadgeSticker(top: top, middle: middle, bottom: bottom)
+                    .offset(x: pizzaSize * 0.54, y: pizzaSize * 0.48)
+            }
+        }
+        .frame(width: discSize + 50, height: discSize + 50)
+    }
+    
+    // MARK: - Floating Tilted Badge Sticker
+    
+    private func tiltedBadgeSticker(top: String, middle: String, bottom: String) -> some View {
+        ZStack {
+            // White circular badge base
             Circle()
                 .fill(Color.white)
                 .frame(width: 86, height: 86)
-                .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 6)
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.9), lineWidth: 1.2)
+                )
+                // 3D elevation drop shadows for the sticker
+                .shadow(
+                    color: Color(red: 0x25 / 255.0, green: 0x15 / 255.0, blue: 0x0A / 255.0).opacity(0.16),
+                    radius: 10,
+                    x: 2,
+                    y: 6
+                )
+                .shadow(
+                    color: Color.black.opacity(0.08),
+                    radius: 3,
+                    x: 0,
+                    y: 2
+                )
             
-            // Text Content
-            VStack(spacing: -1) {
+            // Tilted typography content (-10 degrees)
+            VStack(spacing: -1.5) {
                 Text(top)
                     .font(.oswaldMedium(size: 11))
-                    .tracking(1.0)
+                    .tracking(1.6)
                     .foregroundColor(Color("Button_red"))
                 
                 Text(middle)
-                    .font(.oswaldBold(size: 20))
-                    .tracking(0.4)
+                    .font(.oswaldBold(size: 21))
+                    .tracking(0.5)
                     .foregroundColor(Color("Button_red"))
                 
                 Text(bottom)
                     .font(.oswaldMedium(size: 11))
-                    .tracking(1.0)
+                    .tracking(1.6)
                     .foregroundColor(Color("Button_red"))
             }
+            .rotationEffect(.degrees(-10))
         }
     }
     
@@ -201,7 +294,7 @@ struct OnboardingView: View {
                 if index == currentPage {
                     Capsule()
                         .fill(Color("Button_red"))
-                        .frame(width: 22, height: 6)
+                        .frame(width: 22, height: 8)
                         .transition(.identity)
                 } else {
                     Circle()
