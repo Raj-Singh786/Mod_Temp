@@ -65,6 +65,7 @@ struct HomeView: View {
     @State private var isPickupScheduled: Bool = false
     @State private var isDeliveryScheduled: Bool = false
     @State private var showOrderSetup: Bool = false
+    @State private var showMenuView: Bool = false
     @State private var orderSetupInitialTab: Int = 0
     @State private var orderSetupAutoScrollToWhen: Bool = false
     @State private var favoritesState: [UUID: Bool] = [:]
@@ -202,6 +203,9 @@ struct HomeView: View {
                 }
             )
         }
+        .fullScreenCover(isPresented: $showMenuView) {
+            MenuView(showDismissButton: true)
+        }
         .onAppear {
             withAnimation(.linear(duration: 35).repeatForever(autoreverses: false)) {
                 pizzaRotation = 360
@@ -298,6 +302,8 @@ struct HomeView: View {
             HStack(spacing: 10) {
                 // Start Your Order Button
                 Button(action: {
+                    MenuCoordinator.shared.selectCategoryAndOpenMenu(.all)
+                    showMenuView = true
                     onStartOrder?()
                 }) {
                     HStack(spacing: 6) {
@@ -691,6 +697,8 @@ struct HomeView: View {
                 Spacer()
                 
                 Button(action: {
+                    MenuCoordinator.shared.selectCategoryAndOpenMenu(.all)
+                    showMenuView = true
                     onFullMenuTap?()
                 }) {
                     HStack(spacing: 3) {
@@ -709,6 +717,23 @@ struct HomeView: View {
                 HStack(spacing: 14) {
                     ForEach(categories) { category in
                         Button(action: {
+                            let selectedCat: MenuCategory
+                            switch category.name.lowercased() {
+                            case "pizzas", "pizza":
+                                selectedCat = .pizzas
+                            case "salads", "salad":
+                                selectedCat = .salads
+                            case "sides", "side":
+                                selectedCat = .sides
+                            case "desserts", "dessert":
+                                selectedCat = .desserts
+                            case "drinks", "beverages":
+                                selectedCat = .beverages
+                            default:
+                                selectedCat = .all
+                            }
+                            MenuCoordinator.shared.selectCategoryAndOpenMenu(selectedCat)
+                            showMenuView = true
                             onCategorySelected?(category.name)
                         }) {
                             VStack(spacing: 8) {
@@ -764,6 +789,8 @@ struct HomeView: View {
                 Spacer()
                 
                 Button(action: {
+                    MenuCoordinator.shared.selectCategoryAndOpenMenu(.all)
+                    showMenuView = true
                     onFullMenuTap?()
                 }) {
                     HStack(spacing: 3) {
@@ -1023,7 +1050,7 @@ struct HomeView: View {
                     Text("SIGN IN")
                         .font(.oswaldMedium(size: 13))
                         .tracking(1.0)
-                        .foregroundColor(Color("app_black"))
+                        .foregroundColor(Color("Button_red"))
                         .padding(.horizontal, 16)
                         .frame(height: 36)
                         .background(

@@ -63,6 +63,10 @@ extension TabBarVC {
         navigationController?.isNavigationBarHidden = true
 
         setUPTabBar()
+        
+        NotificationCenter.default.addObserver(forName: .selectMenuTabWithCategory, object: nil, queue: .main) { [weak self] _ in
+            self?.selectedIndex = 1
+        }
     }
 
 
@@ -122,18 +126,14 @@ extension TabBarVC {
         )
 
 
-        // MARK: Leave
+        // MARK: Menu (2nd tab - direct hosting controller without BaseNavigationVC to prevent double safe-area insets)
 
-        let leaveVC = tabItems[1].viewController
+        let menuVC = tabItems[1].viewController
 
-        leaveVC.tabBarItem = UITabBarItem(
+        menuVC.tabBarItem = UITabBarItem(
             title: tabItems[1].displayTitle,
             image: tabItems[1].unSelectedIcon,
             selectedImage: tabItems[1].selectedIcon
-        )
-
-        let nav2 = BaseNavigationVC(
-            rootViewController: leaveVC
         )
 
 
@@ -177,7 +177,7 @@ extension TabBarVC {
 
         viewControllers = [
             nav1,
-            nav2,
+            menuVC,
             serviceVC,
             nav4,
             nav5

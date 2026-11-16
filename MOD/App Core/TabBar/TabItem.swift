@@ -24,7 +24,7 @@ enum TabItems: String, CaseIterable {
             return UIHostingController(rootView: HomeView(isGuest: isGuest))
 
         case .Menu:
-            return UIViewController()
+            return UIHostingController(rootView: MenuView())
 
         case .Rewards:
             return UIHostingController(rootView: RewardsCoordinatorView())
