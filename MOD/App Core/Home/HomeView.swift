@@ -56,6 +56,12 @@ struct HomeView: View {
     // MARK: - State
     
     @State private var selectedOrderType: Int = 0 // 0: Pickup, 1: Delivery
+    @State private var selectedStoreName: String = "Capitol Hill, Seattle"
+    @State private var deliveryAddress: String = "Add a delivery address"
+    @State private var selectedPickupOption: String = "In-store pickup"
+    @State private var selectedWhenText: String = "ASAP unavailable"
+    @State private var showOrderSetup: Bool = false
+    @State private var orderSetupInitialTab: Int = 0
     @State private var favoritesState: [UUID: Bool] = [:]
     @State private var pizzaRotation: Double = 0
     
@@ -163,6 +169,23 @@ struct HomeView: View {
         }
         // Hide the system navigation bar so it doesn't reserve blank space above the custom header
         .toolbar(.hidden, for: .navigationBar)   // iOS 16+
+        .sheet(isPresented: $showOrderSetup) {
+            OrderSetupView(
+                initialOrderType: orderSetupInitialTab,
+                currentStoreName: selectedStoreName,
+                currentDeliveryAddress: deliveryAddress,
+                currentPickupOption: selectedPickupOption,
+                currentWhenText: selectedWhenText,
+                onDone: { newOrderType, newStoreName, newPickupOption, newAddress, newWhen in
+                    selectedOrderType = newOrderType
+                    selectedStoreName = newStoreName
+                    selectedPickupOption = newPickupOption
+                    deliveryAddress = newAddress
+                    selectedWhenText = newWhen
+                    showOrderSetup = false
+                }
+            )
+        }
         .onAppear {
             withAnimation(.linear(duration: 35).repeatForever(autoreverses: false)) {
                 pizzaRotation = 360
@@ -348,23 +371,23 @@ struct HomeView: View {
     private var madeYourWayBadge: some View {
         VStack(spacing: 1.5) {
             Text("MADE")
-                .font(.oswaldBold(size: 12))
-                .tracking(0.5)
+                .font(.oswaldBold(size: 11))
+                .tracking(0.6)
             Text("YOUR")
-                .font(.oswaldBold(size: 18))
-                .tracking(0.5)
+                .font(.oswaldBold(size: 16))
+                .tracking(0.6)
             Text("WAY")
-                .font(.oswaldBold(size: 12))
-                .tracking(0.5)
+                .font(.oswaldBold(size: 11))
+                .tracking(0.6)
         }
         .foregroundColor(Color("Button_red"))
-        .frame(width: 82, height: 82)
+        .frame(width: 78, height: 78)
         .background(
             Circle()
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
         )
-        .rotationEffect(.degrees(-8)) // optional slight tilt; remove for a perfectly upright sticker
+        .rotationEffect(.degrees(-10))
     }
     
     // MARK: - Order Mode & Store Selector Card
@@ -375,17 +398,17 @@ struct HomeView: View {
             HStack(spacing: 0) {
                 // Pickup
                 Button(action: {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
                         selectedOrderType = 0
                     }
                 }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "storefront")
-                            .font(.system(size: 14))
+                    HStack(spacing: 7) {
+                        Image(systemName: "bag")
+                            .font(.system(size: 14.5, weight: .semibold))
                         Text("Pickup")
-                            .font(.barlowSemiBold(size: 14.5))
+                            .font(.barlowSemiBold(size: 15))
                     }
-                    .foregroundColor(Color("app_black"))
+                    .foregroundColor(selectedOrderType == 0 ? Color("Button_red") : Color("app_black"))
                     .frame(maxWidth: .infinity)
                     .frame(height: 38)
                     .background(
@@ -393,6 +416,10 @@ struct HomeView: View {
                             if selectedOrderType == 0 {
                                 Capsule()
                                     .fill(Color.white)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color("Button_red"), lineWidth: 1.8)
+                                    )
                                     .shadow(color: Color.black.opacity(0.06), radius: 3, x: 0, y: 1)
                             } else {
                                 Color.clear
@@ -404,17 +431,17 @@ struct HomeView: View {
                 
                 // Delivery
                 Button(action: {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
                         selectedOrderType = 1
                     }
                 }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "bicycle")
-                            .font(.system(size: 14))
+                    HStack(spacing: 7) {
+                        Image(systemName: "box.truck")
+                            .font(.system(size: 14.5, weight: .semibold))
                         Text("Delivery")
-                            .font(.barlowSemiBold(size: 14.5))
+                            .font(.barlowSemiBold(size: 15))
                     }
-                    .foregroundColor(Color("app_black"))
+                    .foregroundColor(selectedOrderType == 1 ? Color("Button_red") : Color("app_black"))
                     .frame(maxWidth: .infinity)
                     .frame(height: 38)
                     .background(
@@ -422,6 +449,10 @@ struct HomeView: View {
                             if selectedOrderType == 1 {
                                 Capsule()
                                     .fill(Color.white)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color("Button_red"), lineWidth: 1.8)
+                                    )
                                     .shadow(color: Color.black.opacity(0.06), radius: 3, x: 0, y: 1)
                             } else {
                                 Color.clear
@@ -438,71 +469,180 @@ struct HomeView: View {
             )
             .padding(14)
             
-            Divider()
-                .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDF / 255.0))
-            
-            // Store Location Row
-            Button(action: {
-                onSelectStore?()
-            }) {
-                HStack(spacing: 12) {
-                    Image(systemName: "storefront.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(Color("Button_red"))
-                        .frame(width: 28, height: 28)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Select for pickup at")
-                            .font(.barlowRegular(size: 11.5))
-                            .foregroundColor(Color("text_gary"))
-                        Text("Capitol Hill, Seattle")
-                            .font(.barlowSemiBold(size: 14.5))
-                            .foregroundColor(Color("app_black"))
+            if selectedOrderType == 0 {
+                // MARK: Pickup Rows
+                // 1. In-Store Pickup Row
+                Button(action: {
+                    orderSetupInitialTab = 0
+                    showOrderSetup = true
+                    onSelectStore?()
+                }) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "storefront")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color("Button_red"))
+                            .frame(width: 26, height: 26)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(selectedPickupOption)
+                                .font(.barlowRegular(size: 12))
+                                .foregroundColor(Color("text_gary"))
+                            Text(selectedStoreName)
+                                .font(.barlowBold(size: 15))
+                                .foregroundColor(Color("app_black"))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color("text_gary").opacity(0.7))
                     }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color("text_gary").opacity(0.7))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            Divider()
-                .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDF / 255.0))
-            
-            // When / Time Row
-            Button(action: {
-                onSelectTime?()
-            }) {
-                HStack(spacing: 12) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 18))
-                        .foregroundColor(Color("Button_red"))
-                        .frame(width: 28, height: 28)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("When")
-                            .font(.barlowRegular(size: 11.5))
-                            .foregroundColor(Color("text_gary"))
-                        Text("ASAP · ~15 min")
-                            .font(.barlowSemiBold(size: 14.5))
-                            .foregroundColor(Color("app_black"))
+                .buttonStyle(PlainButtonStyle())
+                
+                Divider()
+                    .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDF / 255.0))
+                
+                // 2. When / Time Row
+                Button(action: {
+                    orderSetupInitialTab = 0
+                    showOrderSetup = true
+                    onSelectTime?()
+                }) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color("Button_red"))
+                            .frame(width: 26, height: 26)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("When")
+                                .font(.barlowRegular(size: 12))
+                                .foregroundColor(Color("text_gary"))
+                            Text("ASAP · ~15 min")
+                                .font(.barlowBold(size: 15))
+                                .foregroundColor(Color("app_black"))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color("text_gary").opacity(0.7))
                     }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color("text_gary").opacity(0.7))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .buttonStyle(PlainButtonStyle())
+            } else {
+                // MARK: Delivery Rows (Matching Snapshot 1)
+                // 1. Delivering From Row
+                Button(action: {
+                    orderSetupInitialTab = 1
+                    showOrderSetup = true
+                    onSelectStore?()
+                }) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "storefront")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color("Button_red"))
+                            .frame(width: 26, height: 26)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Delivering from")
+                                .font(.barlowRegular(size: 12))
+                                .foregroundColor(Color("text_gary"))
+                            Text(selectedStoreName)
+                                .font(.barlowBold(size: 15))
+                                .foregroundColor(Color("app_black"))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color("text_gary").opacity(0.7))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Divider()
+                    .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDF / 255.0))
+                
+                // 2. Deliver To Address Row
+                Button(action: {
+                    orderSetupInitialTab = 1
+                    showOrderSetup = true
+                }) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "mappin.and.ellipse")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color("Button_red"))
+                            .frame(width: 26, height: 26)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Deliver to · Leave at door")
+                                .font(.barlowRegular(size: 12))
+                                .foregroundColor(Color("text_gary"))
+                            Text(deliveryAddress)
+                                .font(.barlowBold(size: 15))
+                                .foregroundColor(Color("app_black"))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color("text_gary").opacity(0.7))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Divider()
+                    .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDF / 255.0))
+                
+                // 3. When Row
+                Button(action: {
+                    orderSetupInitialTab = 1
+                    showOrderSetup = true
+                    onSelectTime?()
+                }) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color("Button_red"))
+                            .frame(width: 26, height: 26)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("When")
+                                .font(.barlowRegular(size: 12))
+                                .foregroundColor(Color("text_gary"))
+                            Text(selectedWhenText)
+                                .font(.barlowBold(size: 15))
+                                .foregroundColor(Color("app_black"))
+                            Text("Schedule for later")
+                                .font(.barlowMedium(size: 12))
+                                .foregroundColor(Color(red: 0x9E / 255.0, green: 0x66 / 255.0, blue: 0x22 / 255.0))
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color("text_gary").opacity(0.7))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .buttonStyle(PlainButtonStyle())
         }
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -1044,6 +1184,8 @@ struct HomeView: View {
 
 // MARK: - Preview
 
-#Preview {
-    HomeView(isGuest: true)
+struct HomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        HomeView(isGuest: true)
+    }
 }
