@@ -332,7 +332,7 @@ struct HomeView: View {
             .overlay(alignment: .topTrailing) {
                 madeYourWayBadge
                     .padding(.trailing, 18)
-                    .offset(y: -12)
+                    .offset(y: -1)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
