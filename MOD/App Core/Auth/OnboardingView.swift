@@ -52,7 +52,7 @@ struct OnboardingView: View {
         GeometryReader { geometry in
             ZStack {
                 // Background Color
-                Color("pizza_found")
+                Color("app_background")
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {

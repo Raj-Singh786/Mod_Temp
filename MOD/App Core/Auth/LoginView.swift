@@ -84,7 +84,7 @@ struct LoginView: View {
             
             ZStack(alignment: .top) {
                 // Background Color
-                Color("pizza_found")
+                Color("app_background")
                     .ignoresSafeArea()
                 
                 // Top Header Graphic (Pizza peaking from behind card)

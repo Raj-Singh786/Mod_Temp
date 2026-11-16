@@ -57,6 +57,7 @@ struct HomeView: View {
     
     @State private var selectedOrderType: Int = 0 // 0: Pickup, 1: Delivery
     @State private var favoritesState: [UUID: Bool] = [:]
+    @State private var pizzaRotation: Double = 0
     
     // MARK: - Data
     
@@ -119,12 +120,12 @@ struct HomeView: View {
     
     var body: some View {
         ZStack {
-            // Background Color
-            Color("pizza_found")
+            // Background Color (app_background)
+            Color("app_background")
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Top Header Bar
+                // Top Header Bar (compact, app_background color, centered icons)
                 topHeaderBar
                 
                 // Scrollable Content
@@ -160,6 +161,11 @@ struct HomeView: View {
                 }
             }
         }
+        .onAppear {
+            withAnimation(.linear(duration: 35).repeatForever(autoreverses: false)) {
+                pizzaRotation = 360
+            }
+        }
     }
     
     // MARK: - Top Header Bar
@@ -175,31 +181,36 @@ struct HomeView: View {
             
             Spacer()
             
-            HStack(spacing: 20) {
-                // Profile Button
+            HStack(spacing: 12) {
+                // Profile Button (vertically centered in middle)
                 Button(action: {
                     onProfileTap?()
                 }) {
                     Image(systemName: "person")
-                        .font(.system(size: 20, weight: .regular))
+                        .font(.system(size: 19, weight: .regular))
                         .foregroundColor(Color("app_black"))
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                // Shopping Cart Button
+                // Shopping Cart Button (vertically centered in middle)
                 Button(action: {
                     onCartTap?()
                 }) {
                     Image(systemName: "cart")
-                        .font(.system(size: 20, weight: .regular))
+                        .font(.system(size: 19, weight: .regular))
                         .foregroundColor(Color("app_black"))
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .background(Color("pizza_found"))
+        .padding(.top, 4)
+        .padding(.bottom, 6)
+        .background(Color("app_background"))
     }
     
     // MARK: - Hero Banner Card
@@ -218,14 +229,20 @@ struct HomeView: View {
             .padding(.top, 22)
             .padding(.horizontal, 20)
             
-            // Headline
-            Text("YOUR PIZZA.\nYOUR WAY.")
-                .font(.oswaldMedium(size: 32))
-                .tracking(0.6)
-                .foregroundColor(.white)
-                .lineSpacing(2)
-                .padding(.top, 10)
-                .padding(.horizontal, 20)
+            // Headline (YOUR PIZZA is app_white, YOUR WAY is pizza_found)
+            VStack(alignment: .leading, spacing: 0) {
+                Text("YOUR PIZZA.")
+                    .font(.oswaldMedium(size: 34))
+                    .tracking(0.6)
+                    .foregroundColor(Color("app_white"))
+                
+                Text("YOUR WAY.")
+                    .font(.oswaldMedium(size: 34))
+                    .tracking(0.6)
+                    .foregroundColor(Color("pizza_found"))
+            }
+            .padding(.top, 10)
+            .padding(.horizontal, 20)
             
             // Description
             Text("Pile on what you love, split it down the middle, or grab a go-to in two taps. Every pizza is made on demand.")
@@ -236,8 +253,8 @@ struct HomeView: View {
                 .padding(.horizontal, 20)
             
             // Action Buttons
-            HStack(spacing: 12) {
-                // Start Your Order Button
+            HStack(spacing: 10) {
+                // Start Your Order Button (Single line, text in Button_red)
                 Button(action: {
                     onStartOrder?()
                 }) {
@@ -245,10 +262,14 @@ struct HomeView: View {
                         Text("START YOUR ORDER")
                             .font(.oswaldMedium(size: 13.5))
                             .tracking(1.0)
+                            .foregroundColor(Color("Button_red"))
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                        
                         Image(systemName: "chevron.right")
                             .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(Color("Button_red"))
                     }
-                    .foregroundColor(Color("app_black"))
                     .padding(.horizontal, 16)
                     .frame(height: 42)
                     .background(
@@ -258,7 +279,7 @@ struct HomeView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                // Build Your Pizza Button
+                // Build Your Pizza Button (Single line)
                 Button(action: {
                     onBuildPizza?()
                 }) {
@@ -266,57 +287,63 @@ struct HomeView: View {
                         .font(.oswaldMedium(size: 13.5))
                         .tracking(1.0)
                         .foregroundColor(.white)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                         .padding(.horizontal, 16)
                         .frame(height: 42)
                         .background(
                             Capsule()
-                                .stroke(Color.white.opacity(0.5), lineWidth: 1.2)
+                                .stroke(Color.white.opacity(0.55), lineWidth: 1.2)
                                 .background(Capsule().fill(Color.white.opacity(0.12)))
                         )
                 }
                 .buttonStyle(PlainButtonStyle())
             }
-            .padding(.top, 18)
+            .padding(.top, 16)
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
             
-            // Pizza Cutout Graphic with "MADE YOUR WAY" Badge
+            // Pizza Graphic (Slowly rotating animation) with "MADE YOUR WAY" Badge Overlapping
             ZStack(alignment: .topTrailing) {
                 // Cream circular arc background
                 Circle()
                     .fill(Color("pizza_found"))
                     .frame(width: 290, height: 290)
-                    .offset(y: 40)
+                    .offset(y: 45)
                 
-                // Centered Pizza Image
+                // Centered Pizza Image with subtle continuous round animation
                 Image(UIImage(named: "PizzaOn") != nil ? "PizzaOn" : "pizza1")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 260, height: 260)
                     .clipShape(Circle())
                     .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
-                    .offset(y: 40)
+                    .rotationEffect(.degrees(pizzaRotation))
+                    .offset(y: 45)
                 
-                // "MADE YOUR WAY" Circular Sticker Badge
+                // "MADE YOUR WAY" Circular Sticker Badge overlapping the pizza
                 VStack(spacing: 1) {
                     Text("MADE")
                         .font(.oswaldBold(size: 10))
+                        .tracking(0.5)
                     Text("YOUR")
-                        .font(.oswaldBold(size: 13))
+                        .font(.oswaldBold(size: 13.5))
+                        .tracking(0.5)
                     Text("WAY")
                         .font(.oswaldBold(size: 10))
+                        .tracking(0.5)
                 }
                 .foregroundColor(Color("Button_red"))
                 .frame(width: 62, height: 62)
                 .background(
                     Circle()
                         .fill(Color.white)
-                        .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
+                        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
                 )
-                .offset(x: -16, y: 24)
+                .offset(x: -26, y: 30)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 180)
+            .frame(height: 195)
             .clipped()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -472,6 +499,7 @@ struct HomeView: View {
     }
     
     // MARK: - "WHAT ARE YOU CRAVING?" Categories Section
+    // 3D effect cell with border, drop shadow, and circular pizza_found background behind image
     
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -498,35 +526,47 @@ struct HomeView: View {
                 .buttonStyle(PlainButtonStyle())
             }
             
-            // Categories Row
+            // 3D Categories Cells Row
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
+                HStack(spacing: 14) {
                     ForEach(categories) { category in
                         Button(action: {
                             onCategorySelected?(category.name)
                         }) {
                             VStack(spacing: 8) {
+                                // Circular view with pizza_found background behind image
                                 ZStack {
                                     Circle()
-                                        .fill(Color(red: 0xF3 / 255.0, green: 0xEB / 255.0, blue: 0xDF / 255.0))
-                                        .frame(width: 66, height: 66)
+                                        .fill(Color("pizza_found"))
+                                        .frame(width: 58, height: 58)
                                     
                                     Image(category.imageName)
                                         .resizable()
                                         .scaledToFill()
-                                        .frame(width: 58, height: 58)
+                                        .frame(width: 48, height: 48)
                                         .clipShape(Circle())
                                 }
                                 
                                 Text(category.name)
-                                    .font(.barlowSemiBold(size: 13))
+                                    .font(.barlowSemiBold(size: 13.5))
                                     .foregroundColor(Color("app_black"))
                             }
+                            .frame(width: 80, height: 104)
+                            .background(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .fill(Color.white)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .stroke(Color(red: 0xEA / 255.0, green: 0xE2 / 255.0, blue: 0xD4 / 255.0), lineWidth: 1.2)
+                            )
+                            .shadow(color: Color.black.opacity(0.07), radius: 6, x: 0, y: 3.5)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
                 }
-                .padding(.vertical, 2)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 2)
             }
         }
         .padding(.top, 4)
@@ -576,16 +616,24 @@ struct HomeView: View {
     
     private func menuItemCard(item: HomeMenuItem) -> some View {
         let isFav = favoritesState[item.id] ?? item.isFavorite
+        let dietaryColor: Color = item.isVeg ? Color("kale_green") : Color("Button_red")
         
         return HStack(alignment: .top, spacing: 14) {
-            // Left Image with Tag Badge
+            // Left Image with pizza_found background & roma_red Popular badge
             ZStack(alignment: .topLeading) {
+                // Background behind image is pizza_found
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color("pizza_found"))
+                    .frame(width: 90, height: 90)
+                
                 Image(item.imageName)
                     .resizable()
                     .scaledToFill()
+                    .frame(width: 82, height: 82)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .frame(width: 90, height: 90)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 
+                // Popular / item badge in roma_red
                 if let tag = item.tag {
                     Text(tag)
                         .font(.oswaldMedium(size: 9.5))
@@ -595,7 +643,7 @@ struct HomeView: View {
                         .padding(.vertical, 3)
                         .background(
                             Capsule()
-                                .fill(Color("Button_red"))
+                                .fill(Color("roma_red"))
                         )
                         .offset(x: -4, y: -4)
                 }
@@ -613,13 +661,26 @@ struct HomeView: View {
                     
                     Spacer()
                     
-                    // Favorite Heart Button
+                    // Circular round view around heart icon (on click heart icon is Button_red)
                     Button(action: {
-                        favoritesState[item.id] = !isFav
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            favoritesState[item.id] = !isFav
+                        }
                     }) {
-                        Image(systemName: isFav ? "suit.heart.fill" : "suit.heart")
-                            .font(.system(size: 15))
-                            .foregroundColor(isFav ? Color("Button_red") : Color("text_gary"))
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 30, height: 30)
+                                .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1.5)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1)
+                                )
+                            
+                            Image(systemName: isFav ? "suit.heart.fill" : "suit.heart")
+                                .font(.system(size: 13.5, weight: isFav ? .bold : .medium))
+                                .foregroundColor(isFav ? Color("Button_red") : Color("text_gary").opacity(0.75))
+                        }
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
@@ -630,20 +691,20 @@ struct HomeView: View {
                     .lineLimit(2)
                     .lineSpacing(2)
                 
-                // Dietary Badge
+                // Dietary Badge (Nonveg: Button_red, Veg & Vegan: kale_green)
                 HStack(spacing: 5) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 3)
-                            .stroke(item.isVeg ? Color.green : Color.red, lineWidth: 1.2)
+                            .stroke(dietaryColor, lineWidth: 1.2)
                             .frame(width: 12, height: 12)
                         Circle()
-                            .fill(item.isVeg ? Color.green : Color.red)
+                            .fill(dietaryColor)
                             .frame(width: 6, height: 6)
                     }
                     
                     Text(item.isVegan ? "Vegan" : (item.isVeg ? "Veg" : "Non-veg"))
-                        .font(.barlowRegular(size: 11.5))
-                        .foregroundColor(Color("text_gary"))
+                        .font(.barlowSemiBold(size: 11.5))
+                        .foregroundColor(dietaryColor)
                     
                     Text("·")
                         .foregroundColor(Color("text_gary"))
@@ -808,7 +869,7 @@ struct HomeView: View {
         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 3)
     }
     
-    // MARK: - FEATURED OFFER Card
+    // MARK: - FEATURED OFFER Card (roma_red with opacity, dotted border)
     
     private var featuredOfferCard: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -819,7 +880,7 @@ struct HomeView: View {
                     .font(.oswaldMedium(size: 11))
                     .tracking(1.2)
             }
-            .foregroundColor(Color("Button_red"))
+            .foregroundColor(Color("roma_red"))
             
             Text("Free dessert with any pizza")
                 .font(.oswaldBold(size: 18))
@@ -842,7 +903,7 @@ struct HomeView: View {
                         .frame(height: 28)
                         .background(
                             Capsule()
-                                .fill(Color("Button_red"))
+                                .fill(Color("roma_red"))
                         )
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -855,13 +916,20 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white)
-                .overlay(
+                .fill(Color("roma_red").opacity(0.06))
+                .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color("Button_red").opacity(0.2), lineWidth: 1.2)
+                        .fill(Color.white)
                 )
-                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(
+                    Color("roma_red").opacity(0.4),
+                    style: StrokeStyle(lineWidth: 1.4, dash: [4, 4])
+                )
+        )
+        .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 2)
     }
     
     // MARK: - Utility Links Card
