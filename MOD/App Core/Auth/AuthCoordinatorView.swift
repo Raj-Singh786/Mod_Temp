@@ -26,12 +26,12 @@ struct AuthCoordinatorView: View {
     
     // MARK: - Actions
     
-    private func handleMoveToHome(isGuest: Bool) {
+    private func handleMoveToTabBar(isGuest: Bool, selectedIndex: Int = 0) {
         UserDefaults.standard.set(isGuest, forKey: "isGuestUser")
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let sceneDelegate = windowScene.delegate as? SceneDelegate,
            sceneDelegate.window != nil {
-            kSharedAppDelegate?.moveToTabBar(isGuest: isGuest)
+            kSharedAppDelegate?.moveToTabBar(isGuest: isGuest, selectedIndex: selectedIndex)
         } else {
             navigationPath.append(AuthDestination.home(isGuest: isGuest))
         }
@@ -58,7 +58,7 @@ struct AuthCoordinatorView: View {
                             navigationPath.append(AuthDestination.login)
                         },
                         onContinueAsGuest: {
-                            handleMoveToHome(isGuest: true)
+                            handleMoveToTabBar(isGuest: true, selectedIndex: 0)
                         },
                         onPageSelected: { page in
                             if page == 0 && !navigationPath.isEmpty {
@@ -74,7 +74,7 @@ struct AuthCoordinatorView: View {
                             navigationPath.append(AuthDestination.otp(destination: destination, mode: mode))
                         },
                         onContinueAsGuest: {
-                            handleMoveToHome(isGuest: true)
+                            handleMoveToTabBar(isGuest: true, selectedIndex: 0)
                         }
                     )
                     .navigationBarBackButtonHidden(true)
@@ -84,10 +84,11 @@ struct AuthCoordinatorView: View {
                         destination: destination,
                         mode: mode,
                         onVerificationSuccess: {
-                            handleMoveToHome(isGuest: false)
+                            // User Logged In (Not Guest user) -> Open 3rd tab of Tab Bar (Rewards, index 2)
+                            handleMoveToTabBar(isGuest: false, selectedIndex: 2)
                         },
                         onContinueAsGuest: {
-                            handleMoveToHome(isGuest: true)
+                            handleMoveToTabBar(isGuest: true, selectedIndex: 0)
                         },
                         onBack: {
                             if !navigationPath.isEmpty {

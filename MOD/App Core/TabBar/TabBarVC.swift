@@ -19,17 +19,15 @@ class TabBarVC: UITabBarController {
     let tabItems: [TabItems] = [
         .Home,
         .Menu,
-        .Cart,
+        .Rewards,
         .Orders,
-        .Sign
+        .Account
     ]
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         initialViewLoad()
-
-       
 
         DispatchQueue.main.async {
            // self.addTabbarIndicatorView(index: self.selectedIndex)
@@ -41,6 +39,10 @@ class TabBarVC: UITabBarController {
 
         navigationItem.setHidesBackButton(true, animated: true)
         navigationController?.isNavigationBarHidden = true
+        
+        if selectedIndex != myIndex {
+            selectedIndex = myIndex
+        }
     }
 
    
@@ -135,7 +137,7 @@ extension TabBarVC {
         )
 
 
-        // MARK: Services (Cart - direct hosting controller without BaseNavigationVC to prevent double safe-area insets)
+        // MARK: Rewards (3rd tab - direct hosting controller without BaseNavigationVC to prevent double safe-area insets)
 
         let serviceVC = tabItems[2].viewController
 

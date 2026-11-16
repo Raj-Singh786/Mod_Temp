@@ -13,9 +13,9 @@ enum TabItems: String, CaseIterable {
 
     case Home = "Home"
     case Menu = "Menu"
-    case Cart = "Cart"
+    case Rewards = "Rewards"
     case Orders = "Orders"
-    case Sign = "Sign In"
+    case Account = "Account"
 
     var viewController: UIViewController {
         switch self {
@@ -24,20 +24,16 @@ enum TabItems: String, CaseIterable {
             return UIHostingController(rootView: HomeView(isGuest: isGuest))
 
         case .Menu:
-            //return UIHostingController(rootView: MenuScreen())
-            return(UIViewController())
+            return UIViewController()
 
-
-        case .Cart:
-            //return UIHostingController(rootView: CartScreen())
-            return(UIViewController())
+        case .Rewards:
+            return UIHostingController(rootView: RewardsCoordinatorView())
 
         case .Orders:
-           // return UIHostingController(rootView: OrderHistoryScreen())
-            return(UIViewController())
-        case .Sign:
-           // return UIHostingController(rootView: ProfileScreen())
-            return(UIViewController())
+            return UIViewController()
+
+        case .Account:
+            return UIViewController()
         }
     }
 
@@ -47,20 +43,16 @@ enum TabItems: String, CaseIterable {
             return UIImage(systemName: "house.fill")
 
         case .Menu:
-            return UIImage(systemName: "fork.knife.fill")
+            return UIImage(systemName: "square.grid.2x2.fill")
             
-        case .Cart:
-            return UIImage(systemName: "cart.fill")
+        case .Rewards:
+            return UIImage(systemName: "star.fill")
 
         case .Orders:
-            return UIImage(systemName: "list.bullet.clipboard.fill")
-
+            return UIImage(systemName: "doc.text.fill") ?? UIImage(systemName: "list.bullet.clipboard.fill")
             
-        
-            
-        case .Sign:
+        case .Account:
             return UIImage(systemName: "person.fill")
-        
         }
     }
 
@@ -70,26 +62,20 @@ enum TabItems: String, CaseIterable {
             return UIImage(systemName: "house")
 
         case .Menu:
-            return UIImage(systemName: "fork.knife")
+            return UIImage(systemName: "square.grid.2x2")
 
-        case .Cart:
-            return UIImage(systemName: "cart")
+        case .Rewards:
+            return UIImage(systemName: "star")
 
         case .Orders:
-            return UIImage(systemName: "list.bullet.clipboard")
+            return UIImage(systemName: "doc.text") ?? UIImage(systemName: "list.bullet.clipboard")
             
-            case .Sign:
+        case .Account:
             return UIImage(systemName: "person")
         }
     }
 
     var displayTitle: String {
-        switch self {
-        case .Sign:
-            return "Profile"
-        default:
-            return rawValue
-        }
+        return rawValue
     }
 }
-

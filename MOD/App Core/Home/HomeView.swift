@@ -62,6 +62,7 @@ struct HomeView: View {
     @State private var selectedWhenText: String = "ASAP unavailable"
     @State private var showOrderSetup: Bool = false
     @State private var orderSetupInitialTab: Int = 0
+    @State private var orderSetupAutoScrollToWhen: Bool = false
     @State private var favoritesState: [UUID: Bool] = [:]
     @State private var pizzaRotation: Double = 0
     
@@ -172,6 +173,7 @@ struct HomeView: View {
         .sheet(isPresented: $showOrderSetup) {
             OrderSetupView(
                 initialOrderType: orderSetupInitialTab,
+                autoScrollToWhen: orderSetupAutoScrollToWhen,
                 currentStoreName: selectedStoreName,
                 currentDeliveryAddress: deliveryAddress,
                 currentPickupOption: selectedPickupOption,
@@ -474,6 +476,7 @@ struct HomeView: View {
                 // 1. In-Store Pickup Row
                 Button(action: {
                     orderSetupInitialTab = 0
+                    orderSetupAutoScrollToWhen = false
                     showOrderSetup = true
                     onSelectStore?()
                 }) {
@@ -509,6 +512,7 @@ struct HomeView: View {
                 // 2. When / Time Row
                 Button(action: {
                     orderSetupInitialTab = 0
+                    orderSetupAutoScrollToWhen = true
                     showOrderSetup = true
                     onSelectTime?()
                 }) {
@@ -542,6 +546,7 @@ struct HomeView: View {
                 // 1. Delivering From Row
                 Button(action: {
                     orderSetupInitialTab = 1
+                    orderSetupAutoScrollToWhen = false
                     showOrderSetup = true
                     onSelectStore?()
                 }) {
@@ -577,6 +582,7 @@ struct HomeView: View {
                 // 2. Deliver To Address Row
                 Button(action: {
                     orderSetupInitialTab = 1
+                    orderSetupAutoScrollToWhen = false
                     showOrderSetup = true
                 }) {
                     HStack(spacing: 14) {
@@ -611,6 +617,7 @@ struct HomeView: View {
                 // 3. When Row
                 Button(action: {
                     orderSetupInitialTab = 1
+                    orderSetupAutoScrollToWhen = true
                     showOrderSetup = true
                     onSelectTime?()
                 }) {

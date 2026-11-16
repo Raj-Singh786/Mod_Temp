@@ -37,6 +37,24 @@ struct OrderPickupOptionItem: Identifiable, Equatable {
     let iconName: String
 }
 
+// MARK: - Schedule Date & Time Slot Models
+
+struct OrderScheduleDateItem: Identifiable, Equatable {
+    let id: Int
+    let title: String
+    let subtitle: String
+}
+
+struct OrderTimeSlotItem: Identifiable, Equatable {
+    let id: String
+    let startTime: String
+    let endTime: String
+    
+    var displayTime: String {
+        "\(startTime) -\(endTime)"
+    }
+}
+
 // MARK: - Diagonal Striped Pattern (for disabled store)
 
 struct DiagonalStripesShape: Shape {
@@ -65,6 +83,7 @@ struct OrderSetupView: View {
     // MARK: - Configuration / Inputs
     
     var initialOrderType: Int = 0 // 0: Pickup, 1: Delivery
+    var autoScrollToWhen: Bool = false
     var currentStoreName: String = "Capitol Hill, Seattle"
     var currentDeliveryAddress: String = "Add a delivery address"
     var currentPickupOption: String = "In-store pickup"
@@ -80,10 +99,95 @@ struct OrderSetupView: View {
     @State private var selectedPickupOptionId: String = "instore"
     @State private var isLocationFilterActive: Bool = true
     @State private var selectedWhenOption: Int = 1 // 0: ASAP, 1: Schedule for later
+    @State private var isScheduleExpanded: Bool = false
+    @State private var selectedDateIndex: Int = 0
+    @State private var selectedSlotId: String = "10:15 AM"
     
     // Delivery Address fields
     @State private var deliveryStreetAddress: String = ""
     @State private var deliveryInstructions: String = "Leave at door"
+    
+    // MARK: - Dates List
+    
+    private let scheduleDates: [OrderScheduleDateItem] = [
+        OrderScheduleDateItem(id: 0, title: "Today", subtitle: "58 times"),
+        OrderScheduleDateItem(id: 1, title: "Tomorrow", subtitle: "58 times"),
+        OrderScheduleDateItem(id: 2, title: "Wed 11/18", subtitle: "58 times"),
+        OrderScheduleDateItem(id: 3, title: "Thu 11/19", subtitle: "58 times")
+    ]
+    
+    // MARK: - Morning Slots
+    
+    private let morningSlots: [OrderTimeSlotItem] = [
+        OrderTimeSlotItem(id: "9:15 AM", startTime: "9:15 AM", endTime: "9:30"),
+        OrderTimeSlotItem(id: "9:30 AM", startTime: "9:30 AM", endTime: "9:45"),
+        OrderTimeSlotItem(id: "9:45 AM", startTime: "9:45 AM", endTime: "10:00"),
+        OrderTimeSlotItem(id: "10:00 AM", startTime: "10:00 AM", endTime: "10:15"),
+        OrderTimeSlotItem(id: "10:15 AM", startTime: "10:15 AM", endTime: "10:30"),
+        OrderTimeSlotItem(id: "10:30 AM", startTime: "10:30 AM", endTime: "10:45"),
+        OrderTimeSlotItem(id: "10:45 AM", startTime: "10:45 AM", endTime: "11:00"),
+        OrderTimeSlotItem(id: "11:00 AM", startTime: "11:00 AM", endTime: "11:15"),
+        OrderTimeSlotItem(id: "11:15 AM", startTime: "11:15 AM", endTime: "11:30"),
+        OrderTimeSlotItem(id: "11:30 AM", startTime: "11:30 AM", endTime: "11:45"),
+        OrderTimeSlotItem(id: "11:45 AM", startTime: "11:45 AM", endTime: "12:00")
+    ]
+    
+    // MARK: - Afternoon Slots
+    
+    private let afternoonSlots: [OrderTimeSlotItem] = [
+        OrderTimeSlotItem(id: "12:00 PM", startTime: "12:00 PM", endTime: "12:15"),
+        OrderTimeSlotItem(id: "12:15 PM", startTime: "12:15 PM", endTime: "12:30"),
+        OrderTimeSlotItem(id: "12:30 PM", startTime: "12:30 PM", endTime: "12:45"),
+        OrderTimeSlotItem(id: "12:45 PM", startTime: "12:45 PM", endTime: "1:00"),
+        OrderTimeSlotItem(id: "1:00 PM", startTime: "1:00 PM", endTime: "1:15"),
+        OrderTimeSlotItem(id: "1:15 PM", startTime: "1:15 PM", endTime: "1:30"),
+        OrderTimeSlotItem(id: "1:30 PM", startTime: "1:30 PM", endTime: "1:45"),
+        OrderTimeSlotItem(id: "1:45 PM", startTime: "1:45 PM", endTime: "2:00"),
+        OrderTimeSlotItem(id: "2:00 PM", startTime: "2:00 PM", endTime: "2:15"),
+        OrderTimeSlotItem(id: "2:15 PM", startTime: "2:15 PM", endTime: "2:30"),
+        OrderTimeSlotItem(id: "2:30 PM", startTime: "2:30 PM", endTime: "2:45"),
+        OrderTimeSlotItem(id: "2:45 PM", startTime: "2:45 PM", endTime: "3:00"),
+        OrderTimeSlotItem(id: "3:00 PM", startTime: "3:00 PM", endTime: "3:15"),
+        OrderTimeSlotItem(id: "3:15 PM", startTime: "3:15 PM", endTime: "3:30"),
+        OrderTimeSlotItem(id: "3:30 PM", startTime: "3:30 PM", endTime: "3:45"),
+        OrderTimeSlotItem(id: "3:45 PM", startTime: "3:45 PM", endTime: "4:00"),
+        OrderTimeSlotItem(id: "4:00 PM", startTime: "4:00 PM", endTime: "4:15"),
+        OrderTimeSlotItem(id: "4:15 PM", startTime: "4:15 PM", endTime: "4:30"),
+        OrderTimeSlotItem(id: "4:30 PM", startTime: "4:30 PM", endTime: "4:45"),
+        OrderTimeSlotItem(id: "4:45 PM", startTime: "4:45 PM", endTime: "5:00")
+    ]
+    
+    // MARK: - Evening Slots
+    
+    private let eveningSlots: [OrderTimeSlotItem] = [
+        OrderTimeSlotItem(id: "5:00 PM", startTime: "5:00 PM", endTime: "5:15"),
+        OrderTimeSlotItem(id: "5:15 PM", startTime: "5:15 PM", endTime: "5:30"),
+        OrderTimeSlotItem(id: "5:30 PM", startTime: "5:30 PM", endTime: "5:45"),
+        OrderTimeSlotItem(id: "5:45 PM", startTime: "5:45 PM", endTime: "6:00"),
+        OrderTimeSlotItem(id: "6:00 PM", startTime: "6:00 PM", endTime: "6:15"),
+        OrderTimeSlotItem(id: "6:15 PM", startTime: "6:15 PM", endTime: "6:30"),
+        OrderTimeSlotItem(id: "6:30 PM", startTime: "6:30 PM", endTime: "6:45"),
+        OrderTimeSlotItem(id: "6:45 PM", startTime: "6:45 PM", endTime: "7:00"),
+        OrderTimeSlotItem(id: "7:00 PM", startTime: "7:00 PM", endTime: "7:15"),
+        OrderTimeSlotItem(id: "7:15 PM", startTime: "7:15 PM", endTime: "7:30"),
+        OrderTimeSlotItem(id: "7:30 PM", startTime: "7:30 PM", endTime: "7:45"),
+        OrderTimeSlotItem(id: "7:45 PM", startTime: "7:45 PM", endTime: "8:00"),
+        OrderTimeSlotItem(id: "8:00 PM", startTime: "8:00 PM", endTime: "8:15"),
+        OrderTimeSlotItem(id: "8:15 PM", startTime: "8:15 PM", endTime: "8:30"),
+        OrderTimeSlotItem(id: "8:30 PM", startTime: "8:30 PM", endTime: "8:45"),
+        OrderTimeSlotItem(id: "8:45 PM", startTime: "8:45 PM", endTime: "9:00"),
+        OrderTimeSlotItem(id: "9:00 PM", startTime: "9:00 PM", endTime: "9:15"),
+        OrderTimeSlotItem(id: "9:15 PM", startTime: "9:15 PM", endTime: "9:30"),
+        OrderTimeSlotItem(id: "9:30 PM", startTime: "9:30 PM", endTime: "9:45"),
+        OrderTimeSlotItem(id: "9:45 PM", startTime: "9:45 PM", endTime: "10:00"),
+        OrderTimeSlotItem(id: "10:00 PM", startTime: "10:00 PM", endTime: "10:15"),
+        OrderTimeSlotItem(id: "10:15 PM", startTime: "10:15 PM", endTime: "10:30"),
+        OrderTimeSlotItem(id: "10:30 PM", startTime: "10:30 PM", endTime: "10:45"),
+        OrderTimeSlotItem(id: "10:45 PM", startTime: "10:45 PM", endTime: "11:00"),
+        OrderTimeSlotItem(id: "11:00 PM", startTime: "11:00 PM", endTime: "11:15"),
+        OrderTimeSlotItem(id: "11:15 PM", startTime: "11:15 PM", endTime: "11:30"),
+        OrderTimeSlotItem(id: "11:30 PM", startTime: "11:30 PM", endTime: "11:45")
+    ]
     
     // MARK: - Store List
     
@@ -173,6 +277,7 @@ struct OrderSetupView: View {
     
     init(
         initialOrderType: Int = 0,
+        autoScrollToWhen: Bool = false,
         currentStoreName: String = "Capitol Hill, Seattle",
         currentDeliveryAddress: String = "Add a delivery address",
         currentPickupOption: String = "In-store pickup",
@@ -180,6 +285,7 @@ struct OrderSetupView: View {
         onDone: ((_ orderType: Int, _ storeName: String, _ pickupOption: String, _ address: String, _ when: String) -> Void)? = nil
     ) {
         self.initialOrderType = initialOrderType
+        self.autoScrollToWhen = autoScrollToWhen
         self.currentStoreName = currentStoreName
         self.currentDeliveryAddress = currentDeliveryAddress
         self.currentPickupOption = currentPickupOption
@@ -188,6 +294,7 @@ struct OrderSetupView: View {
         
         _selectedOrderType = State(initialValue: initialOrderType)
         _deliveryStreetAddress = State(initialValue: currentDeliveryAddress == "Add a delivery address" ? "" : currentDeliveryAddress)
+        _isScheduleExpanded = State(initialValue: autoScrollToWhen)
     }
     
     // MARK: - Body
@@ -202,30 +309,44 @@ struct OrderSetupView: View {
                 headerView
                 
                 // Scrollable Content
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 18) {
-                        // 1. Pickup vs Delivery Segmented Switcher
-                        segmentedSwitcher
-                        
-                        // 2. STORE Section
-                        storeSection
-                        
-                        // 3. Conditional: Pickup Options vs Delivery Address
-                        if selectedOrderType == 0 {
-                            pickupOptionsSection
-                        } else {
-                            deliveryAddressSection
+                ScrollViewReader { scrollProxy in
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 18) {
+                            // 1. Pickup vs Delivery Segmented Switcher
+                            segmentedSwitcher
+                            
+                            // 2. STORE Section
+                            storeSection
+                            
+                            // 3. Conditional: Pickup Options vs Delivery Address
+                            if selectedOrderType == 0 {
+                                pickupOptionsSection
+                            } else {
+                                deliveryAddressSection
+                            }
+                            
+                            // 4. WHEN Section (with expandable time slots)
+                            whenSection(scrollProxy: scrollProxy)
+                            
+                            // Bottom spacer so content is not hidden by sticky DONE button
+                            Spacer()
+                                .frame(height: 90)
                         }
-                        
-                        // 4. WHEN Section
-                        whenSection
-                        
-                        // Bottom spacer so content is not hidden by sticky DONE button
-                        Spacer()
-                            .frame(height: 90)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .onAppear {
+                        selectedOrderType = initialOrderType
+                        if autoScrollToWhen {
+                            selectedWhenOption = 1
+                            isScheduleExpanded = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                withAnimation(.easeInOut(duration: 0.4)) {
+                                    scrollProxy.scrollTo("when_section", anchor: .top)
+                                }
+                            }
+                        }
+                    }
                 }
             }
             
@@ -233,7 +354,6 @@ struct OrderSetupView: View {
             bottomActionBar
         }
         .onAppear {
-            selectedOrderType = initialOrderType
             // Match current store
             if let matched = stores.first(where: { currentStoreName.contains($0.name) }) {
                 selectedStoreId = matched.id
@@ -784,10 +904,10 @@ struct OrderSetupView: View {
         }
     }
     
-    // MARK: - WHEN Section
+    // MARK: - WHEN Section (Collapsible & Expandable with Time Slots)
     
-    private var whenSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func whenSection(scrollProxy: ScrollViewProxy) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             // Title
             Text("WHEN · AMERICA/LOS ANGELES STORE TIME")
                 .font(.oswaldMedium(size: 13))
@@ -798,7 +918,10 @@ struct OrderSetupView: View {
             HStack(spacing: 0) {
                 // ASAP unavailable
                 Button(action: {
-                    // Closed right now
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        selectedWhenOption = 0
+                        isScheduleExpanded = false
+                    }
                 }) {
                     Text("ASAP · unavailable now")
                         .font(.barlowMedium(size: 13))
@@ -806,9 +929,15 @@ struct OrderSetupView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)
                         .background(
-                            Capsule()
-                                .fill(Color.white)
-                                .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+                            Group {
+                                if selectedWhenOption == 0 && !isScheduleExpanded {
+                                    Capsule()
+                                        .fill(Color.white)
+                                        .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+                                } else {
+                                    Color.clear
+                                }
+                            }
                         )
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -816,14 +945,32 @@ struct OrderSetupView: View {
                 
                 // Schedule for later
                 Button(action: {
-                    selectedWhenOption = 1
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        selectedWhenOption = 1
+                        isScheduleExpanded = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            scrollProxy.scrollTo("when_section", anchor: .top)
+                        }
+                    }
                 }) {
                     Text("Schedule for later")
                         .font(.barlowBold(size: 13))
                         .foregroundColor(Color("app_black"))
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)
-                        .background(Color.clear)
+                        .background(
+                            Group {
+                                if selectedWhenOption == 1 && isScheduleExpanded {
+                                    Capsule()
+                                        .fill(Color.white)
+                                        .shadow(color: Color.black.opacity(0.06), radius: 3, x: 0, y: 1)
+                                } else {
+                                    Color.clear
+                                }
+                            }
+                        )
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -833,16 +980,150 @@ struct OrderSetupView: View {
                     .fill(Color(red: 0xF5 / 255.0, green: 0xEF / 255.0, blue: 0xE6 / 255.0))
             )
             
-            // Amber Closed Warning Note
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Closed for ASAP orders right now — schedule for later.")
-                    .font(.barlowRegular(size: 12))
-                    .foregroundColor(Color(red: 0x9E / 255.0, green: 0x66 / 255.0, blue: 0x22 / 255.0))
-                Text("Choose \"Schedule for later\" to pick a time.")
-                    .font(.barlowRegular(size: 12))
-                    .foregroundColor(Color(red: 0x9E / 255.0, green: 0x66 / 255.0, blue: 0x22 / 255.0))
+            // Collapsible Schedule Content (Snap 1 & Snap 2)
+            if isScheduleExpanded {
+                collapsibleScheduleView
+            } else {
+                // Amber Closed Warning Note
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Closed for ASAP orders right now — schedule for later.")
+                        .font(.barlowRegular(size: 12))
+                        .foregroundColor(Color(red: 0x9E / 255.0, green: 0x66 / 255.0, blue: 0x22 / 255.0))
+                    Text("Choose \"Schedule for later\" to pick a time.")
+                        .font(.barlowRegular(size: 12))
+                        .foregroundColor(Color(red: 0x9E / 255.0, green: 0x66 / 255.0, blue: 0x22 / 255.0))
+                }
+                .padding(.top, 2)
             }
-            .padding(.top, 2)
+        }
+        .id("when_section")
+    }
+    
+    // MARK: - Collapsible Schedule View (Snap 1 & Snap 2)
+    
+    private var collapsibleScheduleView: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // 1. Next Available Box
+            HStack(spacing: 12) {
+                Image(systemName: "clock")
+                    .font(.system(size: 18))
+                    .foregroundColor(Color("Button_red"))
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Next available")
+                        .font(.barlowBold(size: 15))
+                        .foregroundColor(Color("app_black"))
+                    Text("Today · 9:15 AM")
+                        .font(.barlowRegular(size: 13))
+                        .foregroundColor(Color("text_gary"))
+                }
+                
+                Spacer()
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                    )
+            )
+            
+            // 2. Dates Horizontal Selector
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(scheduleDates) { dateItem in
+                        let isDateSelected = selectedDateIndex == dateItem.id
+                        
+                        Button(action: {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                selectedDateIndex = dateItem.id
+                            }
+                        }) {
+                            VStack(spacing: 3) {
+                                Text(dateItem.title)
+                                    .font(.barlowBold(size: 14.5))
+                                Text(dateItem.subtitle)
+                                    .font(.barlowRegular(size: 12))
+                            }
+                            .foregroundColor(isDateSelected ? .white : Color("app_black"))
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 16)
+                            .frame(minWidth: 84)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(isDateSelected ? Color("Button_red") : Color.white)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(isDateSelected ? Color("Button_red") : Color.gray.opacity(0.25), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+            
+            // 3. MORNING Slots Grid
+            timeSlotGridSection(title: "MORNING", slots: morningSlots)
+            
+            // 4. AFTERNOON Slots Grid
+            timeSlotGridSection(title: "AFTERNOON", slots: afternoonSlots)
+            
+            // 5. EVENING Slots Grid
+            timeSlotGridSection(title: "EVENING", slots: eveningSlots)
+            
+            // 6. 15-minute windows disclaimer
+            Text("15-minute windows in store time. We hold your time until checkout and recheck it when you pay. Use arrow keys to move between times.")
+                .font(.barlowRegular(size: 12))
+                .foregroundColor(Color("text_gary"))
+                .lineSpacing(3)
+                .padding(.top, 4)
+        }
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+    
+    // MARK: - Time Slot Grid Section
+    
+    private func timeSlotGridSection(title: String, slots: [OrderTimeSlotItem]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.oswaldBold(size: 13))
+                .tracking(0.8)
+                .foregroundColor(Color("text_gary"))
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                ForEach(slots) { slot in
+                    let isSlotSelected = selectedSlotId == slot.id
+                    
+                    Button(action: {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            selectedSlotId = slot.id
+                        }
+                    }) {
+                        VStack(spacing: 2) {
+                            Text(slot.startTime)
+                                .font(.barlowBold(size: 13.5))
+                            Text("-\(slot.endTime)")
+                                .font(.barlowRegular(size: 11.5))
+                        }
+                        .foregroundColor(isSlotSelected ? .white : Color("app_black"))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(isSlotSelected ? Color("Button_red") : Color.white)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(isSlotSelected ? Color("Button_red") : Color.gray.opacity(0.25), lineWidth: isSlotSelected ? 2 : 1)
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
         }
     }
     
@@ -857,7 +1138,14 @@ struct OrderSetupView: View {
                 let chosenStore = stores.first(where: { $0.id == selectedStoreId })?.displayName ?? currentStoreName
                 let chosenPickup = pickupOptions.first(where: { $0.id == selectedPickupOptionId })?.title ?? currentPickupOption
                 let chosenAddress = deliveryStreetAddress.isEmpty ? "Add a delivery address" : deliveryStreetAddress
-                let chosenWhen = selectedWhenOption == 0 ? "ASAP · ~15 min" : "ASAP unavailable"
+                
+                let chosenWhen: String
+                if isScheduleExpanded || selectedWhenOption == 1 {
+                    let dateTitle = scheduleDates.indices.contains(selectedDateIndex) ? scheduleDates[selectedDateIndex].title : "Today"
+                    chosenWhen = "\(dateTitle) · \(selectedSlotId)"
+                } else {
+                    chosenWhen = "ASAP unavailable"
+                }
                 
                 onDone?(selectedOrderType, chosenStore, chosenPickup, chosenAddress, chosenWhen)
                 dismiss()

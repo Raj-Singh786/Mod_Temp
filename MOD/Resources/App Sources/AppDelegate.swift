@@ -40,11 +40,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
 extension AppDelegate {
-    func moveToTabBar(isGuest: Bool = false) {
+    func moveToTabBar(isGuest: Bool = false, selectedIndex: Int = 0) {
         UserDefaults.standard.set(isGuest, forKey: "isGuestUser")
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let sceneDelegate = windowScene.delegate as? SceneDelegate else { return }
         let tabBarVC = TabBarVC.instantiate(fromAppStoryboard: .Home)
+        tabBarVC.myIndex = selectedIndex
+        tabBarVC.selectedIndex = selectedIndex
         let navVC = UINavigationController(rootViewController: tabBarVC)
+        navVC.isNavigationBarHidden = true
         sceneDelegate.window?.rootViewController = navVC
+        tabBarVC.selectedIndex = selectedIndex
     }
 }
