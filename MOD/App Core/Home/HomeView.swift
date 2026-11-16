@@ -72,18 +72,18 @@ struct HomeView: View {
     private let favoriteItems: [HomeMenuItem] = [
         HomeMenuItem(
             title: "OG PEPPERONI",
-            description: "Tomato sauce, mozzarella, asiago, and pepperoni.",
+            description: "Tomato sauce, mozzarella, asiago and pepperoni.",
             price: "$10.99",
             imageName: "per",
             tag: "Popular",
             isVeg: false,
             isVegan: false,
-            calories: "820 cal",
+            calories: "906 cal",
             actionTitle: "CUSTOMIZE"
         ),
         HomeMenuItem(
             title: "PERFECT PESTO",
-            description: "Pesto, garlic rub, mozzarella, feta, artichokes, and fresh arugula...",
+            description: "Pesto, garlic rub, mozzarella, feta, artichokes, and fresh arugula.",
             price: "$13.99",
             imageName: "pesto",
             tag: "New",
@@ -94,7 +94,7 @@ struct HomeView: View {
         ),
         HomeMenuItem(
             title: "NO NAME CAKE",
-            description: "Chocolate cake with vanilla buttercream center and chocolate...",
+            description: "Chocolate cake with vanilla buttercream center and chocolate glaze.",
             price: "$3.99",
             imageName: "Desert",
             tag: "Fan Favorite",
@@ -130,7 +130,7 @@ struct HomeView: View {
                 
                 // Scrollable Content
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                         // Hero Banner Card
                         heroBannerCard
                         
@@ -156,11 +156,13 @@ struct HomeView: View {
                         utilityLinksCard
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 4)
+                    .padding(.top, 2)
                     .padding(.bottom, 36)
                 }
             }
         }
+        // Hide the system navigation bar so it doesn't reserve blank space above the custom header
+        .toolbar(.hidden, for: .navigationBar)   // iOS 16+
         .onAppear {
             withAnimation(.linear(duration: 35).repeatForever(autoreverses: false)) {
                 pizzaRotation = 360
@@ -171,45 +173,45 @@ struct HomeView: View {
     // MARK: - Top Header Bar
     
     private var topHeaderBar: some View {
-        HStack(alignment: .center) {
-            // MOD Shield Logo
-            Image("app_logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 32, height: 38)
-                .accessibilityLabel("MOD Pizza Logo")
+        ZStack {
+            // Left: MOD Shield Logo
+            HStack {
+                Image("app_logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32, height: 38)
+                    .accessibilityLabel("MOD Pizza Logo")
+                Spacer()
+            }
             
-            Spacer()
-            
-            HStack(spacing: 12) {
-                // Profile Button (vertically centered in middle)
+            // Center: Person and Cart icons in the exact middle of the screen
+            HStack(spacing: 18) {
+                // Profile Button
                 Button(action: {
                     onProfileTap?()
                 }) {
                     Image(systemName: "person")
-                        .font(.system(size: 19, weight: .regular))
+                        .font(.system(size: 20, weight: .regular))
                         .foregroundColor(Color("app_black"))
-                        .frame(width: 36, height: 36)
-                        .contentShape(Rectangle())
+                        .frame(width: 34, height: 34)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                // Shopping Cart Button (vertically centered in middle)
+                // Shopping Cart Button
                 Button(action: {
                     onCartTap?()
                 }) {
                     Image(systemName: "cart")
-                        .font(.system(size: 19, weight: .regular))
-                        .foregroundColor(Color("app_black"))
-                        .frame(width: 36, height: 36)
-                        .contentShape(Rectangle())
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundColor(Color("Button_red"))
+                        .frame(width: 34, height: 34)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.horizontal, 20)
-        .padding(.top, 4)
-        .padding(.bottom, 6)
+        .padding(.top, 2)
+        .padding(.bottom, 4)
         .background(Color("app_background"))
     }
     
@@ -226,11 +228,11 @@ struct HomeView: View {
                     .tracking(1.2)
             }
             .foregroundColor(.white)
-            .padding(.top, 22)
+            .padding(.top, 20)
             .padding(.horizontal, 20)
             
             // Headline (YOUR PIZZA is app_white, YOUR WAY is pizza_found)
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: -8) {   // try -4 to -12
                 Text("YOUR PIZZA.")
                     .font(.oswaldMedium(size: 34))
                     .tracking(0.6)
@@ -244,6 +246,7 @@ struct HomeView: View {
             .padding(.top, 10)
             .padding(.horizontal, 20)
             
+            
             // Description
             Text("Pile on what you love, split it down the middle, or grab a go-to in two taps. Every pizza is made on demand.")
                 .font(.barlowRegular(size: 13.5))
@@ -254,7 +257,7 @@ struct HomeView: View {
             
             // Action Buttons
             HStack(spacing: 10) {
-                // Start Your Order Button (Single line, text in Button_red)
+                // Start Your Order Button
                 Button(action: {
                     onStartOrder?()
                 }) {
@@ -279,7 +282,7 @@ struct HomeView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                // Build Your Pizza Button (Single line)
+                // Build Your Pizza Button
                 Button(action: {
                     onBuildPizza?()
                 }) {
@@ -303,48 +306,34 @@ struct HomeView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
             
-            // Pizza Graphic (Slowly rotating animation) with "MADE YOUR WAY" Badge Overlapping
-            ZStack(alignment: .topTrailing) {
-                // Cream circular arc background
+            // Pizza Cutout Graphic with Cream Arch Dome
+            ZStack(alignment: .bottom) {
+                // 1. Cream Dome Background Arch (spans across the bottom of the card)
                 Circle()
                     .fill(Color("pizza_found"))
-                    .frame(width: 290, height: 290)
-                    .offset(y: 45)
+                    .frame(width: 380, height: 380)
+                    .offset(y: 110)
                 
-                // Centered Pizza Image with subtle continuous round animation
-                Image(UIImage(named: "PizzaOn") != nil ? "PizzaOn" : "pizza1")
+                // 2. Centered PizzaOn Image (with continuous rotation)
+                Image("PizzaOn")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 260, height: 260)
+                    .frame(width: 270, height: 270)
                     .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
+                    .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: 4)
                     .rotationEffect(.degrees(pizzaRotation))
-                    .offset(y: 45)
-                
-                // "MADE YOUR WAY" Circular Sticker Badge overlapping the pizza
-                VStack(spacing: 1) {
-                    Text("MADE")
-                        .font(.oswaldBold(size: 10))
-                        .tracking(0.5)
-                    Text("YOUR")
-                        .font(.oswaldBold(size: 13.5))
-                        .tracking(0.5)
-                    Text("WAY")
-                        .font(.oswaldBold(size: 10))
-                        .tracking(0.5)
-                }
-                .foregroundColor(Color("Button_red"))
-                .frame(width: 62, height: 62)
-                .background(
-                    Circle()
-                        .fill(Color.white)
-                        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
-                )
-                .offset(x: -26, y: 30)
+                    .offset(y: 42)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 195)
+            .frame(height: 205)
             .clipped()
+            // 3. "MADE YOUR WAY" sticker: top-right, straddling the dome edge.
+            //    Applied AFTER .clipped() so the part sticking out above the dome isn't cut off.
+            .overlay(alignment: .topTrailing) {
+                madeYourWayBadge
+                    .padding(.trailing, 18)
+                    .offset(y: -12)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
@@ -352,6 +341,30 @@ struct HomeView: View {
                 .fill(Color("Button_red"))
         )
         .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
+    }
+    
+    // MARK: - "MADE YOUR WAY" Sticker Badge
+    
+    private var madeYourWayBadge: some View {
+        VStack(spacing: 1.5) {
+            Text("MADE")
+                .font(.oswaldBold(size: 12))
+                .tracking(0.5)
+            Text("YOUR")
+                .font(.oswaldBold(size: 18))
+                .tracking(0.5)
+            Text("WAY")
+                .font(.oswaldBold(size: 12))
+                .tracking(0.5)
+        }
+        .foregroundColor(Color("Button_red"))
+        .frame(width: 82, height: 82)
+        .background(
+            Circle()
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
+        )
+        .rotationEffect(.degrees(-8)) // optional slight tilt; remove for a perfectly upright sticker
     }
     
     // MARK: - Order Mode & Store Selector Card
@@ -499,7 +512,6 @@ struct HomeView: View {
     }
     
     // MARK: - "WHAT ARE YOU CRAVING?" Categories Section
-    // 3D effect cell with border, drop shadow, and circular pizza_found background behind image
     
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -618,50 +630,53 @@ struct HomeView: View {
         let isFav = favoritesState[item.id] ?? item.isFavorite
         let dietaryColor: Color = item.isVeg ? Color("kale_green") : Color("Button_red")
         
-        return HStack(alignment: .top, spacing: 14) {
-            // Left Image with pizza_found background & roma_red Popular badge
+        return HStack(spacing: 0) {
+            // Left Panel (full-height pizza_found background with centered food image)
             ZStack(alignment: .topLeading) {
-                // Background behind image is pizza_found
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color("pizza_found"))
-                    .frame(width: 90, height: 90)
+                Color("pizza_found")
                 
-                Image(item.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 82, height: 82)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .frame(width: 90, height: 90)
+                VStack {
+                    Spacer(minLength: 8)
+                    Image(item.imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 96, height: 96)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 3)
+                    Spacer(minLength: 8)
+                }
+                .frame(maxWidth: .infinity)
                 
-                // Popular / item badge in roma_red
+                // Item tag badge at top-left
                 if let tag = item.tag {
                     Text(tag)
-                        .font(.oswaldMedium(size: 9.5))
+                        .font(.oswaldMedium(size: 10))
                         .tracking(0.5)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
                         .background(
                             Capsule()
                                 .fill(Color("roma_red"))
                         )
-                        .offset(x: -4, y: -4)
+                        .padding(.top, 10)
+                        .padding(.leading, 10)
                 }
             }
-            .frame(width: 90, height: 90)
+            .frame(width: 124)
             
-            // Right Details
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .top) {
+            // Right Details Panel
+            VStack(alignment: .leading, spacing: 6) {
+                // Title and Heart Button
+                HStack(alignment: .center) {
                     Text(item.title)
-                        .font(.oswaldMedium(size: 16.5))
-                        .tracking(0.5)
+                        .font(.oswaldMedium(size: 19.5))
+                        .tracking(0.4)
                         .foregroundColor(Color("app_black"))
                         .lineLimit(1)
                     
                     Spacer()
                     
-                    // Circular round view around heart icon (on click heart icon is Button_red)
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                             favoritesState[item.id] = !isFav
@@ -670,55 +685,72 @@ struct HomeView: View {
                         ZStack {
                             Circle()
                                 .fill(Color.white)
-                                .frame(width: 30, height: 30)
-                                .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1.5)
+                                .frame(width: 32, height: 32)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1)
+                                        .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1.2)
                                 )
+                                .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
                             
                             Image(systemName: isFav ? "suit.heart.fill" : "suit.heart")
-                                .font(.system(size: 13.5, weight: isFav ? .bold : .medium))
-                                .foregroundColor(isFav ? Color("Button_red") : Color("text_gary").opacity(0.75))
+                                .font(.system(size: 14, weight: isFav ? .bold : .medium))
+                                .foregroundColor(isFav ? Color("Button_red") : Color("app_black").opacity(0.75))
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
                 
+                // Description
                 Text(item.description)
-                    .font(.barlowRegular(size: 12.5))
+                    .font(.barlowRegular(size: 13))
                     .foregroundColor(Color("text_gary"))
                     .lineLimit(2)
                     .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 
-                // Dietary Badge (Nonveg: Button_red, Veg & Vegan: kale_green)
-                HStack(spacing: 5) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 3)
-                            .stroke(dietaryColor, lineWidth: 1.2)
-                            .frame(width: 12, height: 12)
-                        Circle()
-                            .fill(dietaryColor)
-                            .frame(width: 6, height: 6)
+                // Dietary Pill & Calorie Row
+                HStack(spacing: 8) {
+                    HStack(spacing: 5) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 3)
+                                .stroke(dietaryColor, lineWidth: 1.2)
+                                .frame(width: 13, height: 13)
+                            
+                            if item.isVeg {
+                                Circle()
+                                    .fill(dietaryColor)
+                                    .frame(width: 6, height: 6)
+                            } else {
+                                Image(systemName: "triangle.fill")
+                                    .font(.system(size: 6))
+                                    .foregroundColor(dietaryColor)
+                            }
+                        }
+                        
+                        Text(item.isVegan ? "Vegan" : (item.isVeg ? "Veg" : "Non-veg"))
+                            .font(.barlowSemiBold(size: 12))
+                            .foregroundColor(dietaryColor)
                     }
-                    
-                    Text(item.isVegan ? "Vegan" : (item.isVeg ? "Veg" : "Non-veg"))
-                        .font(.barlowSemiBold(size: 11.5))
-                        .foregroundColor(dietaryColor)
-                    
-                    Text("·")
-                        .foregroundColor(Color("text_gary"))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .stroke(Color(red: 0xE5 / 255.0, green: 0xDF / 255.0, blue: 0xD3 / 255.0), lineWidth: 1)
+                            .background(Capsule().fill(Color.white))
+                    )
                     
                     Text(item.calories)
-                        .font(.barlowRegular(size: 11.5))
+                        .font(.barlowRegular(size: 12.5))
                         .foregroundColor(Color("text_gary"))
+                    
+                    Spacer()
                 }
                 .padding(.top, 2)
                 
                 // Price & Action Button
                 HStack(alignment: .center) {
                     Text(item.price)
-                        .font(.oswaldMedium(size: 17))
+                        .font(.oswaldBold(size: 21))
                         .foregroundColor(Color("app_black"))
                     
                     Spacer()
@@ -731,27 +763,37 @@ struct HomeView: View {
                         }
                     }) {
                         Text(item.actionTitle)
-                            .font(.oswaldMedium(size: 12))
-                            .tracking(0.8)
+                            .font(.oswaldMedium(size: 13.5))
+                            .tracking(1.0)
                             .foregroundColor(.white)
-                            .padding(.horizontal, 14)
-                            .frame(height: 30)
+                            .padding(.horizontal, 18)
+                            .frame(height: 38)
                             .background(
                                 Capsule()
                                     .fill(Color("Button_red"))
                             )
+                            .shadow(color: Color("Button_red").opacity(0.3), radius: 5, x: 0, y: 2)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.top, 4)
             }
+            .padding(.vertical, 14)
+            .padding(.horizontal, 14)
+            .background(Color.white)
         }
-        .padding(12)
+        .frame(maxWidth: .infinity)
+        .fixedSize(horizontal: false, vertical: true)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDE / 255.0), lineWidth: 1.2)
+        )
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
     
     // MARK: - Sign In Rewards Teaser
