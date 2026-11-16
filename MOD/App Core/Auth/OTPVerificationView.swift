@@ -16,17 +16,20 @@ struct OTPVerificationView: View {
     let mode: LoginInputMode
     var codeLength: Int = 6
     
+    // MARK: - Callbacks
+    
     var onVerificationSuccess: (() -> Void)? = nil
+    var onContinueAsGuest: (() -> Void)? = nil
     var onBack: (() -> Void)? = nil
     var onResend: (() -> Void)? = nil
     
     // MARK: - State
     
-    @State private var pinDigits: [String] = Array(repeating: "", count: 6)
-    @FocusState private var focusedIndex: Int?
+    @State private var otpCode: String = ""
     @State private var errorMessage: String? = nil
     @State private var secondsRemaining: Int = 30
     @State private var canResend: Bool = false
+    @FocusState private var isFieldFocused: Bool
     
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
@@ -38,93 +41,50 @@ struct OTPVerificationView: View {
             guard parts.count == 2 else { return destination }
             let name = parts[0]
             let domain = parts[1]
-            let masked = name.count > 2 ? "\(name.prefix(2))****" : "\(name)****"
+            let masked = name.count > 2 ? "\(name.prefix(2))••••" : "\(name)••••"
             return "\(masked)@\(domain)"
         } else {
             let digits = destination.filter { $0.isNumber }
-            if digits.count > 4 {
-                return "•••• ••• " + digits.suffix(4)
+            if digits.count >= 4 {
+                return "••••••" + digits.suffix(4)
             }
             return destination
         }
-    }
-    
-    private var isCodeComplete: Bool {
-        pinDigits.allSatisfy { !$0.isEmpty } && pinDigits.count == codeLength
-    }
-    
-    private var codeString: String {
-        pinDigits.joined()
     }
     
     // MARK: - Body
     
     var body: some View {
         GeometryReader { geometry in
+            let safeTop = geometry.safeAreaInsets.top > 0 ? geometry.safeAreaInsets.top : 20.0
+            let pizzaSize = min(geometry.size.width * 0.72, 280.0)
+            let pizzaTop = safeTop + 10.0
+            let topSpacing = pizzaTop + (pizzaSize * 0.50)
+            let minCardHeight = geometry.size.height - topSpacing + geometry.safeAreaInsets.bottom + 60
+            
             ZStack(alignment: .top) {
                 // Background Color
                 Color("pizza_found")
                     .ignoresSafeArea()
                 
-                VStack(spacing: 0) {
-                    // Header Bar (Back button + Logo)
-                    headerBar(geometry: geometry)
-                        .padding(.top, geometry.safeAreaInsets.top > 0 ? 4 : 12)
-                        .padding(.horizontal, 20)
-                    
-                    ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            // Subtitle
-                            Text("VERIFICATION")
-                                .font(.oswaldMedium(size: 13))
-                                .tracking(1.4)
-                                .foregroundColor(Color("Button_red"))
-                                .padding(.top, 28)
-                            
-                            // Headline
-                            Text("ENTER 6-DIGIT CODE")
-                                .font(.oswaldMedium(size: 30))
-                                .tracking(0.6)
-                                .foregroundColor(Color("app_black"))
-                                .padding(.top, 6)
-                            
-                            // Subtitle
-                            Text("We sent a one-time verification code to\n\(maskedDestination)")
-                                .font(.barlowRegular(size: 15.5))
-                                .foregroundColor(Color("text_gary"))
-                                .lineSpacing(3.5)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.top, 8)
-                                .padding(.bottom, 28)
-                            
-                            // 6-digit Code Boxes
-                            otpFieldsSection
-                                .padding(.bottom, 16)
-                            
-                            // Error message
-                            if let error = errorMessage {
-                                Text(error)
-                                    .font(.barlowRegular(size: 13))
-                                    .foregroundColor(.red)
-                                    .padding(.bottom, 14)
-                            }
-                            
-                            // Resend Timer / Button
-                            resendSection
-                                .padding(.bottom, 32)
-                            
-                            // Verify Button
-                            verifyButton
-                                .padding(.bottom, 24)
-                        }
-                        .padding(.horizontal, 24)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                // Top Header Graphic (Pizza peaking behind card - half pizza shown, no red zigzag)
+                topBackgroundGraphic(pizzaSize: pizzaSize, pizzaTop: pizzaTop, safeTop: safeTop)
+                
+                // Main Content Card (Scrollable)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Spacing from top so half of pizza & logo are visible
+                        Color.clear
+                            .frame(height: topSpacing)
+                        
+                        // White Content Card
+                        cardContent(minHeight: minCardHeight)
                     }
-                    .scrollDismissesKeyboard(.interactively)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .onAppear {
-                focusedIndex = 0
+                isFieldFocused = true
             }
             .onReceive(timer) { _ in
                 if secondsRemaining > 0 {
@@ -136,141 +96,151 @@ struct OTPVerificationView: View {
         }
     }
     
-    // MARK: - Header Bar
+    // MARK: - Top Background Graphic
     
-    private func headerBar(geometry: GeometryProxy) -> some View {
-        HStack(alignment: .center) {
-            Button(action: {
-                onBack?()
-            }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(Color("app_black"))
-                    .frame(width: 38, height: 38)
-                    .background(
-                        Circle()
-                            .fill(Color.white.opacity(0.9))
-                            .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
-                    )
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            Spacer()
-            
-            Image("app_logo")
+    private func topBackgroundGraphic(pizzaSize: CGFloat, pizzaTop: CGFloat, safeTop: CGFloat) -> some View {
+        ZStack(alignment: .top) {
+            // Centered Pizza Peaking Behind Card (showing top half)
+            Image(UIImage(named: "PizzaOn") != nil ? "PizzaOn" : "pizza1")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 34, height: 40)
-                .accessibilityLabel("MOD Pizza Logo")
+                .frame(width: pizzaSize, height: pizzaSize)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.16), radius: 16, x: 0, y: 8)
+                .offset(y: pizzaTop)
             
-            Spacer()
-            
-            // Placeholder to keep logo centered
-            Color.clear
-                .frame(width: 38, height: 38)
-        }
-    }
-    
-    // MARK: - OTP Fields Section
-    
-    private var otpFieldsSection: some View {
-        HStack(spacing: 9) {
-            ForEach(0..<codeLength, id: \.self) { index in
-                singleDigitField(index: index)
+            // MOD Shield Logo at Top Center
+            HStack {
+                Spacer()
+                Image("app_logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 36, height: 42)
+                    .accessibilityLabel("MOD Pizza Logo")
+                Spacer()
             }
+            .padding(.top, safeTop > 20 ? 6 : 14)
         }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity)
     }
     
-    private func singleDigitField(index: Int) -> some View {
-        let isFocused = (focusedIndex == index)
-        let hasValue = !pinDigits[index].isEmpty
-        
-        return ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+    // MARK: - Card Content
+    
+    private func cardContent(minHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Subtitle
+            Text("SIGN IN")
+                .font(.oswaldMedium(size: 13))
+                .tracking(1.4)
+                .foregroundColor(Color("Button_red"))
+                .padding(.top, 28)
+            
+            // Headline
+            Text("ENTER YOUR CODE")
+                .font(.oswaldMedium(size: 32))
+                .tracking(0.6)
+                .foregroundColor(Color("app_black"))
+                .padding(.top, 6)
+            
+            // Description
+            (
+                Text("We sent a 6-digit code to ")
+                    .font(.barlowRegular(size: 15.5))
+                +
+                Text(maskedDestination)
+                    .font(.barlowBold(size: 15.5))
+            )
+            .foregroundColor(Color("text_gary"))
+            .lineSpacing(3)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
+            
+            // 6-digit Code Input Section
+            codeInputSection
+                .padding(.bottom, 20)
+            
+            // Verify & Sign In Button
+            verifyButton
+                .padding(.bottom, 20)
+            
+            // Actions Row (Resend Code + Use a Different Number / Email)
+            actionRow
+                .padding(.bottom, 24)
+            
+            // "or" Divider
+            orDivider
+                .padding(.bottom, 24)
+            
+            // Continue As Guest Button
+            continueAsGuestButton
+                .padding(.bottom, 36)
+        }
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .top)
+        .background(
+            // White card with top-rounded corners extending downward
+            CustomTopRoundedCard(cornerRadius: 26)
                 .fill(Color.white)
-            
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(
-                    errorMessage != nil ? Color.red : (isFocused ? Color("Button_red") : (hasValue ? Color("app_black").opacity(0.4) : Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC7 / 255.0))),
-                    lineWidth: isFocused ? 2.0 : 1.2
-                )
-            
-            TextField("", text: Binding(
-                get: {
-                    pinDigits[index]
-                },
-                set: { newValue in
-                    handleDigitInput(newValue, at: index)
-                }
-            ))
-            .keyboardType(.numberPad)
-            .textContentType(index == 0 ? .oneTimeCode : .none)
-            .multilineTextAlignment(.center)
-            .font(.oswaldMedium(size: 24))
-            .foregroundColor(Color("app_black"))
-            .focused($focusedIndex, equals: index)
-        }
-        .frame(height: 54)
+                .shadow(color: Color.black.opacity(0.08), radius: 18, x: 0, y: -4)
+        )
     }
     
-    private func handleDigitInput(_ newValue: String, at index: Int) {
-        let digitsOnly = newValue.filter { $0.isNumber }
-        
-        // Handle paste / SMS autofill of full OTP code
-        if digitsOnly.count > 1 {
-            for (offset, char) in digitsOnly.prefix(codeLength).enumerated() {
-                pinDigits[offset] = String(char)
-            }
-            focusedIndex = min(digitsOnly.count, codeLength - 1)
-            errorMessage = nil
-            if isCodeComplete {
-                handleVerify()
-            }
-            return
-        }
-        
-        if let lastDigit = digitsOnly.last {
-            pinDigits[index] = String(lastDigit)
-            errorMessage = nil
-            if index < codeLength - 1 {
-                focusedIndex = index + 1
-            } else {
-                focusedIndex = nil
-                if isCodeComplete {
-                    handleVerify()
-                }
-            }
-        } else {
-            // Deleted
-            pinDigits[index] = ""
-            if index > 0 {
-                focusedIndex = index - 1
-            }
-        }
-    }
+    // MARK: - Code Input Section
     
-    // MARK: - Resend Section
-    
-    private var resendSection: some View {
-        HStack(spacing: 6) {
-            Text("Didn't receive a code?")
-                .font(.barlowRegular(size: 14.5))
-                .foregroundColor(Color("text_gary"))
+    private var codeInputSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("6-digit code")
+                .font(.barlowSemiBold(size: 14))
+                .foregroundColor(Color("app_black"))
             
-            if canResend {
-                Button(action: {
-                    resendCode()
-                }) {
-                    Text("Resend code")
-                        .font(.barlowSemiBold(size: 14.5))
-                        .foregroundColor(Color("Button_red"))
+            ZStack(alignment: .leading) {
+                if otpCode.isEmpty {
+                    Text("")
+                        .foregroundColor(Color("text_gary").opacity(0.5))
+                        .padding(.horizontal, 16)
                 }
-                .buttonStyle(PlainButtonStyle())
-            } else {
-                Text("Resend in \(secondsRemaining)s")
-                    .font(.barlowMedium(size: 14.5))
-                    .foregroundColor(Color("text_gary").opacity(0.8))
+                
+                TextField("", text: Binding(
+                    get: { otpCode },
+                    set: { newValue in
+                        let digits = newValue.filter { $0.isNumber }
+                        otpCode = String(digits.prefix(codeLength))
+                        if !otpCode.isEmpty {
+                            errorMessage = nil
+                        }
+                        if otpCode.count == codeLength {
+                            handleVerify()
+                        }
+                    }
+                ))
+                .font(.oswaldMedium(size: 25))
+                .tracking(10.0)
+                .multilineTextAlignment(.center)
+                .foregroundColor(Color("app_black"))
+                .keyboardType(.numberPad)
+                .textContentType(.oneTimeCode)
+                .focused($isFieldFocused)
+                .padding(.horizontal, 16)
+            }
+            .frame(height: 52)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(
+                        errorMessage != nil ? Color.buttonRed : (isFieldFocused ? Color("Button_red").opacity(0.6) : Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC7 / 255.0)),
+                        lineWidth: 1.5
+                    )
+            )
+            
+            if let error = errorMessage {
+                Text(error)
+                    .font(.barlowRegular(size: 12.5))
+                    .foregroundColor(.red)
+                    .padding(.top, 2)
             }
         }
     }
@@ -289,19 +259,95 @@ struct OTPVerificationView: View {
                 .frame(height: 52)
                 .background(
                     Capsule()
-                        .fill(isCodeComplete ? Color("Button_red") : Color("Button_red").opacity(0.45))
+                        .fill(Color("Button_red"))
                 )
-                .shadow(color: isCodeComplete ? Color("Button_red").opacity(0.35) : Color.clear, radius: 10, x: 0, y: 5)
+                .shadow(color: Color("Button_red").opacity(0.35), radius: 10, x: 0, y: 5)
         }
-        .disabled(!isCodeComplete)
+        .buttonStyle(ScaleButtonStyle())
+    }
+    
+    // MARK: - Action Row (Resend + Switch Destination)
+    
+    private var actionRow: some View {
+        HStack {
+            // Resend Code Button
+            Button(action: {
+                if canResend {
+                    resendCode()
+                }
+            }) {
+                Text(canResend ? "RESEND CODE" : "RESEND CODE (\(secondsRemaining)S)")
+                    .font(.oswaldMedium(size: 14))
+                    .tracking(1.0)
+                    .foregroundColor(canResend ? Color("app_black") : Color("text_gary"))
+            }
+            .disabled(!canResend)
+            .buttonStyle(PlainButtonStyle())
+            
+            Spacer()
+            
+            // Use a Different Number / Email Button
+            Button(action: {
+                onBack?()
+            }) {
+                Text(mode == .email ? "USE A DIFFERENT EMAIL" : "USE A DIFFERENT NUMBER")
+                    .font(.oswaldMedium(size: 14))
+                    .tracking(1.0)
+                    .foregroundColor(Color("app_black"))
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+    
+    // MARK: - "or" Divider
+    
+    private var orDivider: some View {
+        HStack(spacing: 14) {
+            Rectangle()
+                .fill(Color(red: 0xE2 / 255.0, green: 0xDC / 255.0, blue: 0xD2 / 255.0))
+                .frame(height: 1)
+            
+            Text("or")
+                .font(.barlowRegular(size: 13))
+                .foregroundColor(Color("text_gary"))
+            
+            Rectangle()
+                .fill(Color(red: 0xE2 / 255.0, green: 0xDC / 255.0, blue: 0xD2 / 255.0))
+                .frame(height: 1)
+        }
+    }
+    
+    // MARK: - Continue As Guest Button
+    
+    private var continueAsGuestButton: some View {
+        Button(action: {
+            onContinueAsGuest?()
+        }) {
+            Text("CONTINUE AS GUEST")
+                .font(.oswaldMedium(size: 16))
+                .tracking(1.2)
+                .foregroundColor(Color("app_black"))
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(
+                    Capsule()
+                        .fill(Color.white)
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(Color(red: 0xD8 / 255.0, green: 0xCF / 255.0, blue: 0xC2 / 255.0), lineWidth: 1.5)
+                )
+                .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+        }
         .buttonStyle(ScaleButtonStyle())
     }
     
     // MARK: - Actions
     
     private func handleVerify() {
-        guard isCodeComplete else {
-            errorMessage = "Please enter the complete 6-digit code."
+        let trimmed = otpCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count == codeLength else {
+            errorMessage = "Please enter the complete \(codeLength)-digit code."
             return
         }
         
@@ -310,11 +356,11 @@ struct OTPVerificationView: View {
     }
     
     private func resendCode() {
-        pinDigits = Array(repeating: "", count: codeLength)
+        otpCode = ""
         secondsRemaining = 30
         canResend = false
-        focusedIndex = 0
         errorMessage = nil
+        isFieldFocused = true
         onResend?()
     }
 }
@@ -323,7 +369,7 @@ struct OTPVerificationView: View {
 
 #Preview {
     OTPVerificationView(
-        destination: "jordan.rivera@example.com",
-        mode: .email
+        destination: "+1 (555) 000-0463",
+        mode: .sms
     )
 }

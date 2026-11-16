@@ -72,6 +72,9 @@ struct AuthCoordinatorView: View {
                         onVerificationSuccess: {
                             kSharedAppDelegate?.moveToTabBar(isGuest: false)
                         },
+                        onContinueAsGuest: {
+                            kSharedAppDelegate?.moveToTabBar(isGuest: true)
+                        },
                         onBack: {
                             if !navigationPath.isEmpty {
                                 navigationPath.removeLast()
