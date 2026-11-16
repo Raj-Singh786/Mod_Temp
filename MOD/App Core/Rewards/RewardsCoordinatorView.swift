@@ -110,7 +110,7 @@ struct RewardsCoordinatorView: View {
             
             // Center: Title
             Text(screenState == .join ? "Join" : "Member pass")
-                .font(.barlowBold(size: 16))
+                .font(.oswaldMedium(size: 17))
                 .foregroundColor(Color("app_black"))
             
             Spacer()
@@ -151,7 +151,7 @@ struct RewardsCoordinatorView: View {
             // Header Titles
             VStack(alignment: .leading, spacing: 6) {
                 Text("JOIN MOD REWARDS")
-                    .font(.oswaldBold(size: 32))
+                    .font(.oswaldMedium(size: 32))
                     .tracking(0.6)
                     .foregroundColor(Color("app_black"))
                 
@@ -238,7 +238,7 @@ struct RewardsCoordinatorView: View {
                         }
                     }) {
                         Text("COMPLETE ENROLLMENT")
-                            .font(.oswaldBold(size: 14.5))
+                            .font(.oswaldMedium(size: 14.5))
                             .tracking(0.8)
                             .foregroundColor(.white)
                             .padding(.horizontal, 22)
@@ -262,7 +262,7 @@ struct RewardsCoordinatorView: View {
                         }
                     }) {
                         Text("CANCEL")
-                            .font(.oswaldBold(size: 14.5))
+                            .font(.oswaldMedium(size: 14.5))
                             .tracking(0.8)
                             .foregroundColor(Color("app_black"))
                             .padding(.horizontal, 8)
@@ -288,7 +288,7 @@ struct RewardsCoordinatorView: View {
             // "WHAT YOU GET" Section
             VStack(alignment: .leading, spacing: 14) {
                 Text("WHAT YOU GET")
-                    .font(.oswaldBold(size: 18))
+                    .font(.oswaldMedium(size: 18))
                     .tracking(0.6)
                     .foregroundColor(Color("app_black"))
                 
@@ -332,7 +332,7 @@ struct RewardsCoordinatorView: View {
             // Header Titles
             VStack(alignment: .leading, spacing: 6) {
                 Text("MEMBER PASS")
-                    .font(.oswaldBold(size: 32))
+                    .font(.oswaldMedium(size: 32))
                     .tracking(0.6)
                     .foregroundColor(Color("app_black"))
                 
@@ -374,7 +374,7 @@ struct RewardsCoordinatorView: View {
                 // Member Name & Points
                 VStack(alignment: .leading, spacing: 3) {
                     Text(fullName.isEmpty ? "Raj" : fullName)
-                        .font(.oswaldBold(size: 34))
+                        .font(.oswaldMedium(size: 34))
                         .tracking(0.5)
                         .foregroundColor(.white)
                     
@@ -442,7 +442,7 @@ struct RewardsCoordinatorView: View {
                         Image(systemName: "scope")
                             .font(.system(size: 14, weight: .bold))
                         Text("SCAN A RECEIPT INSTEAD")
-                            .font(.oswaldBold(size: 13.5))
+                            .font(.oswaldMedium(size: 13.5))
                             .tracking(0.8)
                     }
                     .foregroundColor(Color("app_black"))
@@ -461,7 +461,7 @@ struct RewardsCoordinatorView: View {
                     // Enter code action
                 }) {
                     Text("ENTER A CODE")
-                        .font(.oswaldBold(size: 13.5))
+                        .font(.oswaldMedium(size: 13.5))
                         .tracking(0.8)
                         .foregroundColor(Color("app_black"))
                         .padding(.horizontal, 10)

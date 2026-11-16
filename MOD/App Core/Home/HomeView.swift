@@ -836,7 +836,7 @@ struct HomeView: View {
                 // Title and Heart Button
                 HStack(alignment: .center) {
                     Text(item.title)
-                        .font(.oswaldMedium(size: 19.5))
+                        .font(.oswaldLight(size: 19.5))
                         .tracking(0.4)
                         .foregroundColor(Color("app_black"))
                         .lineLimit(1)
@@ -1088,7 +1088,7 @@ struct HomeView: View {
                     .font(.oswaldMedium(size: 11))
                     .tracking(1.2)
             }
-            .foregroundColor(Color("roma_red"))
+            .foregroundColor(Color("Button_red"))
             
             Text("Free dessert with any pizza")
                 .font(.oswaldBold(size: 18))
@@ -1111,7 +1111,7 @@ struct HomeView: View {
                         .frame(height: 28)
                         .background(
                             Capsule()
-                                .fill(Color("roma_red"))
+                                .fill(Color("Button_red"))
                         )
                 }
                 .buttonStyle(PlainButtonStyle())
