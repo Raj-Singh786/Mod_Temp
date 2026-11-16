@@ -290,7 +290,7 @@ struct OnboardingView: View {
     
     private var pageIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(slides.indices, id: \.self) { index in
+            ForEach(0..<max(2, slides.count), id: \.self) { index in
                 if index == currentPage {
                     Capsule()
                         .fill(Color("Button_red"))
@@ -301,8 +301,12 @@ struct OnboardingView: View {
                         .fill(Color("Button_red").opacity(0.25))
                         .frame(width: 6, height: 6)
                         .onTapGesture {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                currentPage = index
+                            if index < slides.count {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                    currentPage = index
+                                }
+                            } else {
+                                onFinish?()
                             }
                         }
                 }

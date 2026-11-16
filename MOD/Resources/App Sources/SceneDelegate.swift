@@ -6,12 +6,11 @@
 //
 
 import UIKit
+import SwiftUI
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-
-
 
     func scene(
         _ scene: UIScene,
@@ -23,20 +22,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-
-        guard let onboardingVC = storyboard.instantiateViewController(
-            withIdentifier: "OnboardingViewController"
-        ) as? OnboardingViewController else {
-            fatalError("Unable to instantiate OnboardingViewController")
-        }
-
-        let navigationController = UINavigationController(rootViewController: onboardingVC)
-        navigationController.isNavigationBarHidden = true
-
         let window = UIWindow(windowScene: windowScene)
-
-        window.rootViewController = navigationController
+        let rootHostingController = UIHostingController(rootView: AuthCoordinatorView())
+        window.rootViewController = rootHostingController
 
         self.window = window
         window.makeKeyAndVisible()

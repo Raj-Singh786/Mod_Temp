@@ -28,7 +28,7 @@
         <!--Onboarding View Controller-->
         <scene sceneID="POE-1y-BKB">
             <objects>
-                <viewController storyboardIdentifier="OnboardingViewController" id="ZoE-g8-n7m" customClass="OnboardingViewController" customModule="MOD" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="OnboardingViewController" id="ZoE-g8-n7m" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Tvn-Xk-VjS">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -215,7 +215,7 @@ baked at 800° perfection within minutes.</string>
         <!--Login View Controller-->
         <scene sceneID="bsG-Ro-XWn">
             <objects>
-                <viewController storyboardIdentifier="LoginViewController" id="szo-Qp-P3t" customClass="LoginViewController" customModule="MOD" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="LoginViewController" id="szo-Qp-P3t" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="WeU-a0-Jf4">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
