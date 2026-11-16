@@ -13,6 +13,7 @@ enum AuthDestination: Hashable {
     case promotion
     case login
     case otp(destination: String, mode: LoginInputMode)
+    case home(isGuest: Bool)
 }
 
 // MARK: - AuthCoordinatorView
@@ -22,6 +23,19 @@ struct AuthCoordinatorView: View {
     // MARK: - Navigation Path
     
     @State private var navigationPath = NavigationPath()
+    
+    // MARK: - Actions
+    
+    private func handleMoveToHome(isGuest: Bool) {
+        UserDefaults.standard.set(isGuest, forKey: "isGuestUser")
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let sceneDelegate = windowScene.delegate as? SceneDelegate,
+           sceneDelegate.window != nil {
+            kSharedAppDelegate?.moveToTabBar(isGuest: isGuest)
+        } else {
+            navigationPath.append(AuthDestination.home(isGuest: isGuest))
+        }
+    }
     
     // MARK: - Body
     
@@ -44,7 +58,7 @@ struct AuthCoordinatorView: View {
                             navigationPath.append(AuthDestination.login)
                         },
                         onContinueAsGuest: {
-                            kSharedAppDelegate?.moveToTabBar(isGuest: true)
+                            handleMoveToHome(isGuest: true)
                         },
                         onPageSelected: { page in
                             if page == 0 && !navigationPath.isEmpty {
@@ -60,7 +74,7 @@ struct AuthCoordinatorView: View {
                             navigationPath.append(AuthDestination.otp(destination: destination, mode: mode))
                         },
                         onContinueAsGuest: {
-                            kSharedAppDelegate?.moveToTabBar(isGuest: true)
+                            handleMoveToHome(isGuest: true)
                         }
                     )
                     .navigationBarBackButtonHidden(true)
@@ -70,10 +84,10 @@ struct AuthCoordinatorView: View {
                         destination: destination,
                         mode: mode,
                         onVerificationSuccess: {
-                            kSharedAppDelegate?.moveToTabBar(isGuest: false)
+                            handleMoveToHome(isGuest: false)
                         },
                         onContinueAsGuest: {
-                            kSharedAppDelegate?.moveToTabBar(isGuest: true)
+                            handleMoveToHome(isGuest: true)
                         },
                         onBack: {
                             if !navigationPath.isEmpty {
@@ -85,6 +99,10 @@ struct AuthCoordinatorView: View {
                         }
                     )
                     .navigationBarBackButtonHidden(true)
+                    
+                case .home(let isGuest):
+                    HomeView(isGuest: isGuest)
+                        .navigationBarBackButtonHidden(true)
                 }
             }
         }
