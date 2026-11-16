@@ -61,11 +61,6 @@ struct AuthCoordinatorView: View {
                         },
                         onContinueAsGuest: {
                             kSharedAppDelegate?.moveToTabBar(isGuest: true)
-                        },
-                        onBack: {
-                            if !navigationPath.isEmpty {
-                                navigationPath.removeLast()
-                            }
                         }
                     )
                     .navigationBarBackButtonHidden(true)

@@ -76,7 +76,10 @@ struct LoginView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            let topSpacing = max(116.0, geometry.size.height * 0.16)
+            let safeTop = geometry.safeAreaInsets.top > 0 ? geometry.safeAreaInsets.top : 20.0
+            let pizzaSize = min(geometry.size.width * 0.72, 280.0)
+            let pizzaTop = safeTop + 10.0
+            let topSpacing = pizzaTop + (pizzaSize * 0.50)
             let minCardHeight = geometry.size.height - topSpacing + geometry.safeAreaInsets.bottom + 60
             
             ZStack(alignment: .top) {
@@ -85,34 +88,12 @@ struct LoginView: View {
                     .ignoresSafeArea()
                 
                 // Top Header Graphic (Pizza peaking from behind card)
-                topBackgroundGraphic(geometry: geometry)
-                
-                // Optional Back Button (Top Left)
-                if let onBack = onBack {
-                    HStack {
-                        Button(action: onBack) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(Color("app_black"))
-                                .frame(width: 38, height: 38)
-                                .background(
-                                    Circle()
-                                        .fill(Color.white.opacity(0.9))
-                                        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
-                                )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(.leading, 18)
-                        .padding(.top, geometry.safeAreaInsets.top > 0 ? 6 : 14)
-                        
-                        Spacer()
-                    }
-                }
+                topBackgroundGraphic(pizzaSize: pizzaSize, pizzaTop: pizzaTop, safeTop: safeTop)
                 
                 // Main Content Card (Scrollable)
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Spacing from top so pizza & logo are visible
+                        // Spacing from top so half of pizza & logo are visible
                         Color.clear
                             .frame(height: topSpacing)
                         
@@ -127,18 +108,16 @@ struct LoginView: View {
     
     // MARK: - Top Background Graphic
     
-    private func topBackgroundGraphic(geometry: GeometryProxy) -> some View {
-        let pizzaSize = min(geometry.size.width * 0.72, 280.0)
-        
-        return ZStack(alignment: .top) {
-            // Centered Pizza Peaking Behind Card
+    private func topBackgroundGraphic(pizzaSize: CGFloat, pizzaTop: CGFloat, safeTop: CGFloat) -> some View {
+        ZStack(alignment: .top) {
+            // Centered Pizza Peaking Behind Card (showing top half)
             Image(UIImage(named: "PizzaOn") != nil ? "PizzaOn" : "pizza1")
                 .resizable()
                 .scaledToFit()
                 .frame(width: pizzaSize, height: pizzaSize)
                 .clipShape(Circle())
                 .shadow(color: Color.black.opacity(0.16), radius: 16, x: 0, y: 8)
-                .offset(y: geometry.safeAreaInsets.top + 28)
+                .offset(y: pizzaTop)
             
             // MOD Shield Logo at Top Center
             HStack {
@@ -150,7 +129,7 @@ struct LoginView: View {
                     .accessibilityLabel("MOD Pizza Logo")
                 Spacer()
             }
-            .padding(.top, geometry.safeAreaInsets.top > 0 ? 6 : 14)
+            .padding(.top, safeTop > 20 ? 6 : 14)
         }
         .frame(maxWidth: .infinity)
     }
