@@ -107,14 +107,13 @@ struct OrderSetupView: View {
     @State private var deliveryStreetAddress: String = ""
     @State private var deliveryInstructions: String = "Leave at door"
     
-    // MARK: - Dates List
+    // MARK: - Dates List (Dynamic from Store TimeZone)
     
-    private let scheduleDates: [OrderScheduleDateItem] = [
-        OrderScheduleDateItem(id: 0, title: "Today", subtitle: "58 times"),
-        OrderScheduleDateItem(id: 1, title: "Tomorrow", subtitle: "58 times"),
-        OrderScheduleDateItem(id: 2, title: "Wed 11/18", subtitle: "58 times"),
-        OrderScheduleDateItem(id: 3, title: "Thu 11/19", subtitle: "58 times")
-    ]
+    private var scheduleDates: [OrderScheduleDateItem] {
+        let activeStoreName = stores.first(where: { $0.id == selectedStoreId })?.name ?? currentStoreName
+        let storeTZ = AppTimeManager.shared.timeZone(forStore: activeStoreName)
+        return AppTime.scheduleDates(for: storeTZ)
+    }
     
     // MARK: - Morning Slots
     
@@ -191,64 +190,66 @@ struct OrderSetupView: View {
     
     // MARK: - Store List
     
-    private let stores: [OrderStoreItem] = [
-        OrderStoreItem(
-            id: "1",
-            name: "Capitol Hill",
-            cityState: "Seattle, WA",
-            distance: "0.4 mi",
-            isNearest: true,
-            address: "1302 Pine St, Seattle, WA 98101",
-            hours: "9:00 AM - 12:00 AM store time · now 11:48 PM PST",
-            pickupText: "Pickup",
-            deliveryFeeText: "Delivery $3.99",
-            prepTimeText: "~15 min prep",
-            statusText: "Scheduled only",
-            isAvailable: true
-        ),
-        OrderStoreItem(
-            id: "2",
-            name: "Bellevue Square",
-            cityState: "Bellevue, WA",
-            distance: "5.4 mi",
-            isNearest: false,
-            address: "575 Bellevue Sq, Bellevue, WA 98004",
-            hours: "10:00 AM - 10:00 PM store time · now 11:48 PM PST",
-            pickupText: "Pickup",
-            deliveryFeeText: "Delivery $2.99",
-            prepTimeText: "~20 min prep",
-            statusText: "Scheduled only",
-            isAvailable: true
-        ),
-        OrderStoreItem(
-            id: "3",
-            name: "South Congress",
-            cityState: "Austin, TX",
-            distance: "1,770 mi",
-            isNearest: false,
-            address: "1500 S Congress Ave, Austin, TX 78704",
-            hours: "10:00 AM - 10:00 PM store time · now 1:48 AM CST",
-            pickupText: "Pickup",
-            deliveryFeeText: "No delivery",
-            prepTimeText: "~15 min prep",
-            statusText: "Scheduled only",
-            isAvailable: true
-        ),
-        OrderStoreItem(
-            id: "4",
-            name: "Union Square",
-            cityState: "New York, NY",
-            distance: "2,401 mi",
-            isNearest: false,
-            address: "30 E 14th St, New York, NY 10003",
-            hours: "11:00 AM - 11:00 PM store time · now 2:48 AM EST",
-            pickupText: "Pickup",
-            deliveryFeeText: "Delivery $4.99",
-            prepTimeText: "~20 min prep",
-            statusText: "Not accepting orders",
-            isAvailable: false
-        )
-    ]
+    private var stores: [OrderStoreItem] {
+        [
+            OrderStoreItem(
+                id: "1",
+                name: "Capitol Hill",
+                cityState: "Seattle, WA",
+                distance: "0.4 mi",
+                isNearest: true,
+                address: "1302 Pine St, Seattle, WA 98101",
+                hours: AppTimeManager.shared.storeHoursLiveString(storeName: "Capitol Hill", openTime: "9:00 AM", closeTime: "12:00 AM"),
+                pickupText: "Pickup",
+                deliveryFeeText: "Delivery $3.99",
+                prepTimeText: "~15 min prep",
+                statusText: "Scheduled only",
+                isAvailable: true
+            ),
+            OrderStoreItem(
+                id: "2",
+                name: "Bellevue Square",
+                cityState: "Bellevue, WA",
+                distance: "5.4 mi",
+                isNearest: false,
+                address: "575 Bellevue Sq, Bellevue, WA 98004",
+                hours: AppTimeManager.shared.storeHoursLiveString(storeName: "Bellevue Square", openTime: "10:00 AM", closeTime: "10:00 PM"),
+                pickupText: "Pickup",
+                deliveryFeeText: "Delivery $2.99",
+                prepTimeText: "~20 min prep",
+                statusText: "Scheduled only",
+                isAvailable: true
+            ),
+            OrderStoreItem(
+                id: "3",
+                name: "South Congress",
+                cityState: "Austin, TX",
+                distance: "1,770 mi",
+                isNearest: false,
+                address: "1500 S Congress Ave, Austin, TX 78704",
+                hours: AppTimeManager.shared.storeHoursLiveString(storeName: "South Congress", openTime: "10:00 AM", closeTime: "10:00 PM"),
+                pickupText: "Pickup",
+                deliveryFeeText: "No delivery",
+                prepTimeText: "~15 min prep",
+                statusText: "Scheduled only",
+                isAvailable: true
+            ),
+            OrderStoreItem(
+                id: "4",
+                name: "Union Square",
+                cityState: "New York, NY",
+                distance: "2,401 mi",
+                isNearest: false,
+                address: "30 E 14th St, New York, NY 10003",
+                hours: AppTimeManager.shared.storeHoursLiveString(storeName: "Union Square", openTime: "11:00 AM", closeTime: "11:00 PM"),
+                pickupText: "Pickup",
+                deliveryFeeText: "Delivery $4.99",
+                prepTimeText: "~20 min prep",
+                statusText: "Not accepting orders",
+                isAvailable: false
+            )
+        ]
+    }
     
     // MARK: - Pickup Options
     
@@ -908,8 +909,10 @@ struct OrderSetupView: View {
     
     private func whenSection(scrollProxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Title
-            Text("WHEN · AMERICA/LOS ANGELES STORE TIME")
+            // Title dynamically reflects the active store's timezone (USA, UK, Australia, etc.)
+            let activeStoreName = stores.first(where: { $0.id == selectedStoreId })?.name ?? currentStoreName
+            let storeTZ = AppTimeManager.shared.timeZone(forStore: activeStoreName)
+            Text("WHEN · \(AppTimeManager.shared.headerName(for: storeTZ)) STORE TIME")
                 .font(.oswaldMedium(size: 13))
                 .tracking(0.6)
                 .foregroundColor(Color("app_black"))
@@ -1004,31 +1007,39 @@ struct OrderSetupView: View {
     private var collapsibleScheduleView: some View {
         VStack(alignment: .leading, spacing: 14) {
             // 1. Next Available Box
-            HStack(spacing: 12) {
-                Image(systemName: "clock")
-                    .font(.system(size: 18))
-                    .foregroundColor(Color("Button_red"))
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Next available")
-                        .font(.barlowBold(size: 15))
-                        .foregroundColor(Color("app_black"))
-                    Text("Today · 9:15 AM")
-                        .font(.barlowRegular(size: 13))
-                        .foregroundColor(Color("text_gary"))
+            Button(action: {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    selectedDateIndex = 0
+                    selectedSlotId = "9:15 AM"
                 }
-                
-                Spacer()
+            }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 18))
+                        .foregroundColor(Color("Button_red"))
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Next available")
+                            .font(.barlowBold(size: 15))
+                            .foregroundColor(Color("app_black"))
+                        Text("\(scheduleDates.first?.title ?? "Today") · 9:15 AM")
+                            .font(.barlowRegular(size: 13))
+                            .foregroundColor(Color("text_gary"))
+                    }
+                    
+                    Spacer()
+                }
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.white)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                        )
+                )
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.gray.opacity(0.25), lineWidth: 1)
-                    )
-            )
+            .buttonStyle(PlainButtonStyle())
             
             // 2. Dates Horizontal Selector
             ScrollView(.horizontal, showsIndicators: false) {
@@ -1142,9 +1153,12 @@ struct OrderSetupView: View {
                 let chosenWhen: String
                 if isScheduleExpanded || selectedWhenOption == 1 {
                     let dateTitle = scheduleDates.indices.contains(selectedDateIndex) ? scheduleDates[selectedDateIndex].title : "Today"
-                    chosenWhen = "\(dateTitle) · \(selectedSlotId)"
+                    let allSlots = morningSlots + afternoonSlots + eveningSlots
+                    let slotObj = allSlots.first(where: { $0.id == selectedSlotId })
+                    let endTime = slotObj?.endTime
+                    chosenWhen = AppTime.scheduleString(dateTitle: dateTitle, slotStartTime: slotObj?.startTime ?? selectedSlotId, slotEndTime: endTime)
                 } else {
-                    chosenWhen = "ASAP unavailable"
+                    chosenWhen = selectedOrderType == 0 ? "ASAP · ~15 min" : "ASAP unavailable"
                 }
                 
                 onDone?(selectedOrderType, chosenStore, chosenPickup, chosenAddress, chosenWhen)

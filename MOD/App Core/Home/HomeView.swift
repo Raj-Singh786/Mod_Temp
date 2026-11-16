@@ -60,6 +60,10 @@ struct HomeView: View {
     @State private var deliveryAddress: String = "Add a delivery address"
     @State private var selectedPickupOption: String = "In-store pickup"
     @State private var selectedWhenText: String = "ASAP unavailable"
+    @State private var pickupWhenText: String = "ASAP · ~15 min"
+    @State private var deliveryWhenText: String = "ASAP unavailable"
+    @State private var isPickupScheduled: Bool = false
+    @State private var isDeliveryScheduled: Bool = false
     @State private var showOrderSetup: Bool = false
     @State private var orderSetupInitialTab: Int = 0
     @State private var orderSetupAutoScrollToWhen: Bool = false
@@ -177,13 +181,23 @@ struct HomeView: View {
                 currentStoreName: selectedStoreName,
                 currentDeliveryAddress: deliveryAddress,
                 currentPickupOption: selectedPickupOption,
-                currentWhenText: selectedWhenText,
+                currentWhenText: orderSetupInitialTab == 0 ? (isPickupScheduled ? pickupWhenText : "ASAP · ~15 min") : (isDeliveryScheduled ? deliveryWhenText : "ASAP unavailable"),
                 onDone: { newOrderType, newStoreName, newPickupOption, newAddress, newWhen in
                     selectedOrderType = newOrderType
                     selectedStoreName = newStoreName
                     selectedPickupOption = newPickupOption
                     deliveryAddress = newAddress
                     selectedWhenText = newWhen
+                    
+                    let isScheduled = !newWhen.lowercased().hasPrefix("asap")
+                    if newOrderType == 0 {
+                        pickupWhenText = newWhen
+                        isPickupScheduled = isScheduled
+                    } else {
+                        deliveryWhenText = newWhen
+                        isDeliveryScheduled = isScheduled
+                    }
+                    
                     showOrderSetup = false
                 }
             )
@@ -526,9 +540,14 @@ struct HomeView: View {
                             Text("When")
                                 .font(.barlowRegular(size: 12))
                                 .foregroundColor(Color("text_gary"))
-                            Text("ASAP · ~15 min")
+                            Text(isPickupScheduled ? pickupWhenText : "ASAP · ~15 min")
                                 .font(.barlowBold(size: 15))
                                 .foregroundColor(Color("app_black"))
+                            if isPickupScheduled {
+                                Text("Scheduled pickup")
+                                    .font(.barlowMedium(size: 12))
+                                    .foregroundColor(Color(red: 0x9E / 255.0, green: 0x66 / 255.0, blue: 0x22 / 255.0))
+                            }
                         }
                         
                         Spacer()
@@ -631,10 +650,10 @@ struct HomeView: View {
                             Text("When")
                                 .font(.barlowRegular(size: 12))
                                 .foregroundColor(Color("text_gary"))
-                            Text(selectedWhenText)
+                            Text(isDeliveryScheduled ? deliveryWhenText : "ASAP unavailable")
                                 .font(.barlowBold(size: 15))
                                 .foregroundColor(Color("app_black"))
-                            Text("Schedule for later")
+                            Text(isDeliveryScheduled ? "Scheduled delivery" : "Schedule for later")
                                 .font(.barlowMedium(size: 12))
                                 .foregroundColor(Color(red: 0x9E / 255.0, green: 0x66 / 255.0, blue: 0x22 / 255.0))
                         }
