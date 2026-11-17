@@ -270,68 +270,76 @@ struct MenuCustomizationView: View {
     // MARK: - Body
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Color("app_background")
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Top Custom Navigation Bar
-                customNavigationBar
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                Color("app_background")
+                    .ignoresSafeArea()
                 
-                // Scrollable Customization Content
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 22) {
-                        // 1. Pizza Hero Visual Card
-                        pizzaHeroCard
-                        
-                        // 2. Title & Badge Section
-                        titleBadgeSection
-                        
-                        // 3. Size Selection Section
-                        sizeSection
-                        
-                        // 4. Crust Selection Section
-                        crustSection
-                        
-                        // 5. Toppings Sections (Sauces, Cheeses, Meats, Veggies, Finishes)
-                        ForEach(ToppingCategory.allCases) { category in
-                            categorySection(category)
+                VStack(spacing: 0) {
+                    // Top Custom Navigation Bar
+                    customNavigationBar
+                        .frame(width: geometry.size.width)
+                    
+                    // Scrollable Customization Content (Strictly Vertical Only)
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 22) {
+                            // 1. Pizza Hero Visual Card
+                            pizzaHeroCard
+                            
+                            // 2. Title & Badge Section
+                            titleBadgeSection
+                            
+                            // 3. Size Selection Section
+                            sizeSection
+                            
+                            // 4. Crust Selection Section
+                            crustSection
+                            
+                            // 5. Toppings Sections (Sauces, Cheeses, Meats, Veggies, Finishes)
+                            ForEach(ToppingCategory.allCases) { category in
+                                categorySection(category)
+                            }
+                            
+                            // 6. Nutrition Facts Table Card
+                            nutritionSummaryCard
+                            
+                            // Bottom Padding for Fixed Checkout Bar
+                            Spacer()
+                                .frame(height: 150)
                         }
-                        
-                        // 6. Nutrition Facts Table Card
-                        nutritionSummaryCard
-                        
-                        // Bottom Padding for Fixed Checkout Bar
-                        Spacer()
-                            .frame(height: 140)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 10)
+                        .frame(width: geometry.size.width, alignment: .leading)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
+                    .frame(width: geometry.size.width)
+                    .clipped()
+                }
+                
+                // Fixed Bottom Checkout & Calorie Bar
+                bottomCheckoutBar
+                    .frame(width: geometry.size.width)
+                
+                // Toast Notification
+                if showAddedToast {
+                    VStack {
+                        Spacer()
+                        Text("Added custom Build Your Pizza to cart!")
+                            .font(.barlowMedium(size: 14))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(
+                                Capsule()
+                                    .fill(Color("app_black").opacity(0.92))
+                                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                            )
+                            .padding(.bottom, 130)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    .animation(.easeInOut(duration: 0.25), value: showAddedToast)
                 }
             }
-            
-            // Fixed Bottom Checkout & Calorie Bar
-            bottomCheckoutBar
-            
-            // Toast Notification
-            if showAddedToast {
-                VStack {
-                    Spacer()
-                    Text("Added custom Build Your Pizza to cart!")
-                        .font(.barlowMedium(size: 14))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(
-                            Capsule()
-                                .fill(Color("app_black").opacity(0.92))
-                                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-                        )
-                        .padding(.bottom, 130)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-                .animation(.easeInOut(duration: 0.25), value: showAddedToast)
-            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
     }
     
@@ -475,12 +483,14 @@ struct MenuCustomizationView: View {
                 .tracking(0.6)
                 .foregroundColor(Color("app_black"))
             
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 ForEach(PizzaSize.allCases) { size in
                     sizeCard(size)
                 }
             }
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     private func sizeCard(_ size: PizzaSize) -> some View {
@@ -493,24 +503,30 @@ struct MenuCustomizationView: View {
         }) {
             VStack(spacing: 4) {
                 Text(size.rawValue)
-                    .font(.oswaldMedium(size: 17))
+                    .font(.oswaldMedium(size: 16))
                     .foregroundColor(Color("app_black"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 
                 Text(size.dimensionText)
                     .font(.barlowRegular(size: 12))
                     .foregroundColor(Color("text_gary"))
+                    .lineLimit(1)
                 
                 Text(size.priceText)
                     .font(.barlowBold(size: 13))
                     .foregroundColor(Color("app_black"))
                     .padding(.top, 2)
+                    .lineLimit(1)
                 
                 Text("\(size.baseCalories) cal")
                     .font(.barlowRegular(size: 11))
                     .foregroundColor(Color("Button_red"))
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
+            .padding(.horizontal, 4)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF4 / 255.0) : Color.white)
@@ -533,12 +549,14 @@ struct MenuCustomizationView: View {
                 .tracking(0.6)
                 .foregroundColor(Color("app_black"))
             
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 ForEach(PizzaCrust.allCases) { crust in
                     crustCard(crust)
                 }
             }
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     private func crustCard(_ crust: PizzaCrust) -> some View {
@@ -551,23 +569,28 @@ struct MenuCustomizationView: View {
         }) {
             VStack(spacing: 3) {
                 Text(crust.rawValue)
-                    .font(.barlowSemiBold(size: 14))
+                    .font(.barlowSemiBold(size: 13.5))
                     .foregroundColor(Color("app_black"))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 
                 if crust.extraPrice > 0 {
                     Text("+$\(String(format: "%.2f", crust.extraPrice)) · +\(crust.extraCalories) cal")
-                        .font(.barlowRegular(size: 11))
+                        .font(.barlowRegular(size: 10))
                         .foregroundColor(Color("Button_red"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 } else {
                     Text("Included · 0 cal")
-                        .font(.barlowRegular(size: 11))
+                        .font(.barlowRegular(size: 10))
                         .foregroundColor(Color("text_gary"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 4)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF4 / 255.0) : Color.white)
@@ -587,15 +610,18 @@ struct MenuCustomizationView: View {
         
         return VStack(alignment: .leading, spacing: 12) {
             // Category Header Row
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(category.rawValue)
                     .font(.oswaldMedium(size: 16))
                     .tracking(0.6)
                     .foregroundColor(Color("app_black"))
+                    .lineLimit(1)
                 
                 Text("· \(category.subtitle)")
                     .font(.barlowRegular(size: 12.5))
                     .foregroundColor(Color("text_gary"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 
                 Spacer()
             }
@@ -606,7 +632,9 @@ struct MenuCustomizationView: View {
                     toppingCell(topping)
                 }
             }
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     // MARK: - Topping Cell (Expandable with Portion & Amount)
@@ -636,6 +664,7 @@ struct MenuCustomizationView: View {
                         Text(topping.name)
                             .font(.barlowSemiBold(size: 14.5))
                             .foregroundColor(Color("app_black"))
+                            .lineLimit(1)
                         
                         Spacer()
                         
@@ -644,10 +673,12 @@ struct MenuCustomizationView: View {
                             Text("+\(toppings[index].calculatedCalories) cal")
                                 .font(.barlowBold(size: 13))
                                 .foregroundColor(Color("Button_red"))
+                                .lineLimit(1)
                         } else {
                             Text("+\(topping.baseCalories) cal")
                                 .font(.barlowRegular(size: 12.5))
                                 .foregroundColor(Color("text_gary"))
+                                .lineLimit(1)
                         }
                         
                         // Selection Badge / Add Icon
@@ -686,9 +717,9 @@ struct MenuCustomizationView: View {
                             Text("Portion:")
                                 .font(.barlowMedium(size: 12))
                                 .foregroundColor(Color("text_gary"))
-                                .frame(width: 52, alignment: .leading)
+                                .frame(width: 48, alignment: .leading)
                             
-                            HStack(spacing: 4) {
+                            HStack(spacing: 3) {
                                 ForEach(ToppingPortion.allCases) { portion in
                                     portionButton(portion: portion, index: index)
                                 }
@@ -705,9 +736,9 @@ struct MenuCustomizationView: View {
                             Text("Amount:")
                                 .font(.barlowMedium(size: 12))
                                 .foregroundColor(Color("text_gary"))
-                                .frame(width: 52, alignment: .leading)
+                                .frame(width: 48, alignment: .leading)
                             
-                            HStack(spacing: 4) {
+                            HStack(spacing: 3) {
                                 ForEach(ToppingAmount.allCases) { amount in
                                     amountButton(amount: amount, index: index)
                                 }
@@ -722,7 +753,8 @@ struct MenuCustomizationView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -747,7 +779,7 @@ struct MenuCustomizationView: View {
             Text(portion.shortTitle)
                 .font(.barlowSemiBold(size: 12))
                 .foregroundColor(isCurrent ? Color("Button_red") : Color("app_black"))
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 10)
                 .frame(height: 28)
                 .background(
                     Capsule()
@@ -769,7 +801,7 @@ struct MenuCustomizationView: View {
             Text(amount.rawValue)
                 .font(.barlowSemiBold(size: 12))
                 .foregroundColor(isCurrent ? Color("Button_red") : Color("app_black"))
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 10)
                 .frame(height: 28)
                 .background(
                     Capsule()
@@ -817,6 +849,7 @@ struct MenuCustomizationView: View {
                 .padding(.top, 2)
         }
         .padding(.top, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     private func nutritionRow(label: String, value: String, isBold: Bool = false) -> some View {
