@@ -246,8 +246,15 @@ struct OrderHistoryView: View {
         .sheet(item: $activeDetailsOrder) { order in
             OrderDetailsSheet(order: order)
         }
-        .sheet(item: $activeReceiptOrder) { order in
-            OrderReceiptSheet(order: order)
+        .fullScreenCover(item: $activeReceiptOrder) { order in
+            ReceiptView(
+                order: order,
+                onBack: {
+                    activeReceiptOrder = nil
+                },
+                onStarTap: onStarTap,
+                onCartTap: onCartTap
+            )
         }
         .sheet(item: $activeHelpOrder) { order in
             OrderHelpSheet(order: order)
@@ -323,7 +330,7 @@ struct OrderHistoryView: View {
                 .foregroundColor(Color("app_black"))
             
             Text("Member order history on this browser")
-                .font(.barlowRegular(size: 14))
+                .font(.barlowRegular(size: 16))
                 .foregroundColor(Color("text_gary"))
         }
         .padding(.top, 4)
@@ -385,7 +392,7 @@ struct OrderHistoryView: View {
             // Top Row: Order ID + Status Badge
             HStack(alignment: .center) {
                 Text(order.id)
-                    .font(.oswaldMedium(size: 20))
+                    .font(.oswaldLight(size: 20))
                     .tracking(0.5)
                     .foregroundColor(Color("app_black"))
                 
@@ -734,11 +741,11 @@ struct OrderTrackingSheet: View {
                 // Order Header
                 VStack(alignment: .leading, spacing: 4) {
                     Text(order.id)
-                        .font(.oswaldBold(size: 26))
+                        .font(.oswaldLight(size: 26))
                         .foregroundColor(Color("app_black"))
                     
                     Text("\(order.storeName) · \(order.fulfillment.rawValue)")
-                        .font(.barlowRegular(size: 14))
+                        .font(.oswaldExtraLight(size: 14))
                         .foregroundColor(Color("text_gary"))
                 }
                 .padding(.top, 10)
