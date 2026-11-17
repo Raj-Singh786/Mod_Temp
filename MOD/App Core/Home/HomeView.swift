@@ -66,6 +66,7 @@ struct HomeView: View {
     @State private var isDeliveryScheduled: Bool = false
     @State private var showOrderSetup: Bool = false
     @State private var showMenuView: Bool = false
+    @State private var showCustomizationView: Bool = false
     @State private var orderSetupInitialTab: Int = 0
     @State private var orderSetupAutoScrollToWhen: Bool = false
     @State private var favoritesState: [UUID: Bool] = [:]
@@ -206,6 +207,9 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showMenuView) {
             MenuView(showDismissButton: true)
         }
+        .fullScreenCover(isPresented: $showCustomizationView) {
+            MenuCustomizationView()
+        }
         .onAppear {
             withAnimation(.linear(duration: 35).repeatForever(autoreverses: false)) {
                 pizzaRotation = 360
@@ -329,7 +333,11 @@ struct HomeView: View {
                 
                 // Build Your Pizza Button
                 Button(action: {
-                    onBuildPizza?()
+                    if let onBuildPizza = onBuildPizza {
+                        onBuildPizza()
+                    } else {
+                        showCustomizationView = true
+                    }
                 }) {
                     Text("BUILD YOUR PIZZA")
                         .font(.oswaldMedium(size: 13.5))
@@ -950,7 +958,11 @@ struct HomeView: View {
                     
                     Button(action: {
                         if item.actionTitle == "CUSTOMIZE" {
-                            onCustomizeItem?(item)
+                            if let onCustomizeItem = onCustomizeItem {
+                                onCustomizeItem(item)
+                            } else {
+                                showCustomizationView = true
+                            }
                         } else {
                             onAddItem?(item)
                         }

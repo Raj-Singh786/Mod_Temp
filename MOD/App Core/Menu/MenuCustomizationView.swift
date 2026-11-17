@@ -1,0 +1,935 @@
+//
+//  MenuCustomizationView.swift
+//  MOD
+//
+//  Created by Rajpal singh on 17/11/26.
+//
+
+import SwiftUI
+
+// MARK: - Topping Portion & Amount Enums
+
+enum ToppingPortion: String, CaseIterable, Identifiable, Hashable {
+    case left = "Left (½)"
+    case whole = "Whole"
+    case right = "Right (½)"
+    
+    var id: String { rawValue }
+    
+    var shortTitle: String {
+        switch self {
+        case .left: return "Left"
+        case .whole: return "Whole"
+        case .right: return "Right"
+        }
+    }
+    
+    var calorieMultiplier: Double {
+        switch self {
+        case .left, .right: return 0.5
+        case .whole: return 1.0
+        }
+    }
+}
+
+enum ToppingAmount: String, CaseIterable, Identifiable, Hashable {
+    case light = "Light"
+    case regular = "Regular"
+    case extra = "Extra"
+    
+    var id: String { rawValue }
+    
+    var calorieMultiplier: Double {
+        switch self {
+        case .light: return 0.5
+        case .regular: return 1.0
+        case .extra: return 1.5
+        }
+    }
+}
+
+// MARK: - Topping Category Enum
+
+enum ToppingCategory: String, CaseIterable, Identifiable {
+    case sauce = "SAUCES"
+    case cheese = "CHEESES"
+    case meat = "MEATS"
+    case veggie = "VEGGIES & MORE"
+    case finish = "FINISHES (AFTER BAKE)"
+    
+    var id: String { rawValue }
+    
+    var subtitle: String {
+        switch self {
+        case .sauce: return "Choose one or more"
+        case .cheese: return "Free unlimited"
+        case .meat: return "Free unlimited"
+        case .veggie: return "Free unlimited"
+        case .finish: return "Added after bake"
+        }
+    }
+}
+
+// MARK: - Customizable Topping Model
+
+struct CustomizableTopping: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let category: ToppingCategory
+    let baseCalories: Int
+    let dotColor: Color
+    var isSelected: Bool = false
+    var portion: ToppingPortion = .whole
+    var amount: ToppingAmount = .regular
+    
+    var calculatedCalories: Int {
+        guard isSelected else { return 0 }
+        let raw = Double(baseCalories) * portion.calorieMultiplier * amount.calorieMultiplier
+        return Int(round(raw))
+    }
+}
+
+// MARK: - Pizza Size Enum
+
+enum PizzaSize: String, CaseIterable, Identifiable {
+    case mini = "Mini"
+    case mod = "MOD"
+    case mega = "Mega"
+    
+    var id: String { rawValue }
+    
+    var dimensionText: String {
+        switch self {
+        case .mini: return "6\""
+        case .mod: return "11\""
+        case .mega: return "11\" thick"
+        }
+    }
+    
+    var priceText: String {
+        switch self {
+        case .mini: return "$8.99"
+        case .mod: return "$10.99"
+        case .mega: return "$13.99"
+        }
+    }
+    
+    var basePrice: Double {
+        switch self {
+        case .mini: return 8.99
+        case .mod: return 10.99
+        case .mega: return 13.99
+        }
+    }
+    
+    var baseCalories: Int {
+        switch self {
+        case .mini: return 540
+        case .mod: return 820
+        case .mega: return 1160
+        }
+    }
+}
+
+// MARK: - Pizza Crust Enum
+
+enum PizzaCrust: String, CaseIterable, Identifiable {
+    case thin = "Thin"
+    case glutenFree = "Gluten-Free"
+    case cauliflower = "Cauliflower"
+    
+    var id: String { rawValue }
+    
+    var extraPrice: Double {
+        switch self {
+        case .thin: return 0.0
+        case .glutenFree: return 3.00
+        case .cauliflower: return 3.00
+        }
+    }
+    
+    var extraCalories: Int {
+        switch self {
+        case .thin: return 0
+        case .glutenFree: return 80
+        case .cauliflower: return 60
+        }
+    }
+    
+    var label: String {
+        switch self {
+        case .thin: return "Thin · 0 cal"
+        case .glutenFree: return "Gluten-Free (+$3.00 · +80 cal)"
+        case .cauliflower: return "Cauliflower (+$3.00 · +60 cal)"
+        }
+    }
+}
+
+// MARK: - MenuCustomizationView
+
+struct MenuCustomizationView: View {
+    
+    // MARK: - Callbacks
+    
+    var onBack: (() -> Void)? = nil
+    var onAddToCart: ((Int, Double, Int) -> Void)? = nil
+    var onStarTap: (() -> Void)? = nil
+    var onCartTap: (() -> Void)? = nil
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    // MARK: - Configuration State
+    
+    @State private var selectedSize: PizzaSize = .mod
+    @State private var selectedCrust: PizzaCrust = .thin
+    @State private var quantity: Int = 1
+    @State private var showAddedToast: Bool = false
+    
+    // MARK: - Toppings State
+    
+    @State private var toppings: [CustomizableTopping] = [
+        // SAUCES
+        CustomizableTopping(id: "s1", name: "Red Sauce", category: .sauce, baseCalories: 30, dotColor: Color("Button_red"), isSelected: true),
+        CustomizableTopping(id: "s2", name: "Spicy Red Sauce", category: .sauce, baseCalories: 35, dotColor: Color("Button_red")),
+        CustomizableTopping(id: "s3", name: "Garlic Rub / White", category: .sauce, baseCalories: 45, dotColor: Color(red: 0xF7 / 255.0, green: 0xEE / 255.0, blue: 0xDD / 255.0)),
+        CustomizableTopping(id: "s4", name: "BBQ Sauce", category: .sauce, baseCalories: 40, dotColor: Color(red: 0x73 / 255.0, green: 0x36 / 255.0, blue: 0x1E / 255.0)),
+        CustomizableTopping(id: "s5", name: "Pesto", category: .sauce, baseCalories: 60, dotColor: Color(red: 0x58 / 255.0, green: 0x7A / 255.0, blue: 0x30 / 255.0)),
+        CustomizableTopping(id: "s6", name: "Extra Virgin Olive Oil", category: .sauce, baseCalories: 50, dotColor: Color(red: 0xDE / 255.0, green: 0xC5 / 255.0, blue: 0x62 / 255.0)),
+        CustomizableTopping(id: "s7", name: "Buffalo Sauce", category: .sauce, baseCalories: 25, dotColor: Color(red: 0xD8 / 255.0, green: 0x62 / 255.0, blue: 0x2A / 255.0)),
+        CustomizableTopping(id: "s8", name: "No Sauce", category: .sauce, baseCalories: 0, dotColor: Color.gray.opacity(0.4)),
+        
+        // CHEESES
+        CustomizableTopping(id: "c1", name: "Mozzarella", category: .cheese, baseCalories: 180, dotColor: Color(red: 0xF7 / 255.0, green: 0xDF / 255.0, blue: 0xA5 / 255.0), isSelected: true, portion: .whole, amount: .regular),
+        CustomizableTopping(id: "c2", name: "Asiago", category: .cheese, baseCalories: 90, dotColor: Color(red: 0xF3 / 255.0, green: 0xEA / 255.0, blue: 0xCA / 255.0)),
+        CustomizableTopping(id: "c3", name: "Parmesan", category: .cheese, baseCalories: 70, dotColor: Color(red: 0xEE / 255.0, green: 0xE6 / 255.0, blue: 0xCF / 255.0)),
+        CustomizableTopping(id: "c4", name: "Cheddar", category: .cheese, baseCalories: 110, dotColor: Color(red: 0xEA / 255.0, green: 0x9B / 255.0, blue: 0x3E / 255.0)),
+        CustomizableTopping(id: "c5", name: "Feta", category: .cheese, baseCalories: 80, dotColor: Color(red: 0xF9 / 255.0, green: 0xF7 / 255.0, blue: 0xF0 / 255.0)),
+        CustomizableTopping(id: "c6", name: "Gorgonzola", category: .cheese, baseCalories: 100, dotColor: Color(red: 0xDA / 255.0, green: 0xE5 / 255.0, blue: 0xD6 / 255.0)),
+        CustomizableTopping(id: "c7", name: "Ricotta", category: .cheese, baseCalories: 90, dotColor: Color.white),
+        CustomizableTopping(id: "c8", name: "Dairy-Free Cheese", category: .cheese, baseCalories: 120, dotColor: Color(red: 0xF8 / 255.0, green: 0xEE / 255.0, blue: 0xC8 / 255.0)),
+        
+        // MEATS
+        CustomizableTopping(id: "m1", name: "Pepperoni", category: .meat, baseCalories: 120, dotColor: Color("Button_red"), isSelected: true),
+        CustomizableTopping(id: "m2", name: "Mild Italian Sausage", category: .meat, baseCalories: 140, dotColor: Color(red: 0x86 / 255.0, green: 0x3E / 255.0, blue: 0x22 / 255.0), isSelected: true, portion: .whole, amount: .regular),
+        CustomizableTopping(id: "m3", name: "Spicy Chicken Sausage", category: .meat, baseCalories: 110, dotColor: Color(red: 0xB5 / 255.0, green: 0x58 / 255.0, blue: 0x34 / 255.0)),
+        CustomizableTopping(id: "m4", name: "Bacon", category: .meat, baseCalories: 130, dotColor: Color(red: 0x98 / 255.0, green: 0x30 / 255.0, blue: 0x25 / 255.0)),
+        CustomizableTopping(id: "m5", name: "Canadian Bacon", category: .meat, baseCalories: 80, dotColor: Color(red: 0xDA / 255.0, green: 0x72 / 255.0, blue: 0x76 / 255.0)),
+        CustomizableTopping(id: "m6", name: "Grilled Chicken", category: .meat, baseCalories: 100, dotColor: Color(red: 0xD9 / 255.0, green: 0xB1 / 255.0, blue: 0x82 / 255.0)),
+        CustomizableTopping(id: "m7", name: "Salami", category: .meat, baseCalories: 140, dotColor: Color(red: 0x93 / 255.0, green: 0x35 / 255.0, blue: 0x2B / 255.0)),
+        CustomizableTopping(id: "m8", name: "Plant-Based Sausage", category: .meat, baseCalories: 120, dotColor: Color(red: 0x6E / 255.0, green: 0x4D / 255.0, blue: 0x3E / 255.0)),
+        
+        // VEGGIES & MORE
+        CustomizableTopping(id: "v1", name: "Artichokes", category: .veggie, baseCalories: 20, dotColor: Color(red: 0x7E / 255.0, green: 0x98 / 255.0, blue: 0x68 / 255.0)),
+        CustomizableTopping(id: "v2", name: "Red Onion", category: .veggie, baseCalories: 15, dotColor: Color(red: 0x8E / 255.0, green: 0x32 / 255.0, blue: 0x62 / 255.0)),
+        CustomizableTopping(id: "v3", name: "Black Olives", category: .veggie, baseCalories: 35, dotColor: Color("app_black")),
+        CustomizableTopping(id: "v4", name: "Roasted Red Peppers", category: .veggie, baseCalories: 25, dotColor: Color("Button_red")),
+        CustomizableTopping(id: "v5", name: "Mushrooms", category: .veggie, baseCalories: 10, dotColor: Color(red: 0x9C / 255.0, green: 0x87 / 255.0, blue: 0x78 / 255.0)),
+        CustomizableTopping(id: "v6", name: "Roasted Garlic Cloves", category: .veggie, baseCalories: 30, dotColor: Color(red: 0xD6 / 255.0, green: 0xC1 / 255.0, blue: 0x9B / 255.0)),
+        CustomizableTopping(id: "v7", name: "Fresh Spinach", category: .veggie, baseCalories: 10, dotColor: Color(red: 0x3D / 255.0, green: 0x70 / 255.0, blue: 0x35 / 255.0)),
+        CustomizableTopping(id: "v8", name: "Sliced Tomatoes", category: .veggie, baseCalories: 15, dotColor: Color(red: 0xD3 / 255.0, green: 0x38 / 255.0, blue: 0x2C / 255.0)),
+        CustomizableTopping(id: "v9", name: "Jalapeños", category: .veggie, baseCalories: 10, dotColor: Color(red: 0x2A / 255.0, green: 0x6E / 255.0, blue: 0x30 / 255.0)),
+        CustomizableTopping(id: "v10", name: "Pineapple", category: .veggie, baseCalories: 35, dotColor: Color(red: 0xF4 / 255.0, green: 0xC7 / 255.0, blue: 0x3C / 255.0)),
+        CustomizableTopping(id: "v11", name: "Roasted Broccoli", category: .veggie, baseCalories: 25, dotColor: Color(red: 0x35 / 255.0, green: 0x64 / 255.0, blue: 0x3A / 255.0)),
+        CustomizableTopping(id: "v12", name: "Fresh Basil", category: .veggie, baseCalories: 5, dotColor: Color(red: 0x46 / 255.0, green: 0x7A / 255.0, blue: 0x36 / 255.0)),
+        CustomizableTopping(id: "v13", name: "Roasted Corn", category: .veggie, baseCalories: 30, dotColor: Color(red: 0xE6 / 255.0, green: 0xB9 / 255.0, blue: 0x41 / 255.0)),
+        CustomizableTopping(id: "v14", name: "Arugula", category: .veggie, baseCalories: 10, dotColor: Color(red: 0x51 / 255.0, green: 0x77 / 255.0, blue: 0x3D / 255.0)),
+        CustomizableTopping(id: "v15", name: "Green Bell Pepper", category: .veggie, baseCalories: 15, dotColor: Color(red: 0x42 / 255.0, green: 0x7E / 255.0, blue: 0x3F / 255.0)),
+        CustomizableTopping(id: "v16", name: "Kalamata Olives", category: .veggie, baseCalories: 40, dotColor: Color(red: 0x47 / 255.0, green: 0x34 / 255.0, blue: 0x4B / 255.0)),
+        
+        // FINISHES (AFTER BAKE)
+        CustomizableTopping(id: "f1", name: "Balsamic Fig Glaze", category: .finish, baseCalories: 40, dotColor: Color(red: 0x50 / 255.0, green: 0x28 / 255.0, blue: 0x22 / 255.0)),
+        CustomizableTopping(id: "f2", name: "Hot Honey Drizzle", category: .finish, baseCalories: 50, dotColor: Color(red: 0xDD / 255.0, green: 0x8C / 255.0, blue: 0x26 / 255.0)),
+        CustomizableTopping(id: "f3", name: "BBQ Drizzle", category: .finish, baseCalories: 35, dotColor: Color(red: 0x70 / 255.0, green: 0x33 / 255.0, blue: 0x1E / 255.0)),
+        CustomizableTopping(id: "f4", name: "Buffalo Drizzle", category: .finish, baseCalories: 25, dotColor: Color("Button_red")),
+        CustomizableTopping(id: "f5", name: "Pesto Drizzle", category: .finish, baseCalories: 50, dotColor: Color(red: 0x58 / 255.0, green: 0x7A / 255.0, blue: 0x30 / 255.0)),
+        CustomizableTopping(id: "f6", name: "Ranch Drizzle", category: .finish, baseCalories: 60, dotColor: Color(red: 0xF3 / 255.0, green: 0xEE / 255.0, blue: 0xE4 / 255.0)),
+        CustomizableTopping(id: "f7", name: "Sri-racha Drizzle", category: .finish, baseCalories: 15, dotColor: Color(red: 0xCA / 255.0, green: 0x3A / 255.0, blue: 0x27 / 255.0)),
+        CustomizableTopping(id: "f8", name: "Red Pepper Flakes", category: .finish, baseCalories: 0, dotColor: Color(red: 0xB5 / 255.0, green: 0x31 / 255.0, blue: 0x25 / 255.0))
+    ]
+    
+    // MARK: - Computed Calorie & Price Calculations
+    
+    /// Total calories of a single customized pizza
+    var singlePizzaCalories: Int {
+        let sizeBase = selectedSize.baseCalories
+        let crustExtra = selectedCrust.extraCalories
+        let toppingsCal = toppings.reduce(0) { $0 + $1.calculatedCalories }
+        return sizeBase + crustExtra + toppingsCal
+    }
+    
+    /// Total price of a single customized pizza
+    var singlePizzaPrice: Double {
+        selectedSize.basePrice + selectedCrust.extraPrice
+    }
+    
+    /// Total final price for current quantity
+    var finalTotalPrice: Double {
+        singlePizzaPrice * Double(quantity)
+    }
+    
+    // MARK: - Body
+    
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Color("app_background")
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Top Custom Navigation Bar
+                customNavigationBar
+                
+                // Scrollable Customization Content
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        // 1. Pizza Hero Visual Card
+                        pizzaHeroCard
+                        
+                        // 2. Title & Badge Section
+                        titleBadgeSection
+                        
+                        // 3. Size Selection Section
+                        sizeSection
+                        
+                        // 4. Crust Selection Section
+                        crustSection
+                        
+                        // 5. Toppings Sections (Sauces, Cheeses, Meats, Veggies, Finishes)
+                        ForEach(ToppingCategory.allCases) { category in
+                            categorySection(category)
+                        }
+                        
+                        // 6. Nutrition Facts Table Card
+                        nutritionSummaryCard
+                        
+                        // Bottom Padding for Fixed Checkout Bar
+                        Spacer()
+                            .frame(height: 140)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                }
+            }
+            
+            // Fixed Bottom Checkout & Calorie Bar
+            bottomCheckoutBar
+            
+            // Toast Notification
+            if showAddedToast {
+                VStack {
+                    Spacer()
+                    Text("Added custom Build Your Pizza to cart!")
+                        .font(.barlowMedium(size: 14))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(
+                            Capsule()
+                                .fill(Color("app_black").opacity(0.92))
+                                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                        )
+                        .padding(.bottom, 130)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                .animation(.easeInOut(duration: 0.25), value: showAddedToast)
+            }
+        }
+    }
+    
+    // MARK: - Custom Top Navigation Bar
+    
+    private var customNavigationBar: some View {
+        HStack(alignment: .center) {
+            // Left: Red Back Button
+            Button(action: {
+                if let onBack = onBack {
+                    onBack()
+                } else {
+                    dismiss()
+                }
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.backward")
+                        .font(.system(size: 15, weight: .bold))
+                    Text("Back")
+                        .font(.barlowBold(size: 16))
+                }
+                .foregroundColor(Color("Button_red"))
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Spacer()
+            
+            // Center: Title
+            Text("Customize")
+                .font(.oswaldMedium(size: 18))
+                .foregroundColor(Color("app_black"))
+            
+            Spacer()
+            
+            // Right: Star & Red Cart Icons
+            HStack(spacing: 16) {
+                Button(action: {
+                    onStarTap?()
+                }) {
+                    Image(systemName: "star")
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundColor(Color("app_black"))
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    onCartTap?()
+                }) {
+                    Image(systemName: "cart")
+                        .font(.system(size: 19, weight: .regular))
+                        .foregroundColor(Color("Button_red"))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .frame(width: 70, alignment: .trailing)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 6)
+        .padding(.bottom, 10)
+        .background(Color("app_background"))
+    }
+    
+    // MARK: - 1. Pizza Hero Visual Card
+    
+    private var pizzaHeroCard: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                // Rounded Tan Card Container
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color("pizza_found"))
+                    .frame(height: 220)
+                
+                // High-resolution Pizza Image
+                Image("PizzaOn")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 190, height: 190)
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 5)
+            }
+            
+            Text("Build your own pizza with unlimited toppings on our fresh dough, pressed daily.")
+                .font(.barlowRegular(size: 12.5))
+                .foregroundColor(Color("text_gary"))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+        }
+    }
+    
+    // MARK: - 2. Title & Badge Section
+    
+    private var titleBadgeSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // "Value" Red Badge
+            Text("Value")
+                .font(.barlowBold(size: 11))
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule()
+                        .fill(Color("Button_red"))
+                )
+            
+            // Title
+            Text("BUILD YOUR PIZZA")
+                .font(.oswaldBold(size: 28))
+                .tracking(0.6)
+                .foregroundColor(Color("app_black"))
+            
+            // Subtitle
+            Text("Choose a size and crust to begin. Unlimited toppings included at one set price.")
+                .font(.barlowRegular(size: 14))
+                .foregroundColor(Color("text_gary"))
+                .lineSpacing(2)
+            
+            // Calorie range badge
+            HStack(spacing: 6) {
+                Image(systemName: "flame")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color("Button_red"))
+                
+                Text("\(singlePizzaCalories) cal")
+                    .font(.barlowBold(size: 13.5))
+                    .foregroundColor(Color("app_black"))
+                
+                Text("· Unlimited toppings included")
+                    .font(.barlowRegular(size: 13))
+                    .foregroundColor(Color("text_gary"))
+            }
+            .padding(.top, 4)
+        }
+    }
+    
+    // MARK: - 3. Size Selection Section
+    
+    private var sizeSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("SIZE")
+                .font(.oswaldMedium(size: 16))
+                .tracking(0.6)
+                .foregroundColor(Color("app_black"))
+            
+            HStack(spacing: 10) {
+                ForEach(PizzaSize.allCases) { size in
+                    sizeCard(size)
+                }
+            }
+        }
+    }
+    
+    private func sizeCard(_ size: PizzaSize) -> some View {
+        let isSelected = selectedSize == size
+        
+        return Button(action: {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                selectedSize = size
+            }
+        }) {
+            VStack(spacing: 4) {
+                Text(size.rawValue)
+                    .font(.oswaldMedium(size: 17))
+                    .foregroundColor(Color("app_black"))
+                
+                Text(size.dimensionText)
+                    .font(.barlowRegular(size: 12))
+                    .foregroundColor(Color("text_gary"))
+                
+                Text(size.priceText)
+                    .font(.barlowBold(size: 13))
+                    .foregroundColor(Color("app_black"))
+                    .padding(.top, 2)
+                
+                Text("\(size.baseCalories) cal")
+                    .font(.barlowRegular(size: 11))
+                    .foregroundColor(Color("Button_red"))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF4 / 255.0) : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? Color("Button_red") : Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: isSelected ? 1.6 : 1.2)
+            )
+            .shadow(color: Color.black.opacity(0.02), radius: 3, x: 0, y: 1)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - 4. Crust Selection Section
+    
+    private var crustSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("CRUST")
+                .font(.oswaldMedium(size: 16))
+                .tracking(0.6)
+                .foregroundColor(Color("app_black"))
+            
+            HStack(spacing: 10) {
+                ForEach(PizzaCrust.allCases) { crust in
+                    crustCard(crust)
+                }
+            }
+        }
+    }
+    
+    private func crustCard(_ crust: PizzaCrust) -> some View {
+        let isSelected = selectedCrust == crust
+        
+        return Button(action: {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                selectedCrust = crust
+            }
+        }) {
+            VStack(spacing: 3) {
+                Text(crust.rawValue)
+                    .font(.barlowSemiBold(size: 14))
+                    .foregroundColor(Color("app_black"))
+                    .lineLimit(1)
+                
+                if crust.extraPrice > 0 {
+                    Text("+$\(String(format: "%.2f", crust.extraPrice)) · +\(crust.extraCalories) cal")
+                        .font(.barlowRegular(size: 11))
+                        .foregroundColor(Color("Button_red"))
+                } else {
+                    Text("Included · 0 cal")
+                        .font(.barlowRegular(size: 11))
+                        .foregroundColor(Color("text_gary"))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF4 / 255.0) : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? Color("Button_red") : Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: isSelected ? 1.6 : 1.2)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - 5. Toppings Category Section
+    
+    private func categorySection(_ category: ToppingCategory) -> some View {
+        let categoryToppings = toppings.filter { $0.category == category }
+        
+        return VStack(alignment: .leading, spacing: 12) {
+            // Category Header Row
+            HStack(alignment: .firstTextBaseline) {
+                Text(category.rawValue)
+                    .font(.oswaldMedium(size: 16))
+                    .tracking(0.6)
+                    .foregroundColor(Color("app_black"))
+                
+                Text("· \(category.subtitle)")
+                    .font(.barlowRegular(size: 12.5))
+                    .foregroundColor(Color("text_gary"))
+                
+                Spacer()
+            }
+            
+            // Topping List / Cells
+            VStack(spacing: 8) {
+                ForEach(categoryToppings) { topping in
+                    toppingCell(topping)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Topping Cell (Expandable with Portion & Amount)
+    
+    private func toppingCell(_ topping: CustomizableTopping) -> some View {
+        guard let index = toppings.firstIndex(where: { $0.id == topping.id }) else {
+            return AnyView(EmptyView())
+        }
+        let isSelected = toppings[index].isSelected
+        
+        return AnyView(
+            VStack(alignment: .leading, spacing: 10) {
+                // Main Clickable Cell Row
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.78)) {
+                        toppings[index].isSelected.toggle()
+                    }
+                }) {
+                    HStack(spacing: 12) {
+                        // Colored Dot Indicator
+                        Circle()
+                            .fill(topping.dotColor)
+                            .frame(width: 14, height: 14)
+                            .overlay(Circle().stroke(Color.black.opacity(0.12), lineWidth: 0.8))
+                        
+                        // Topping Name
+                        Text(topping.name)
+                            .font(.barlowSemiBold(size: 14.5))
+                            .foregroundColor(Color("app_black"))
+                        
+                        Spacer()
+                        
+                        // Calorie Display (Shows exact calories added!)
+                        if isSelected {
+                            Text("+\(toppings[index].calculatedCalories) cal")
+                                .font(.barlowBold(size: 13))
+                                .foregroundColor(Color("Button_red"))
+                        } else {
+                            Text("+\(topping.baseCalories) cal")
+                                .font(.barlowRegular(size: 12.5))
+                                .foregroundColor(Color("text_gary"))
+                        }
+                        
+                        // Selection Badge / Add Icon
+                        ZStack {
+                            if isSelected {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(Color("Button_red"))
+                                    .frame(width: 26, height: 26)
+                                
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white)
+                            } else {
+                                Circle()
+                                    .fill(Color(red: 0xF3 / 255.0, green: 0xEE / 255.0, blue: 0xE4 / 255.0))
+                                    .frame(width: 26, height: 26)
+                                
+                                Image(systemName: "plus")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(Color("app_black"))
+                            }
+                        }
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                // Expanded Controls: Portion & Amount (Visible when selected)
+                if isSelected {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Divider()
+                            .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
+                            .padding(.vertical, 2)
+                        
+                        // 1. Portion Row: Left (½) | Whole | Right (½)
+                        HStack(spacing: 8) {
+                            Text("Portion:")
+                                .font(.barlowMedium(size: 12))
+                                .foregroundColor(Color("text_gary"))
+                                .frame(width: 52, alignment: .leading)
+                            
+                            HStack(spacing: 4) {
+                                ForEach(ToppingPortion.allCases) { portion in
+                                    portionButton(portion: portion, index: index)
+                                }
+                            }
+                            .padding(2)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
+                            )
+                        }
+                        
+                        // 2. Amount Row: Light | Regular | Extra
+                        HStack(spacing: 8) {
+                            Text("Amount:")
+                                .font(.barlowMedium(size: 12))
+                                .foregroundColor(Color("text_gary"))
+                                .frame(width: 52, alignment: .leading)
+                            
+                            HStack(spacing: 4) {
+                                ForEach(ToppingAmount.allCases) { amount in
+                                    amountButton(amount: amount, index: index)
+                                }
+                            }
+                            .padding(2)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
+                            )
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF7 / 255.0, blue: 0xF5 / 255.0) : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(isSelected ? Color("Button_red") : Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: isSelected ? 1.4 : 1.0)
+            )
+            .shadow(color: Color.black.opacity(0.02), radius: 3, x: 0, y: 1)
+        )
+    }
+    
+    private func portionButton(portion: ToppingPortion, index: Int) -> some View {
+        let isCurrent = toppings[index].portion == portion
+        
+        return Button(action: {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                toppings[index].portion = portion
+            }
+        }) {
+            Text(portion.shortTitle)
+                .font(.barlowSemiBold(size: 12))
+                .foregroundColor(isCurrent ? Color("Button_red") : Color("app_black"))
+                .padding(.horizontal, 12)
+                .frame(height: 28)
+                .background(
+                    Capsule()
+                        .fill(isCurrent ? Color.white : Color.clear)
+                        .shadow(color: isCurrent ? Color.black.opacity(0.06) : Color.clear, radius: 2, x: 0, y: 1)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private func amountButton(amount: ToppingAmount, index: Int) -> some View {
+        let isCurrent = toppings[index].amount == amount
+        
+        return Button(action: {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                toppings[index].amount = amount
+            }
+        }) {
+            Text(amount.rawValue)
+                .font(.barlowSemiBold(size: 12))
+                .foregroundColor(isCurrent ? Color("Button_red") : Color("app_black"))
+                .padding(.horizontal, 12)
+                .frame(height: 28)
+                .background(
+                    Capsule()
+                        .fill(isCurrent ? Color.white : Color.clear)
+                        .shadow(color: isCurrent ? Color.black.opacity(0.06) : Color.clear, radius: 2, x: 0, y: 1)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - 6. Nutrition Facts Table Card
+    
+    private var nutritionSummaryCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Nutrition facts (estimated)")
+                .font(.oswaldMedium(size: 16))
+                .tracking(0.6)
+                .foregroundColor(Color("app_black"))
+            
+            VStack(spacing: 8) {
+                nutritionRow(label: "Calories", value: "\(singlePizzaCalories) cal", isBold: true)
+                Divider()
+                nutritionRow(label: "Total Fat", value: "\(Int(Double(singlePizzaCalories) * 0.034))g")
+                Divider()
+                nutritionRow(label: "Total Carbohydrates", value: "\(Int(Double(singlePizzaCalories) * 0.105))g")
+                Divider()
+                nutritionRow(label: "Sodium", value: "\(Int(Double(singlePizzaCalories) * 1.73))mg")
+                Divider()
+                nutritionRow(label: "Protein", value: "\(Int(Double(singlePizzaCalories) * 0.044))g")
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1.2)
+                    )
+            )
+            
+            Text("2,000 calories a day is used for general nutrition advice, but calorie needs vary. Nutritional information is calculated based on standard portions.")
+                .font(.barlowRegular(size: 11.5))
+                .foregroundColor(Color("text_gary"))
+                .lineSpacing(2)
+                .padding(.top, 2)
+        }
+        .padding(.top, 4)
+    }
+    
+    private func nutritionRow(label: String, value: String, isBold: Bool = false) -> some View {
+        HStack {
+            Text(label)
+                .font(isBold ? .barlowBold(size: 14) : .barlowRegular(size: 13.5))
+                .foregroundColor(Color("app_black"))
+            
+            Spacer()
+            
+            Text(value)
+                .font(isBold ? .oswaldBold(size: 15) : .barlowMedium(size: 13.5))
+                .foregroundColor(isBold ? Color("Button_red") : Color("app_black"))
+        }
+    }
+    
+    // MARK: - Fixed Bottom Checkout Bar
+    
+    private var bottomCheckoutBar: some View {
+        VStack(spacing: 8) {
+            // Row 1: Quantity Selector + ADD TO CART Button
+            HStack(spacing: 12) {
+                // Quantity Selector: [-] 1 [+]
+                HStack(spacing: 12) {
+                    Button(action: {
+                        if quantity > 1 {
+                            quantity -= 1
+                        }
+                    }) {
+                        Image(systemName: "minus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(quantity > 1 ? Color("app_black") : Color("text_gary"))
+                            .frame(width: 32, height: 46)
+                    }
+                    .disabled(quantity <= 1)
+                    
+                    Text("\(quantity)")
+                        .font(.oswaldMedium(size: 16))
+                        .foregroundColor(Color("app_black"))
+                    
+                    Button(action: {
+                        quantity += 1
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color("app_black"))
+                            .frame(width: 32, height: 46)
+                    }
+                }
+                .padding(.horizontal, 4)
+                .background(
+                    Capsule()
+                        .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1.2)
+                        .background(Capsule().fill(Color.white))
+                )
+                
+                // ADD TO CART Button
+                Button(action: {
+                    onAddToCart?(quantity, finalTotalPrice, singlePizzaCalories)
+                    showAddedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                        dismiss()
+                    }
+                }) {
+                    Text("ADD TO CART — $\(String(format: "%.2f", finalTotalPrice))")
+                        .font(.oswaldMedium(size: 15))
+                        .tracking(0.8)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            Capsule()
+                                .fill(Color("Button_red"))
+                                .shadow(color: Color("Button_red").opacity(0.35), radius: 6, x: 0, y: 3)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            // Row 2: Final Total Calorie Count Display (Directly below Add to Cart Button as requested!)
+            HStack(spacing: 6) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 13))
+                    .foregroundColor(Color.orange)
+                
+                Text("Total Calories: \(singlePizzaCalories * quantity) cal")
+                    .font(.barlowBold(size: 14))
+                    .foregroundColor(Color("app_black"))
+                
+                if quantity > 1 {
+                    Text("(\(singlePizzaCalories) cal each)")
+                        .font(.barlowRegular(size: 12.5))
+                        .foregroundColor(Color("text_gary"))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 2)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 18)
+        .background(
+            Color.white
+                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: -4)
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+}
+
+// MARK: - SwiftUI Preview
+
+struct MenuCustomizationView_Previews: PreviewProvider {
+    static var previews: some View {
+        MenuCustomizationView()
+    }
+}

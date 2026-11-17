@@ -133,6 +133,7 @@ struct MenuView: View {
     @State private var whenText: String = "ASAP unavailable"
     @State private var whenSubtitle: String = "Schedule for later"
     @State private var showOrderSetup: Bool = false
+    @State private var showCustomizationView: Bool = false
     @State private var orderSetupInitialTab: Int = 0
     @State private var orderSetupAutoScrollToWhen: Bool = false
     
@@ -701,6 +702,9 @@ struct MenuView: View {
                 }
             )
         }
+        .fullScreenCover(isPresented: $showCustomizationView) {
+            MenuCustomizationView()
+        }
     }
     
     // MARK: - Top Navigation Bar
@@ -1255,7 +1259,11 @@ struct MenuView: View {
                     } else {
                         Button(action: {
                             if item.category == .pizzas || item.category == .salads {
-                                onCustomizeItem?(item)
+                                if let onCustomizeItem = onCustomizeItem {
+                                    onCustomizeItem(item)
+                                } else {
+                                    showCustomizationView = true
+                                }
                             } else {
                                 onAddItem?(item)
                             }
