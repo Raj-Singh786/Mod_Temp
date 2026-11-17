@@ -210,14 +210,14 @@ struct OrderHelpView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                Button(action: {
-                    onCartTap?()
-                }) {
-                    Image(systemName: "cart")
-                        .font(.system(size: 19, weight: .regular))
-                        .foregroundColor(Color("Button_red"))
-                }
-                .buttonStyle(PlainButtonStyle())
+                TopCartButton(action: {
+                    if let onCartTap = onCartTap {
+                        onCartTap()
+                    } else {
+                        CartManager.shared.showCartSheet = true
+                        NotificationCenter.default.post(name: .showCartNotification, object: nil)
+                    }
+                })
             }
             .frame(width: 70, alignment: .trailing)
         }

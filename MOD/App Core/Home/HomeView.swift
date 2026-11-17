@@ -244,16 +244,15 @@ struct HomeView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                // Shopping Cart Button
-                Button(action: {
-                    onCartTap?()
-                }) {
-                    Image(systemName: "cart")
-                        .font(.system(size: 20, weight: .regular))
-                        .foregroundColor(Color("Button_red"))
-                        .frame(width: 34, height: 34)
-                }
-                .buttonStyle(PlainButtonStyle())
+                // Shopping Cart Button with Live Badge
+                TopCartButton(action: {
+                    if let onCartTap = onCartTap {
+                        onCartTap()
+                    } else {
+                        CartManager.shared.showCartSheet = true
+                        NotificationCenter.default.post(name: .showCartNotification, object: nil)
+                    }
+                })
             }
         }
         .padding(.horizontal, 20)

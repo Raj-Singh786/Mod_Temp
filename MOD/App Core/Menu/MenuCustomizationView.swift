@@ -7,22 +7,25 @@
 
 import SwiftUI
 
+// MARK: - Recipe Style Enum
+
+enum RecipeStyle: String, CaseIterable, Identifiable {
+    case whole = "Whole pizza"
+    case halfAndHalf = "Half & half"
+    
+    var id: String { rawValue }
+}
+
 // MARK: - Topping Portion & Amount Enums
 
 enum ToppingPortion: String, CaseIterable, Identifiable, Hashable {
-    case left = "Left (½)"
+    case left = "Left ½"
     case whole = "Whole"
-    case right = "Right (½)"
+    case right = "Right ½"
     
     var id: String { rawValue }
     
-    var shortTitle: String {
-        switch self {
-        case .left: return "Left"
-        case .whole: return "Whole"
-        case .right: return "Right"
-        }
-    }
+    var shortTitle: String { rawValue }
     
     var calorieMultiplier: Double {
         switch self {
@@ -48,10 +51,19 @@ enum ToppingAmount: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+// MARK: - Sauce Option Model
+
+struct SauceOption: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let baseCalories: Int
+    let dotColor: Color
+    var isNoSauce: Bool = false
+}
+
 // MARK: - Topping Category Enum
 
 enum ToppingCategory: String, CaseIterable, Identifiable {
-    case sauce = "SAUCES"
     case cheese = "CHEESES"
     case meat = "MEATS"
     case veggie = "VEGGIES & MORE"
@@ -61,7 +73,6 @@ enum ToppingCategory: String, CaseIterable, Identifiable {
     
     var subtitle: String {
         switch self {
-        case .sauce: return "Choose one or more"
         case .cheese: return "Free unlimited"
         case .meat: return "Free unlimited"
         case .veggie: return "Free unlimited"
@@ -124,9 +135,9 @@ enum PizzaSize: String, CaseIterable, Identifiable {
     
     var baseCalories: Int {
         switch self {
-        case .mini: return 540
-        case .mod: return 820
-        case .mega: return 1160
+        case .mini: return 480
+        case .mod: return 680
+        case .mega: return 980
         }
     }
 }
@@ -182,22 +193,31 @@ struct MenuCustomizationView: View {
     
     @State private var selectedSize: PizzaSize = .mod
     @State private var selectedCrust: PizzaCrust = .thin
+    @State private var recipeStyle: RecipeStyle = .whole
     @State private var quantity: Int = 1
     @State private var showAddedToast: Bool = false
     
-    // MARK: - Toppings State
+    // MARK: - Sauce State (Single Selection with Grid)
+    
+    @State private var selectedSauceId: String = "s_tomato"
+    @State private var saucePortion: ToppingPortion = .whole
+    @State private var sauceAmount: ToppingAmount = .regular
+    
+    let sauceOptions: [SauceOption] = [
+        SauceOption(id: "s_tomato", name: "Tomato", baseCalories: 30, dotColor: Color(red: 0xD8 / 255.0, green: 0x32 / 255.0, blue: 0x2A / 255.0)),
+        SauceOption(id: "s_spicy_tomato", name: "Spicy tomato", baseCalories: 35, dotColor: Color(red: 0x9B / 255.0, green: 0x23 / 255.0, blue: 0x1A / 255.0)),
+        SauceOption(id: "s_creamy_alfredo", name: "Creamy alfredo", baseCalories: 80, dotColor: Color(red: 0xF3 / 255.0, green: 0xEA / 255.0, blue: 0xD0 / 255.0)),
+        SauceOption(id: "s_bbq", name: "BBQ", baseCalories: 40, dotColor: Color(red: 0x73 / 255.0, green: 0x2C / 255.0, blue: 0x1A / 255.0)),
+        SauceOption(id: "s_buffalo", name: "Frank’s Buffalo", baseCalories: 25, dotColor: Color(red: 0xEB / 255.0, green: 0x5E / 255.0, blue: 0x1E / 255.0)),
+        SauceOption(id: "s_pesto", name: "Pesto", baseCalories: 60, dotColor: Color(red: 0x5A / 255.0, green: 0x8C / 255.0, blue: 0x32 / 255.0)),
+        SauceOption(id: "s_garlic_rub", name: "Garlic rub", baseCalories: 45, dotColor: Color(red: 0xF0 / 255.0, green: 0xDC / 255.0, blue: 0x96 / 255.0)),
+        SauceOption(id: "s_olive_oil", name: "Olive oil", baseCalories: 50, dotColor: Color(red: 0xD6 / 255.0, green: 0xB9 / 255.0, blue: 0x46 / 255.0)),
+        SauceOption(id: "s_no_sauce", name: "No sauce", baseCalories: 0, dotColor: Color.clear, isNoSauce: true)
+    ]
+    
+    // MARK: - Toppings State (Cheeses, Meats, Veggies, Finishes)
     
     @State private var toppings: [CustomizableTopping] = [
-        // SAUCES
-        CustomizableTopping(id: "s1", name: "Red Sauce", category: .sauce, baseCalories: 30, dotColor: Color("Button_red"), isSelected: true),
-        CustomizableTopping(id: "s2", name: "Spicy Red Sauce", category: .sauce, baseCalories: 35, dotColor: Color("Button_red")),
-        CustomizableTopping(id: "s3", name: "Garlic Rub / White", category: .sauce, baseCalories: 45, dotColor: Color(red: 0xF7 / 255.0, green: 0xEE / 255.0, blue: 0xDD / 255.0)),
-        CustomizableTopping(id: "s4", name: "BBQ Sauce", category: .sauce, baseCalories: 40, dotColor: Color(red: 0x73 / 255.0, green: 0x36 / 255.0, blue: 0x1E / 255.0)),
-        CustomizableTopping(id: "s5", name: "Pesto", category: .sauce, baseCalories: 60, dotColor: Color(red: 0x58 / 255.0, green: 0x7A / 255.0, blue: 0x30 / 255.0)),
-        CustomizableTopping(id: "s6", name: "Extra Virgin Olive Oil", category: .sauce, baseCalories: 50, dotColor: Color(red: 0xDE / 255.0, green: 0xC5 / 255.0, blue: 0x62 / 255.0)),
-        CustomizableTopping(id: "s7", name: "Buffalo Sauce", category: .sauce, baseCalories: 25, dotColor: Color(red: 0xD8 / 255.0, green: 0x62 / 255.0, blue: 0x2A / 255.0)),
-        CustomizableTopping(id: "s8", name: "No Sauce", category: .sauce, baseCalories: 0, dotColor: Color.gray.opacity(0.4)),
-        
         // CHEESES
         CustomizableTopping(id: "c1", name: "Mozzarella", category: .cheese, baseCalories: 180, dotColor: Color(red: 0xF7 / 255.0, green: 0xDF / 255.0, blue: 0xA5 / 255.0), isSelected: true, portion: .whole, amount: .regular),
         CustomizableTopping(id: "c2", name: "Asiago", category: .cheese, baseCalories: 90, dotColor: Color(red: 0xF3 / 255.0, green: 0xEA / 255.0, blue: 0xCA / 255.0)),
@@ -209,8 +229,8 @@ struct MenuCustomizationView: View {
         CustomizableTopping(id: "c8", name: "Dairy-Free Cheese", category: .cheese, baseCalories: 120, dotColor: Color(red: 0xF8 / 255.0, green: 0xEE / 255.0, blue: 0xC8 / 255.0)),
         
         // MEATS
-        CustomizableTopping(id: "m1", name: "Pepperoni", category: .meat, baseCalories: 120, dotColor: Color("Button_red"), isSelected: true),
-        CustomizableTopping(id: "m2", name: "Mild Italian Sausage", category: .meat, baseCalories: 140, dotColor: Color(red: 0x86 / 255.0, green: 0x3E / 255.0, blue: 0x22 / 255.0), isSelected: true, portion: .whole, amount: .regular),
+        CustomizableTopping(id: "m1", name: "Pepperoni", category: .meat, baseCalories: 120, dotColor: Color("Button_red")),
+        CustomizableTopping(id: "m2", name: "Mild Italian Sausage", category: .meat, baseCalories: 140, dotColor: Color(red: 0x86 / 255.0, green: 0x3E / 255.0, blue: 0x22 / 255.0)),
         CustomizableTopping(id: "m3", name: "Spicy Chicken Sausage", category: .meat, baseCalories: 110, dotColor: Color(red: 0xB5 / 255.0, green: 0x58 / 255.0, blue: 0x34 / 255.0)),
         CustomizableTopping(id: "m4", name: "Bacon", category: .meat, baseCalories: 130, dotColor: Color(red: 0x98 / 255.0, green: 0x30 / 255.0, blue: 0x25 / 255.0)),
         CustomizableTopping(id: "m5", name: "Canadian Bacon", category: .meat, baseCalories: 80, dotColor: Color(red: 0xDA / 255.0, green: 0x72 / 255.0, blue: 0x76 / 255.0)),
@@ -249,12 +269,27 @@ struct MenuCustomizationView: View {
     
     // MARK: - Computed Calorie & Price Calculations
     
+    /// Whether current pizza has no meat selected
+    var isVegetarian: Bool {
+        !toppings.contains(where: { $0.category == .meat && $0.isSelected })
+    }
+    
+    /// Calories contributed by the selected sauce, portion, and amount
+    var calculatedSauceCalories: Int {
+        guard let sauce = sauceOptions.first(where: { $0.id == selectedSauceId }), !sauce.isNoSauce else {
+            return 0
+        }
+        let raw = Double(sauce.baseCalories) * saucePortion.calorieMultiplier * sauceAmount.calorieMultiplier
+        return Int(round(raw))
+    }
+    
     /// Total calories of a single customized pizza
     var singlePizzaCalories: Int {
         let sizeBase = selectedSize.baseCalories
         let crustExtra = selectedCrust.extraCalories
+        let sauceCal = calculatedSauceCalories
         let toppingsCal = toppings.reduce(0) { $0 + $1.calculatedCalories }
-        return sizeBase + crustExtra + toppingsCal
+        return sizeBase + crustExtra + sauceCal + toppingsCal
     }
     
     /// Total price of a single customized pizza
@@ -295,12 +330,18 @@ struct MenuCustomizationView: View {
                             // 4. Crust Selection Section
                             crustSection
                             
-                            // 5. Toppings Sections (Sauces, Cheeses, Meats, Veggies, Finishes)
+                            // 5. Recipe Style Section
+                            recipeStyleSection
+                            
+                            // 6. Sauce Selection Section (2-Column Grid + Shared Controls)
+                            sauceSection
+                            
+                            // 7. Toppings Sections (Cheeses, Meats, Veggies, Finishes)
                             ForEach(ToppingCategory.allCases) { category in
                                 categorySection(category)
                             }
                             
-                            // 6. Nutrition Facts Table Card
+                            // 8. Nutrition Facts Table Card
                             nutritionSummaryCard
                             
                             // Bottom Padding for Fixed Checkout Bar
@@ -385,14 +426,14 @@ struct MenuCustomizationView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                Button(action: {
-                    onCartTap?()
-                }) {
-                    Image(systemName: "cart")
-                        .font(.system(size: 19, weight: .regular))
-                        .foregroundColor(Color("Button_red"))
-                }
-                .buttonStyle(PlainButtonStyle())
+                TopCartButton(action: {
+                    if let onCartTap = onCartTap {
+                        onCartTap()
+                    } else {
+                        CartManager.shared.showCartSheet = true
+                        NotificationCenter.default.post(name: .showCartNotification, object: nil)
+                    }
+                })
             }
             .frame(width: 70, alignment: .trailing)
         }
@@ -407,42 +448,41 @@ struct MenuCustomizationView: View {
     private var pizzaHeroCard: some View {
         VStack(spacing: 12) {
             ZStack {
-                // Rounded Tan Card Container
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                // Wide Rounded Tan Card Container
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(Color("pizza_found"))
-                    .frame(height: 220)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 235)
                 
                 // High-resolution Pizza Image
                 Image("PizzaOn")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 190, height: 190)
+                    .frame(width: 205, height: 205)
                     .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 5)
+                    .shadow(color: Color.black.opacity(0.14), radius: 8, x: 0, y: 4)
             }
+            .frame(maxWidth: .infinity)
             
-            Text("Build your own pizza with unlimited toppings on our fresh dough, pressed daily.")
-                .font(.barlowRegular(size: 12.5))
+            Text("Standard recipe photo. Customize it and we’ll switch to a live illustration of your build.")
+                .font(.barlowRegular(size: 13))
                 .foregroundColor(Color("text_gary"))
                 .multilineTextAlignment(.center)
+                .lineSpacing(2)
                 .padding(.horizontal, 16)
         }
+        .frame(maxWidth: .infinity)
     }
     
     // MARK: - 2. Title & Badge Section
     
     private var titleBadgeSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // "Value" Red Badge
-            Text("Value")
-                .font(.barlowBold(size: 11))
-                .foregroundColor(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(
-                    Capsule()
-                        .fill(Color("Button_red"))
-                )
+            // Category Red Title (Replaced Value Tag)
+            Text("PIZZAS")
+                .font(.oswaldMedium(size: 13))
+                .tracking(1.0)
+                .foregroundColor(Color("Button_red"))
             
             // Title
             Text("BUILD YOUR PIZZA")
@@ -451,27 +491,46 @@ struct MenuCustomizationView: View {
                 .foregroundColor(Color("app_black"))
             
             // Subtitle
-            Text("Choose a size and crust to begin. Unlimited toppings included at one set price.")
+            Text("Build your own with 40+ toppings and 8 finishing sauces — all for one price. Supports independent half-and-half recipes.")
                 .font(.barlowRegular(size: 14))
                 .foregroundColor(Color("text_gary"))
                 .lineSpacing(2)
             
-            // Calorie range badge
-            HStack(spacing: 6) {
-                Image(systemName: "flame")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color("Button_red"))
+            // Veg Tag + Calorie info
+            HStack(spacing: 8) {
+                if isVegetarian {
+                    // Veg Badge
+                    HStack(spacing: 4.5) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 2.5)
+                                .stroke(Color(red: 0x38 / 255.0, green: 0x7E / 255.0, blue: 0x3C / 255.0), lineWidth: 1.4)
+                                .frame(width: 14, height: 14)
+                            
+                            Circle()
+                                .fill(Color(red: 0x38 / 255.0, green: 0x7E / 255.0, blue: 0x3C / 255.0))
+                                .frame(width: 6, height: 6)
+                        }
+                        
+                        Text("Veg")
+                            .font(.barlowBold(size: 12))
+                            .foregroundColor(Color(red: 0x38 / 255.0, green: 0x7E / 255.0, blue: 0x3C / 255.0))
+                    }
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3.5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(Color(red: 0xD0 / 255.0, green: 0xD8 / 255.0, blue: 0xC8 / 255.0), lineWidth: 1.0)
+                            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white))
+                    )
+                }
                 
-                Text("\(singlePizzaCalories) cal")
-                    .font(.barlowBold(size: 13.5))
-                    .foregroundColor(Color("app_black"))
-                
-                Text("· Unlimited toppings included")
-                    .font(.barlowRegular(size: 13))
+                Text(singlePizzaCalories == 680 ? "680 cal standard" : "\(singlePizzaCalories) cal standard")
+                    .font(.barlowRegular(size: 13.5))
                     .foregroundColor(Color("text_gary"))
             }
             .padding(.top, 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     // MARK: - 3. Size Selection Section
@@ -479,8 +538,8 @@ struct MenuCustomizationView: View {
     private var sizeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("SIZE")
-                .font(.oswaldMedium(size: 16))
-                .tracking(0.6)
+                .font(.oswaldLight(size: 20))
+                .tracking(0.8)
                 .foregroundColor(Color("app_black"))
             
             HStack(spacing: 8) {
@@ -545,8 +604,8 @@ struct MenuCustomizationView: View {
     private var crustSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("CRUST")
-                .font(.oswaldMedium(size: 16))
-                .tracking(0.6)
+                .font(.oswaldLight(size: 20))
+                .tracking(0.8)
                 .foregroundColor(Color("app_black"))
             
             HStack(spacing: 8) {
@@ -603,7 +662,213 @@ struct MenuCustomizationView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - 5. Toppings Category Section
+    // MARK: - 5. Recipe Style Section
+    
+    private var recipeStyleSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider()
+                .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
+                .padding(.bottom, 2)
+            
+            Text("RECIPE STYLE")
+                .font(.oswaldLight(size: 20))
+                .tracking(0.8)
+                .foregroundColor(Color("app_black"))
+            
+            // Segmented Capsule: [ Whole pizza ] [ Half & half ]
+            HStack(spacing: 4) {
+                ForEach(RecipeStyle.allCases) { style in
+                    let isSelected = recipeStyle == style
+                    Button(action: {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            recipeStyle = style
+                        }
+                    }) {
+                        Text(style.rawValue)
+                            .font(isSelected ? .barlowBold(size: 14) : .barlowMedium(size: 14))
+                            .foregroundColor(Color("app_black"))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(
+                                Capsule()
+                                    .fill(isSelected ? Color.white : Color.clear)
+                                    .shadow(color: isSelected ? Color.black.opacity(0.08) : Color.clear, radius: 2, x: 0, y: 1)
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding(4)
+            .background(
+                Capsule()
+                    .fill(Color(red: 0xF3 / 255.0, green: 0xEE / 255.0, blue: 0xE4 / 255.0))
+            )
+            
+            Text("Use Left ½ / Right ½ on any topping, or switch to Half & half for two fully independent recipes.")
+                .font(.barlowRegular(size: 13))
+                .foregroundColor(Color("text_gary"))
+                .lineSpacing(2)
+            
+            Divider()
+                .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
+                .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    // MARK: - 6. Sauce Selection Section (2-Column Box Grid)
+    
+    private var sauceSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("SAUCE")
+                .font(.oswaldLight(size: 20))
+                .tracking(0.8)
+                .foregroundColor(Color("app_black"))
+            
+            let columns = [
+                GridItem(.flexible(), spacing: 10),
+                GridItem(.flexible(), spacing: 10)
+            ]
+            
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(sauceOptions) { sauce in
+                    sauceBox(sauce)
+                }
+            }
+            
+            // Bottom Shared Portion & Amount Controls (Directly below sauce boxes)
+            VStack(alignment: .leading, spacing: 8) {
+                // Portion: Left ½ | Whole | Right ½
+                HStack(spacing: 3) {
+                    ForEach(ToppingPortion.allCases) { portion in
+                        let isCurrent = saucePortion == portion
+                        Button(action: {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                saucePortion = portion
+                            }
+                        }) {
+                            Text(portion.shortTitle)
+                                .font(isCurrent ? .barlowBold(size: 13) : .barlowSemiBold(size: 13))
+                                .foregroundColor(isCurrent ? Color("Button_red") : Color("app_black"))
+                                .padding(.horizontal, 14)
+                                .frame(height: 32)
+                                .background(
+                                    Capsule()
+                                        .fill(isCurrent ? Color.white : Color.clear)
+                                        .shadow(color: isCurrent ? Color.black.opacity(0.08) : Color.clear, radius: 2, x: 0, y: 1)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(3)
+                .background(
+                    Capsule()
+                        .fill(Color(red: 0xF3 / 255.0, green: 0xEE / 255.0, blue: 0xE4 / 255.0))
+                )
+                
+                // Amount: Light | Regular | Extra
+                HStack(spacing: 3) {
+                    ForEach(ToppingAmount.allCases) { amount in
+                        let isCurrent = sauceAmount == amount
+                        Button(action: {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                sauceAmount = amount
+                            }
+                        }) {
+                            Text(amount.rawValue)
+                                .font(isCurrent ? .barlowBold(size: 13) : .barlowSemiBold(size: 13))
+                                .foregroundColor(isCurrent ? Color("Button_red") : Color("app_black"))
+                                .padding(.horizontal, 14)
+                                .frame(height: 32)
+                                .background(
+                                    Capsule()
+                                        .fill(isCurrent ? Color.white : Color.clear)
+                                        .shadow(color: isCurrent ? Color.black.opacity(0.08) : Color.clear, radius: 2, x: 0, y: 1)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(3)
+                .background(
+                    Capsule()
+                        .fill(Color(red: 0xF3 / 255.0, green: 0xEE / 255.0, blue: 0xE4 / 255.0))
+                )
+            }
+            .padding(.top, 4)
+            
+            Divider()
+                .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
+                .padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    private func sauceBox(_ sauce: SauceOption) -> some View {
+        let isSelected = selectedSauceId == sauce.id
+        
+        return Button(action: {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                selectedSauceId = sauce.id
+            }
+        }) {
+            VStack(spacing: 8) {
+                sauceDotView(for: sauce)
+                
+                Text(sauce.name)
+                    .font(.barlowBold(size: 14))
+                    .foregroundColor(Color("app_black"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 78)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF4 / 255.0) : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(isSelected ? Color("Button_red") : Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: isSelected ? 1.6 : 1.2)
+            )
+            .shadow(color: Color.black.opacity(0.02), radius: 3, x: 0, y: 1)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    @ViewBuilder
+    private func sauceDotView(for sauce: SauceOption) -> some View {
+        if sauce.isNoSauce {
+            ZStack {
+                Circle()
+                    .stroke(Color(red: 0xD0 / 255.0, green: 0xCA / 255.0, blue: 0xC0 / 255.0), lineWidth: 1.5)
+                    .frame(width: 26, height: 26)
+                
+                ForEach([-6, 0, 6], id: \.self) { offset in
+                    Rectangle()
+                        .fill(Color(red: 0xD0 / 255.0, green: 0xCA / 255.0, blue: 0xC0 / 255.0))
+                        .frame(width: 1.5, height: 26)
+                        .rotationEffect(.degrees(45))
+                        .offset(x: CGFloat(offset))
+                }
+            }
+            .frame(width: 26, height: 26)
+            .clipShape(Circle())
+        } else {
+            ZStack {
+                Circle()
+                    .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1.5)
+                    .frame(width: 26, height: 26)
+                
+                Circle()
+                    .fill(sauce.dotColor)
+                    .frame(width: 20, height: 20)
+            }
+        }
+    }
+    
+    // MARK: - 7. Toppings Category Section
     
     private func categorySection(_ category: ToppingCategory) -> some View {
         let categoryToppings = toppings.filter { $0.category == category }
@@ -612,13 +877,13 @@ struct MenuCustomizationView: View {
             // Category Header Row
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(category.rawValue)
-                    .font(.oswaldMedium(size: 16))
-                    .tracking(0.6)
+                    .font(.oswaldLight(size: 20))
+                    .tracking(0.8)
                     .foregroundColor(Color("app_black"))
                     .lineLimit(1)
                 
                 Text("· \(category.subtitle)")
-                    .font(.barlowRegular(size: 12.5))
+                    .font(.barlowRegular(size: 13))
                     .foregroundColor(Color("text_gary"))
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
@@ -812,13 +1077,13 @@ struct MenuCustomizationView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - 6. Nutrition Facts Table Card
+    // MARK: - 8. Nutrition Facts Table Card
     
     private var nutritionSummaryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Nutrition facts (estimated)")
-                .font(.oswaldMedium(size: 16))
-                .tracking(0.6)
+            Text("NUTRITION FACTS (ESTIMATED)")
+                .font(.oswaldLight(size: 20))
+                .tracking(0.8)
                 .foregroundColor(Color("app_black"))
             
             VStack(spacing: 8) {
@@ -908,9 +1173,22 @@ struct MenuCustomizationView: View {
                 
                 // ADD TO CART Button
                 Button(action: {
+                    let sauceName = sauceOptions.first(where: { $0.id == selectedSauceId })?.name ?? "Tomato"
+                    let selectedToppingNames = toppings.filter { $0.isSelected }.map { $0.name }
+                    let toppingsSummary = selectedToppingNames.isEmpty ? "" : " · " + selectedToppingNames.joined(separator: ", ")
+                    let detailsText = "\(selectedSize.rawValue) · \(selectedCrust.rawValue) crust · \(sauceName) sauce" + toppingsSummary
+                    
+                    CartManager.shared.addItem(
+                        title: "BUILD YOUR PIZZA",
+                        price: singlePizzaPrice,
+                        quantity: quantity,
+                        details: detailsText,
+                        calories: singlePizzaCalories
+                    )
+                    
                     onAddToCart?(quantity, finalTotalPrice, singlePizzaCalories)
                     showAddedToast = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                         dismiss()
                     }
                 }) {

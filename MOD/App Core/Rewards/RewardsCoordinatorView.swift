@@ -246,15 +246,15 @@ struct RewardsCoordinatorView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
                 
-                // Cart Button (Red)
-                Button(action: {
-                    onCartTap?()
-                }) {
-                    Image(systemName: "cart")
-                        .font(.system(size: 19, weight: .regular))
-                        .foregroundColor(Color("Button_red"))
-                }
-                .buttonStyle(PlainButtonStyle())
+                // Cart Button (Red with Live Badge)
+                TopCartButton(action: {
+                    if let onCartTap = onCartTap {
+                        onCartTap()
+                    } else {
+                        CartManager.shared.showCartSheet = true
+                        NotificationCenter.default.post(name: .showCartNotification, object: nil)
+                    }
+                })
             }
             .frame(width: screenState == .guestPromo ? 70 : nil, alignment: .trailing)
         }

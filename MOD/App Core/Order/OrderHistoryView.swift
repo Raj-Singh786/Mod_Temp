@@ -323,14 +323,14 @@ struct OrderHistoryView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                Button(action: {
-                    onCartTap?()
-                }) {
-                    Image(systemName: "cart")
-                        .font(.system(size: 19, weight: .regular))
-                        .foregroundColor(Color("Button_red"))
-                }
-                .buttonStyle(PlainButtonStyle())
+                TopCartButton(action: {
+                    if let onCartTap = onCartTap {
+                        onCartTap()
+                    } else {
+                        CartManager.shared.showCartSheet = true
+                        NotificationCenter.default.post(name: .showCartNotification, object: nil)
+                    }
+                })
             }
             .frame(width: 70, alignment: .trailing)
         }
@@ -529,28 +529,9 @@ struct OrderHistoryView: View {
                 HStack(spacing: 14) {
                     // REORDER Button
                     Button(action: {
-                        showToast("Added \(order.id) items to your cart!")
+                        handleReorder(order)
                     }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 12, weight: .bold))
-                            
-                            Text("REORDER")
-                                .font(.oswaldMedium(size: 13.5))
-                                .tracking(0.8)
-                        }
-                        .foregroundColor(Color("app_black"))
-                        .padding(.horizontal, 16)
-                        .frame(height: 38)
-                        .background(
-                            Capsule()
-                                .fill(Color.white)
-                                .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
-                        )
-                        .overlay(
-                            Capsule()
-                                .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
-                        )
+                        reorderButtonLabel
                     }
                     .buttonStyle(PlainButtonStyle())
                     
@@ -734,6 +715,39 @@ struct OrderHistoryView: View {
     }
     
     // MARK: - Helpers
+    
+    private func handleReorder(_ order: OrderHistoryItem) {
+        CartManager.shared.addItem(
+            title: order.itemsDescription,
+            price: order.totalAmount,
+            quantity: 1,
+            details: "Reorder from \(order.id)"
+        )
+        showToast("Added \(order.id) items to your cart!")
+    }
+    
+    private var reorderButtonLabel: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 12, weight: .bold))
+            
+            Text("REORDER")
+                .font(.oswaldMedium(size: 13.5))
+                .tracking(0.8)
+        }
+        .foregroundColor(Color("app_black"))
+        .padding(.horizontal, 16)
+        .frame(height: 38)
+        .background(
+            Capsule()
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
+        )
+        .overlay(
+            Capsule()
+                .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+        )
+    }
     
     private func toggleGoTo(_ order: OrderHistoryItem) {
         if let idx = orders.firstIndex(where: { $0.id == order.id }) {

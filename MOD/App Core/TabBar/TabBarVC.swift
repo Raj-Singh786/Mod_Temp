@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SwiftUI
 
 class TabBarVC: UITabBarController {
 
@@ -15,6 +16,8 @@ class TabBarVC: UITabBarController {
 
     private let indicatorWidth: CGFloat = 32
     private let indicatorHeight: CGFloat = 4
+    
+    private var cartHostingVC: UIHostingController<PersistentFloatingCartBar>?
 
     let tabItems: [TabItems] = [
         .Home,
@@ -50,6 +53,9 @@ class TabBarVC: UITabBarController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if let hostingView = cartHostingVC?.view {
+            view.bringSubviewToFront(hostingView)
+        }
     }
 }
 
@@ -63,6 +69,7 @@ extension TabBarVC {
         navigationController?.isNavigationBarHidden = true
 
         setUPTabBar()
+        setupPersistentFloatingCartBar()
         
         NotificationCenter.default.addObserver(forName: .selectMenuTabWithCategory, object: nil, queue: .main) { [weak self] _ in
             self?.selectedIndex = 1
@@ -236,10 +243,78 @@ extension TabBarVC: UITabBarControllerDelegate {
         _ tabBarController: UITabBarController,
         didSelect viewController: UIViewController
     ) {
+        if let hostingView = cartHostingVC?.view {
+            view.bringSubviewToFront(hostingView)
+        }
+    }
+}
 
-//        addTabbarIndicatorView(
-//            index: selectedIndex
-//        )
+// MARK: - Persistent Floating Cart Bar Extension
+
+extension TabBarVC {
+
+    private func setupPersistentFloatingCartBar() {
+        let cartBar = PersistentFloatingCartBar(onTap: { [weak self] in
+            self?.presentCartSheet()
+        })
+        
+        let hosting = UIHostingController(rootView: cartBar)
+        hosting.view.backgroundColor = .clear
+        hosting.view.translatesAutoresizingMaskIntoConstraints = false
+        
+        addChild(hosting)
+        view.addSubview(hosting.view)
+        hosting.didMove(toParent: self)
+        
+        self.cartHostingVC = hosting
+        
+        NSLayoutConstraint.activate([
+            hosting.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hosting.view.bottomAnchor.constraint(equalTo: tabBar.topAnchor, constant: -10),
+            hosting.view.heightAnchor.constraint(equalToConstant: 56)
+        ])
+        
+        view.bringSubviewToFront(hosting.view)
+        
+        NotificationCenter.default.addObserver(forName: .cartUpdatedNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.updateCartBarVisibility(animated: true)
+        }
+        
+        NotificationCenter.default.addObserver(forName: .showCartNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.presentCartSheet()
+        }
+        
+        updateCartBarVisibility(animated: false)
+    }
+
+    private func updateCartBarVisibility(animated: Bool = true) {
+        let hasItems = CartManager.shared.totalItemCount > 0
+        
+        if let hostingView = cartHostingVC?.view {
+            view.bringSubviewToFront(hostingView)
+        }
+        
+        let updates = {
+            self.cartHostingVC?.view.alpha = hasItems ? 1.0 : 0.0
+            self.cartHostingVC?.view.isUserInteractionEnabled = hasItems
+        }
+        
+        if animated {
+            UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut, .allowUserInteraction], animations: updates)
+        } else {
+            updates()
+        }
+    }
+
+    private func presentCartSheet() {
+        let cartVC = UIHostingController(rootView: CartView())
+        cartVC.modalPresentationStyle = .pageSheet
+        if let sheet = cartVC.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(cartVC, animated: true)
     }
 }
 

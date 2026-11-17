@@ -655,7 +655,7 @@ struct MenuView: View {
                             menuSectionsList
                             
                             Spacer()
-                                .frame(height: 50)
+                                .frame(height: CartManager.shared.totalItemCount > 0 ? 80 : 50)
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 10)
@@ -703,7 +703,9 @@ struct MenuView: View {
             )
         }
         .fullScreenCover(isPresented: $showCustomizationView) {
-            MenuCustomizationView()
+            MenuCustomizationView(onBack: {
+                showCustomizationView = false
+            })
         }
     }
     
@@ -744,16 +746,15 @@ struct MenuView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     
-                    // Cart Icon
-                    Button(action: {
-                        onCartTap?()
-                    }) {
-                        Image(systemName: "cart")
-                            .font(.system(size: 20, weight: .regular))
-                            .foregroundColor(Color("Button_red"))
-                            .frame(width: 34, height: 34)
-                    }
-                    .buttonStyle(PlainButtonStyle())
+                    // Cart Icon with Live Item Count Badge
+                    TopCartButton(action: {
+                        if let onCartTap = onCartTap {
+                            onCartTap()
+                        } else {
+                            CartManager.shared.showCartSheet = true
+                            NotificationCenter.default.post(name: .showCartNotification, object: nil)
+                        }
+                    })
                 }
             }
         }
@@ -1265,6 +1266,16 @@ struct MenuView: View {
                                     showCustomizationView = true
                                 }
                             } else {
+                                let priceVal = Double(item.price.replacingOccurrences(of: "$", with: "")) ?? 3.99
+                                let calVal = Int(item.calories.components(separatedBy: " ").first ?? "")
+                                CartManager.shared.addItem(
+                                    title: item.title,
+                                    price: priceVal,
+                                    quantity: 1,
+                                    details: item.description,
+                                    calories: calVal,
+                                    imageName: item.imageName
+                                )
                                 onAddItem?(item)
                             }
                         }) {
