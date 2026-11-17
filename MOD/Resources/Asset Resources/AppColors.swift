@@ -42,6 +42,12 @@ enum AppColor {
     }
     
     
+    
+    static var olive_green: UIColor {
+        UIColor(named: "olive_green") ?? .systemGreen
+    }
+    
+    
     static var app_black: UIColor {
         UIColor(named: "app_black") ?? .black
     }
@@ -64,6 +70,9 @@ enum AppColor {
     static var appbackground: Color { Color("app_background") }
     static var romaRed: Color { Color("roma_red") }
     static var kalegreen: Color { Color("kale_green") }
+    
+    
+    static var oliveGreen: Color { Color("olive_green") }
 }
 
 //extension Color {

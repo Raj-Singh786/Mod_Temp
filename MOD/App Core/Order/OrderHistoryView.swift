@@ -149,9 +149,10 @@ struct OrderHistoryView: View {
     @State private var activeReceiptOrder: OrderHistoryItem? = nil
     @State private var activeHelpOrder: OrderHistoryItem? = nil
     
-    // Cancel & Toast Alerts
+    // Cancel & Go-To Alerts
     @State private var orderToCancel: OrderHistoryItem? = nil
-    @State private var showCancelConfirmation: Bool = false
+    @State private var showGoToAlert: Bool = false
+    @State private var goToAlertMessage: String = "Order Added to go to"
     @State private var toastMessage: String? = nil
     
     // MARK: - Computed Filtered List
@@ -256,21 +257,40 @@ struct OrderHistoryView: View {
                 onCartTap: onCartTap
             )
         }
-        .sheet(item: $activeHelpOrder) { order in
-            OrderHelpSheet(order: order)
-        }
-        .alert(isPresented: $showCancelConfirmation) {
-            Alert(
-                title: Text("Cancel Order"),
-                message: Text("Are you sure you want to cancel order \(orderToCancel?.id ?? "")? A refund will be issued to your payment method."),
-                primaryButton: .destructive(Text("Cancel Order")) {
-                    if let target = orderToCancel,
-                       let idx = orders.firstIndex(where: { $0.id == target.id }) {
-                        orders[idx].status = .cancelled
-                        showToast("Order \(target.id) cancelled.")
-                    }
+        .fullScreenCover(item: $activeHelpOrder) { order in
+            OrderHelpView(
+                order: order,
+                onBack: {
+                    activeHelpOrder = nil
                 },
-                secondaryButton: .cancel()
+                onStarTap: onStarTap,
+                onCartTap: onCartTap
+            )
+        }
+        .sheet(item: $orderToCancel) { order in
+            CancelOrderView(
+                order: order,
+                onConfirmCancel: { reason in
+                    if let idx = orders.firstIndex(where: { $0.id == order.id }) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            orders[idx].status = .cancelled
+                        }
+                        showToast("Order \(order.id) cancelled (\(reason.rawValue)). Refund issued.")
+                    }
+                    orderToCancel = nil
+                },
+                onKeepOrder: {
+                    orderToCancel = nil
+                }
+            )
+            .presentationDetents([.fraction(0.68), .large])
+            .presentationDragIndicator(.hidden)
+        }
+        .alert(isPresented: $showGoToAlert) {
+            Alert(
+                title: Text("Order Added to go to"),
+                message: Text(goToAlertMessage),
+                dismissButton: .default(Text("OK"))
             )
         }
     }
@@ -538,7 +558,6 @@ struct OrderHistoryView: View {
                         // CANCEL ORDER Button
                         Button(action: {
                             orderToCancel = order
-                            showCancelConfirmation = true
                         }) {
                             HStack(spacing: 5) {
                                 Image(systemName: "xmark")
@@ -552,38 +571,33 @@ struct OrderHistoryView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                     } else {
-                        // Go-to order / MAKE GO-TO
-                        if order.isGoTo {
+                        // Go to Order / MAKE GO-TO
+                        Button(action: {
+                            toggleGoTo(order)
+                        }) {
                             HStack(spacing: 5) {
                                 Image(systemName: "star")
                                     .font(.system(size: 12, weight: .semibold))
                                 
-                                Text("Go-to order")
-                                    .font(.barlowBold(size: 13))
+                                Text(order.isGoTo ? "Go to Order" : "MAKE GO-TO")
+                                    .font(order.isGoTo ? .barlowBold(size: 13) : .oswaldMedium(size: 13.5))
+                                    .tracking(order.isGoTo ? 0 : 0.8)
                             }
-                            .foregroundColor(Color(red: 0x4B / 255.0, green: 0x6E / 255.0, blue: 0x24 / 255.0))
-                            .padding(.horizontal, 12)
+                            .foregroundColor(order.isGoTo ? Color(red: 0x2A / 255.0, green: 0x44 / 255.0, blue: 0x14 / 255.0) : Color("app_black"))
+                            .padding(.horizontal, order.isGoTo ? 12 : 0)
                             .frame(height: 34)
                             .background(
-                                Capsule()
-                                    .fill(Color(red: 0xEE / 255.0, green: 0xF7 / 255.0, blue: 0xD8 / 255.0))
-                            )
-                        } else {
-                            Button(action: {
-                                toggleGoTo(order)
-                            }) {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "star")
-                                        .font(.system(size: 13, weight: .medium))
-                                    
-                                    Text("MAKE GO-TO")
-                                        .font(.oswaldMedium(size: 13.5))
-                                        .tracking(0.8)
+                                Group {
+                                    if order.isGoTo {
+                                        Capsule()
+                                            .fill(AppColor.oliveGreen.opacity(0.5))
+                                    } else {
+                                        Color.clear
+                                    }
                                 }
-                                .foregroundColor(Color("app_black"))
-                            }
-                            .buttonStyle(PlainButtonStyle())
+                            )
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     
                     Spacer()
@@ -595,15 +609,26 @@ struct OrderHistoryView: View {
                         toggleGoTo(order)
                     }) {
                         HStack(spacing: 6) {
-                            Image(systemName: order.isGoTo ? "star.fill" : "star")
+                            Image(systemName: "star")
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(order.isGoTo ? Color("Button_red") : Color("app_black"))
                             
-                            Text(order.isGoTo ? "SAVED TO GO-TO" : "MAKE GO-TO")
-                                .font(.oswaldMedium(size: 13.5))
-                                .tracking(0.8)
-                                .foregroundColor(Color("app_black"))
+                            Text(order.isGoTo ? "Go to Order" : "MAKE GO-TO")
+                                .font(order.isGoTo ? .barlowBold(size: 13) : .oswaldMedium(size: 13.5))
+                                .tracking(order.isGoTo ? 0 : 0.8)
                         }
+                        .foregroundColor(order.isGoTo ? Color(red: 0x2A / 255.0, green: 0x44 / 255.0, blue: 0x14 / 255.0) : Color("app_black"))
+                        .padding(.horizontal, order.isGoTo ? 14 : 0)
+                        .frame(height: 34)
+                        .background(
+                            Group {
+                                if order.isGoTo {
+                                    Capsule()
+                                        .fill(AppColor.oliveGreen.opacity(0.5))
+                                } else {
+                                    Color.clear
+                                }
+                            }
+                        )
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding(.top, 2)
@@ -712,9 +737,14 @@ struct OrderHistoryView: View {
     
     private func toggleGoTo(_ order: OrderHistoryItem) {
         if let idx = orders.firstIndex(where: { $0.id == order.id }) {
-            orders[idx].isGoTo.toggle()
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                orders[idx].isGoTo.toggle()
+            }
             if orders[idx].isGoTo {
-                showToast("Saved \(order.id) as a Go-to order!")
+                goToAlertMessage = "Order \(order.id) has been saved to your Go-to orders."
+                showGoToAlert = true
+            } else {
+                showToast("Removed \(order.id) from Go-to orders.")
             }
         }
     }
