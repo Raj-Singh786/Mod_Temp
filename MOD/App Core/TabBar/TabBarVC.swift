@@ -309,12 +309,13 @@ extension TabBarVC {
 
     private func presentCartSheet() {
         let cartVC = UIHostingController(rootView: CartView())
-        cartVC.modalPresentationStyle = .pageSheet
-        if let sheet = cartVC.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
+        cartVC.modalPresentationStyle = .fullScreen
+        
+        var topVC: UIViewController = self
+        while let presented = topVC.presentedViewController {
+            topVC = presented
         }
-        present(cartVC, animated: true)
+        topVC.present(cartVC, animated: true)
     }
 }
 
