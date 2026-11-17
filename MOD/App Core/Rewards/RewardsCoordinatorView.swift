@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: - Screen State
 
 enum RewardsScreenState {
+    case guestPromo
     case join
     case memberPass
 }
@@ -39,14 +40,37 @@ struct BarcodeGraphicView: View {
 
 struct RewardsCoordinatorView: View {
     
+    // MARK: - Configuration
+    
+    var isGuest: Bool = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
+    var onBackToHome: (() -> Void)? = nil
+    var onSignIn: (() -> Void)? = nil
+    var onProfileTap: (() -> Void)? = nil
+    var onCartTap: (() -> Void)? = nil
+    
     // MARK: - State
     
-    @State private var screenState: RewardsScreenState = .join
+    @State private var screenState: RewardsScreenState
     @State private var fullName: String = "Raj"
     @State private var email: String = "raj@example.com"
     @State private var sendOffersByEmail: Bool = false
     
-    var onBackToHome: (() -> Void)? = nil
+    // MARK: - Initializer
+    
+    init(
+        isGuest: Bool = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true,
+        onBackToHome: (() -> Void)? = nil,
+        onSignIn: (() -> Void)? = nil,
+        onProfileTap: (() -> Void)? = nil,
+        onCartTap: (() -> Void)? = nil
+    ) {
+        self.isGuest = isGuest
+        self.onBackToHome = onBackToHome
+        self.onSignIn = onSignIn
+        self.onProfileTap = onProfileTap
+        self.onCartTap = onCartTap
+        _screenState = State(initialValue: isGuest ? .guestPromo : .join)
+    }
     
     var body: some View {
         ZStack {
@@ -60,7 +84,9 @@ struct RewardsCoordinatorView: View {
                 // Content Switcher
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
-                        if screenState == .join {
+                        if screenState == .guestPromo {
+                            guestPromoContent
+                        } else if screenState == .join {
                             joinRewardsContent
                         } else {
                             memberPassContent
@@ -80,68 +106,221 @@ struct RewardsCoordinatorView: View {
     
     private var customNavigationBar: some View {
         HStack(alignment: .center) {
-            // Left: Back Button
-            Button(action: {
-                if screenState == .memberPass {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        screenState = .join
+            // Left: Back Button (shown only when in .join or .memberPass)
+            if screenState != .guestPromo {
+                Button(action: {
+                    if screenState == .memberPass {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            screenState = .join
+                        }
+                    } else if screenState == .join {
+                        if isGuest {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                screenState = .guestPromo
+                            }
+                        } else {
+                            if let onBack = onBackToHome {
+                                onBack()
+                            } else if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                      let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
+                                      let tabVC = rootNav.viewControllers.first as? UITabBarController {
+                                tabVC.selectedIndex = 0
+                            }
+                        }
                     }
-                } else {
-                    if let onBack = onBackToHome {
-                        onBack()
-                    } else if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                              let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
-                              let tabVC = rootNav.viewControllers.first as? UITabBarController {
-                        tabVC.selectedIndex = 0
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.backward")
+                            .font(.system(size: 15, weight: .bold))
+                        Text("Back")
+                            .font(.barlowBold(size: 16))
                     }
+                    .foregroundColor(Color("Button_red"))
                 }
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.backward")
-                        .font(.system(size: 15, weight: .bold))
-                    Text("Back")
-                        .font(.barlowBold(size: 16))
-                }
-                .foregroundColor(Color("Button_red"))
+                .buttonStyle(PlainButtonStyle())
+            } else {
+                // Placeholder to balance the centered title
+                Color.clear
+                    .frame(width: 70, height: 32)
             }
-            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             
             // Center: Title
-            Text(screenState == .join ? "Join" : "Member pass")
-                .font(.oswaldMedium(size: 17))
+            Text(screenState == .guestPromo ? "Rewards" : (screenState == .join ? "Join" : "Member pass"))
+                .font(screenState == .guestPromo ? .barlowBold(size: 18) : .oswaldMedium(size: 17))
                 .foregroundColor(Color("app_black"))
             
             Spacer()
             
-            // Right: Star & Cart Icons
+            // Right: Profile/Star & Cart Icons
             HStack(spacing: 16) {
-                // Star Button
-                Button(action: {
-                    // Star action
-                }) {
-                    Image(systemName: "star")
-                        .font(.system(size: 18, weight: .regular))
-                        .foregroundColor(Color("app_black"))
+                if screenState == .guestPromo {
+                    // Profile Icon
+                    Button(action: {
+                        onProfileTap?()
+                    }) {
+                        Image(systemName: "person")
+                            .font(.system(size: 19, weight: .regular))
+                            .foregroundColor(Color("app_black"))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    // Star Button
+                    Button(action: {
+                        // Star action
+                    }) {
+                        Image(systemName: "star")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundColor(Color("app_black"))
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
                 
                 // Cart Button (Red)
                 Button(action: {
-                    // Cart action
+                    onCartTap?()
                 }) {
                     Image(systemName: "cart")
-                        .font(.system(size: 18, weight: .regular))
+                        .font(.system(size: 19, weight: .regular))
                         .foregroundColor(Color("Button_red"))
                 }
                 .buttonStyle(PlainButtonStyle())
             }
+            .frame(width: screenState == .guestPromo ? 70 : nil, alignment: .trailing)
         }
         .padding(.horizontal, 16)
         .padding(.top, 6)
         .padding(.bottom, 10)
         .background(Color("app_background"))
+    }
+    
+    // MARK: - 0. Guest Rewards Promo Content (Snapshot media_1794896367824_789752c2.jpg)
+    
+    private var guestPromoContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Screen Title: REWARDS
+            Text("REWARDS")
+                .font(.oswaldBold(size: 32))
+                .tracking(0.8)
+                .foregroundColor(Color("app_black"))
+                .padding(.top, 4)
+            
+            // Main Promo Card
+            VStack(alignment: .leading, spacing: 0) {
+                // Pizza Cutout Graphic in Light Tan Dome (Offset to left matching snapshot)
+                HStack {
+                    ZStack {
+                        Circle()
+                            .fill(Color("pizza_found"))
+                            .frame(width: 190, height: 190)
+                        
+                        Image("pizza7")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 154, height: 154)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.14), radius: 8, x: 0, y: 4)
+                    }
+                    .padding(.top, 24)
+                    .padding(.leading, 24)
+                    
+                    Spacer()
+                }
+                
+                // Content Information
+                VStack(alignment: .leading, spacing: 14) {
+                    // Eyebrow & Headline
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("MOD REWARDS")
+                            .font(.oswaldMedium(size: 13))
+                            .tracking(1.0)
+                            .foregroundColor(Color("Button_red"))
+                        
+                        Text("JOIN TO EARN AND REDEEM")
+                            .font(.oswaldBold(size: 24))
+                            .tracking(0.6)
+                            .foregroundColor(Color("app_black"))
+                    }
+                    
+                    // Body text
+                    Text("Guests can order, track and get support without joining. Points, wallet funds, service credit, member coupons and the member pass are for members.")
+                        .font(.barlowRegular(size: 14))
+                        .foregroundColor(Color("text_gary"))
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    // Action Buttons (SIGN IN & JOIN MOD REWARDS)
+                    HStack(spacing: 12) {
+                        // SIGN IN button
+                        Button(action: {
+                            if let onSignIn = onSignIn {
+                                onSignIn()
+                            } else if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                      let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController {
+                                rootNav.popToRootViewController(animated: true)
+                            }
+                        }) {
+                            Text("SIGN IN")
+                                .font(.oswaldMedium(size: 14))
+                                .tracking(1.0)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 28)
+                                .frame(height: 44)
+                                .background(
+                                    Capsule()
+                                        .fill(Color("Button_red"))
+                                        .shadow(color: Color("Button_red").opacity(0.3), radius: 4, x: 0, y: 2)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // JOIN MOD REWARDS button
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                screenState = .join
+                            }
+                        }) {
+                            Text("JOIN MOD REWARDS")
+                                .font(.oswaldMedium(size: 14))
+                                .tracking(1.0)
+                                .foregroundColor(Color("app_black"))
+                                .padding(.horizontal, 20)
+                                .frame(height: 44)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white)
+                                )
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.top, 4)
+                    
+                    // Footnote
+                    Text("Passwordless sign-in with a one-time code by email or text.")
+                        .font(.barlowRegular(size: 12))
+                        .foregroundColor(Color("text_gary"))
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 24)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color.white)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1.2)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
+        }
     }
     
     // MARK: - 1. Join Rewards Content (Snapshot 1)

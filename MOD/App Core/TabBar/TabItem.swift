@@ -27,7 +27,8 @@ enum TabItems: String, CaseIterable {
             return UIHostingController(rootView: MenuView())
 
         case .Rewards:
-            return UIHostingController(rootView: RewardsCoordinatorView())
+            let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
+            return UIHostingController(rootView: RewardsCoordinatorView(isGuest: isGuest))
 
         case .Orders:
             return UIViewController()
