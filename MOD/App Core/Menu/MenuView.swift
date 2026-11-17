@@ -148,12 +148,26 @@ struct MenuView: View {
     private let allMenuItems: [MenuItemModel] = [
         // MARK: Pizzas
         MenuItemModel(
+            id: "og_pepperoni",
+            title: "OG PEPPERONI",
+            category: .pizzas,
+            description: "Tomato sauce, mozzarella, asiago and pepperoni.",
+            price: "$10.99",
+            imageName: "per",
+            tag: "Popular",
+            isVeg: false,
+            isVegan: false,
+            calories: "906 cal",
+            isSoldOut: false,
+            isFavorite: false
+        ),
+        MenuItemModel(
             id: "one_topping",
             title: "ONE TOPPING",
             category: .pizzas,
-            description: "Everyday value: sauce, cheese and your one favourite topping. Cheese choice...",
+            description: "Everyday value: sauce, cheese and your one favorite topping.",
             price: "$8.99",
-            imageName: "per",
+            imageName: "pizza1",
             tag: "Value",
             isVeg: false,
             isVegan: false,
@@ -179,7 +193,7 @@ struct MenuView: View {
             id: "mike_fav",
             title: "MIKE'S FAVORITE",
             category: .pizzas,
-            description: "Tomato sauce, mozzarella, parmesan, ricotta, spicy chicken sausage,...",
+            description: "Tomato sauce, mozzarella, parmesan, ricotta, and spicy chicken sausage.",
             price: "$12.99",
             imageName: "pizza4",
             tag: "Sold out",
@@ -1127,46 +1141,50 @@ struct MenuView: View {
         let isFav = favoritesState[item.id] ?? item.isFavorite
         
         return HStack(spacing: 0) {
-            // Left Image Container
+            // Left Image Container (Circular cutout food image on pizza_found background matching snapshot)
             ZStack(alignment: .topLeading) {
-                // Background Cream Box
-                Color("app_found")
-                    .frame(width: 115)
+                // Background Warm Cream Box
+                Color("pizza_found")
                 
-                // Food Image
-                Image(item.imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 90, height: 90)
-                    .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack {
+                    Spacer(minLength: 8)
+                    Image(item.imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 96, height: 96)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 3)
+                    Spacer(minLength: 8)
+                }
+                .frame(maxWidth: .infinity)
                 
-                // Optional Tag Pill (e.g. Value, Sold out, Popular, New)
+                // Item tag badge at top-left (e.g. Popular, Value, New, Sold out)
                 if let tag = item.tag {
                     Text(tag)
-                        .font(.barlowBold(size: 10.5))
+                        .font(.oswaldMedium(size: 11))
+                        .tracking(0.4)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
                         .background(
                             Capsule()
-                                .fill(item.isSoldOut ? Color.gray.opacity(0.85) : Color("Button_red"))
+                                .fill(item.isSoldOut ? Color.gray.opacity(0.85) : Color("roma_red"))
                         )
-                        .padding(8)
+                        .padding(.top, 10)
+                        .padding(.leading, 10)
                 }
             }
-            .frame(width: 115)
-            .clipped()
+            .frame(width: 124)
             
-            // Right Content Area
-            VStack(alignment: .leading, spacing: 4) {
-                // Title & Favorite Heart Button
-                HStack(alignment: .top) {
-                    // Item Name using Oswald Light Font (as per instruction)
+            // Right Details Panel
+            VStack(alignment: .leading, spacing: 6) {
+                // Title and Heart Button
+                HStack(alignment: .center) {
+                    // Item Name using Oswald Light Font (as per instruction, in dark red/burgundy)
                     Text(item.title)
-                        .font(.oswaldLight(size: 16.5))
-                        .tracking(0.6)
-                        .foregroundColor(Color("app_black"))
+                        .font(.oswaldLight(size: 19))
+                        .tracking(0.4)
+                        .foregroundColor(Color(red: 0x8A / 255.0, green: 0x1E / 255.0, blue: 0x2D / 255.0))
                         .lineLimit(1)
                     
                     Spacer()
@@ -1177,57 +1195,59 @@ struct MenuView: View {
                             favoritesState[item.id] = !isFav
                         }
                     }) {
-                        Image(systemName: isFav ? "heart.fill" : "heart")
-                            .font(.system(size: 14.5))
-                            .foregroundColor(isFav ? Color("Button_red") : Color.gray.opacity(0.55))
-                            .frame(width: 30, height: 30)
-                            .background(
-                                Circle()
-                                    .fill(Color.white)
-                                    .shadow(color: Color.black.opacity(0.06), radius: 2, x: 0, y: 1)
-                            )
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.8)
-                            )
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1.2)
+                                )
+                                .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+                            
+                            Image(systemName: isFav ? "suit.heart.fill" : "suit.heart")
+                                .font(.system(size: 14, weight: isFav ? .bold : .medium))
+                                .foregroundColor(isFav ? Color("Button_red") : Color("app_black").opacity(0.75))
+                        }
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
                 
-                // Description
+                // Description (NO TRUNCATION - full text visible across natural lines)
                 Text(item.description)
-                    .font(.barlowRegular(size: 12))
+                    .font(.barlowRegular(size: 13))
                     .foregroundColor(Color("text_gary"))
-                    .lineLimit(2)
-                    .lineSpacing(2)
+                    .lineLimit(nil)
+                    .lineSpacing(2.5)
+                    .fixedSize(horizontal: false, vertical: true)
                 
-                // Diet Tag & Calories
+                // Dietary Pill & Calorie Row
                 HStack(spacing: 8) {
                     dietaryBadge(isVeg: item.isVeg, isVegan: item.isVegan)
                     
                     Text(item.calories)
-                        .font(.barlowRegular(size: 12))
+                        .font(.barlowRegular(size: 12.5))
                         .foregroundColor(Color("text_gary"))
+                    
+                    Spacer()
                 }
                 .padding(.top, 2)
                 
-                Spacer()
-                
-                // Bottom: Price & Action Button
+                // Price & Action Button Row
                 HStack(alignment: .center) {
                     Text(item.price)
-                        .font(.oswaldBold(size: 18))
+                        .font(.oswaldBold(size: 21))
                         .foregroundColor(Color("app_black"))
                     
                     Spacer()
                     
                     if item.isSoldOut {
                         Text("SOLD OUT")
-                            .font(.oswaldMedium(size: 12.5))
+                            .font(.oswaldMedium(size: 13))
                             .tracking(0.8)
                             .foregroundColor(Color.gray.opacity(0.7))
-                            .padding(.horizontal, 16)
-                            .frame(height: 34)
+                            .padding(.horizontal, 18)
+                            .frame(height: 36)
                             .background(
                                 Capsule()
                                     .fill(Color(red: 0xF2 / 255.0, green: 0xF2 / 255.0, blue: 0xF2 / 255.0))
@@ -1241,11 +1261,11 @@ struct MenuView: View {
                             }
                         }) {
                             Text(item.category == .pizzas || item.category == .salads ? "CUSTOMIZE" : "+ ADD")
-                                .font(.oswaldMedium(size: 12.5))
-                                .tracking(0.8)
+                                .font(.oswaldMedium(size: 13.5))
+                                .tracking(1.0)
                                 .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .frame(height: 34)
+                                .padding(.horizontal, 18)
+                                .frame(height: 36)
                                 .background(
                                     Capsule()
                                         .fill(Color("Button_red"))
@@ -1259,70 +1279,61 @@ struct MenuView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
         }
-        .frame(height: 140)
+        .frame(minHeight: 148)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(Color.white)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1.2)
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
     }
     
     // MARK: - Dietary Badge Helper
     
     private func dietaryBadge(isVeg: Bool, isVegan: Bool) -> some View {
-        HStack(spacing: 4) {
-            if isVegan {
-                ZStack {
+        let dietaryColor: Color = (isVeg || isVegan) ? Color("kale_green") : Color(red: 0x8A / 255.0, green: 0x2A / 255.0, blue: 0x28 / 255.0)
+        let title: String = isVegan ? "Vegan" : (isVeg ? "Veg" : "Non-veg")
+        
+        return HStack(spacing: 5) {
+            ZStack {
+                if isVegan {
                     Circle()
-                        .stroke(Color("kale_green"), lineWidth: 1.2)
+                        .stroke(dietaryColor, lineWidth: 1.2)
                         .frame(width: 13, height: 13)
                     Circle()
-                        .fill(Color("kale_green"))
-                        .frame(width: 5, height: 5)
-                }
-                Text("Vegan")
-                    .font(.barlowSemiBold(size: 11))
-                    .foregroundColor(Color("kale_green"))
-            } else if isVeg {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 2.5)
-                        .stroke(Color("kale_green"), lineWidth: 1.2)
+                        .fill(dietaryColor)
+                        .frame(width: 6, height: 6)
+                } else if isVeg {
+                    RoundedRectangle(cornerRadius: 3)
+                        .stroke(dietaryColor, lineWidth: 1.2)
                         .frame(width: 13, height: 13)
                     Circle()
-                        .fill(Color("kale_green"))
-                        .frame(width: 5, height: 5)
-                }
-                Text("Veg")
-                    .font(.barlowSemiBold(size: 11))
-                    .foregroundColor(Color("kale_green"))
-            } else {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 2.5)
-                        .stroke(Color(red: 0x8A / 255.0, green: 0x2A / 255.0, blue: 0x28 / 255.0), lineWidth: 1.2)
+                        .fill(dietaryColor)
+                        .frame(width: 6, height: 6)
+                } else {
+                    RoundedRectangle(cornerRadius: 3)
+                        .stroke(dietaryColor, lineWidth: 1.2)
                         .frame(width: 13, height: 13)
                     Image(systemName: "triangle.fill")
-                        .font(.system(size: 5))
-                        .foregroundColor(Color(red: 0x8A / 255.0, green: 0x2A / 255.0, blue: 0x28 / 255.0))
+                        .font(.system(size: 6))
+                        .foregroundColor(dietaryColor)
                 }
-                Text("Non-veg")
-                    .font(.barlowSemiBold(size: 11))
-                    .foregroundColor(Color(red: 0x8A / 255.0, green: 0x2A / 255.0, blue: 0x28 / 255.0))
             }
+            
+            Text(title)
+                .font(.barlowSemiBold(size: 12))
+                .foregroundColor(dietaryColor)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2.5)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
         .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.white)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(isVeg || isVegan ? Color("kale_green").opacity(0.3) : Color(red: 0x8A / 255.0, green: 0x2A / 255.0, blue: 0x28 / 255.0).opacity(0.3), lineWidth: 0.8)
+            Capsule()
+                .stroke(Color(red: 0xE5 / 255.0, green: 0xDF / 255.0, blue: 0xD3 / 255.0), lineWidth: 1)
+                .background(Capsule().fill(Color.white))
         )
     }
 }
