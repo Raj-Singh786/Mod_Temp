@@ -31,7 +31,7 @@ enum TabItems: String, CaseIterable {
             return UIHostingController(rootView: RewardsCoordinatorView(isGuest: isGuest))
 
         case .Orders:
-            return UIViewController()
+            return UIHostingController(rootView: OrderHistoryView())
 
         case .Account:
             return UIViewController()

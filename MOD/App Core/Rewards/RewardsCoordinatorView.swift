@@ -13,6 +13,7 @@ enum RewardsScreenState {
     case guestPromo
     case join
     case memberPass
+    case userReward
 }
 
 // MARK: - Auth Source
@@ -68,6 +69,7 @@ struct RewardsCoordinatorView: View {
     
     init(
         isGuest: Bool = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true,
+        hasCompletedEnrollment: Bool = UserDefaults.standard.bool(forKey: "hasCompletedEnrollment"),
         onBackToHome: (() -> Void)? = nil,
         onSignIn: (() -> Void)? = nil,
         onProfileTap: (() -> Void)? = nil,
@@ -78,7 +80,16 @@ struct RewardsCoordinatorView: View {
         self.onSignIn = onSignIn
         self.onProfileTap = onProfileTap
         self.onCartTap = onCartTap
-        _screenState = State(initialValue: isGuest ? .guestPromo : .memberPass)
+        
+        let initialState: RewardsScreenState
+        if isGuest {
+            initialState = .guestPromo
+        } else if hasCompletedEnrollment {
+            initialState = .userReward
+        } else {
+            initialState = .join
+        }
+        _screenState = State(initialValue: initialState)
     }
     
     var body: some View {
@@ -97,8 +108,18 @@ struct RewardsCoordinatorView: View {
                             guestPromoContent
                         } else if screenState == .join {
                             joinRewardsContent
-                        } else {
+                        } else if screenState == .memberPass {
                             memberPassContent
+                        } else {
+                            UserRewardView(
+                                onOpenMemberPass: {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        screenState = .memberPass
+                                    }
+                                },
+                                onCartTap: onCartTap,
+                                onProfileTap: onProfileTap
+                            )
                         }
                         
                         Spacer()
@@ -115,6 +136,7 @@ struct RewardsCoordinatorView: View {
                 onSuccess: { source, destination in
                     isGuest = false
                     UserDefaults.standard.set(false, forKey: "isGuestUser")
+                    let hasEnrolled = UserDefaults.standard.bool(forKey: "hasCompletedEnrollment")
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         if source == .join {
                             screenState = .join
@@ -122,7 +144,11 @@ struct RewardsCoordinatorView: View {
                                 email = destination
                             }
                         } else {
-                            screenState = .memberPass
+                            if hasEnrolled {
+                                screenState = .userReward
+                            } else {
+                                screenState = .memberPass
+                            }
                         }
                     }
                 },
@@ -138,11 +164,18 @@ struct RewardsCoordinatorView: View {
     private var customNavigationBar: some View {
         HStack(alignment: .center) {
             // Left: Back Button (shown only when in .join or .memberPass)
-            if screenState != .guestPromo {
+            if screenState == .join || screenState == .memberPass {
                 Button(action: {
                     if screenState == .memberPass {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            screenState = .join
+                        let hasEnrolled = UserDefaults.standard.bool(forKey: "hasCompletedEnrollment")
+                        if hasEnrolled {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                screenState = .userReward
+                            }
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                screenState = .join
+                            }
                         }
                     } else if screenState == .join {
                         if isGuest {
@@ -178,8 +211,8 @@ struct RewardsCoordinatorView: View {
             Spacer()
             
             // Center: Title
-            Text(screenState == .guestPromo ? "Rewards" : (screenState == .join ? "Join" : "Member pass"))
-                .font(screenState == .guestPromo ? .oswaldMedium(size: 18) : .oswaldMedium(size: 17))
+            Text(screenState == .guestPromo || screenState == .userReward ? "Rewards" : (screenState == .join ? "Join" : "Member pass"))
+                .font(screenState == .guestPromo || screenState == .userReward ? .oswaldMedium(size: 18) : .oswaldMedium(size: 17))
                 .foregroundColor(Color("app_black"))
             
             Spacer()
@@ -443,6 +476,7 @@ struct RewardsCoordinatorView: View {
                 HStack(spacing: 16) {
                     // COMPLETE ENROLLMENT Button
                     Button(action: {
+                        UserDefaults.standard.set(true, forKey: "hasCompletedEnrollment")
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             screenState = .memberPass
                         }
@@ -682,6 +716,38 @@ struct RewardsCoordinatorView: View {
                 Spacer()
             }
             .padding(.top, 4)
+            
+            // BROWSE REWARDS Button (Moves to UserRewardView)
+            Button(action: {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    screenState = .userReward
+                }
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "gift")
+                        .font(.system(size: 15, weight: .semibold))
+                    
+                    Text("BROWSE REWARDS")
+                        .font(.oswaldMedium(size: 15))
+                        .tracking(1.0)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 13, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 22)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(
+                    Capsule()
+                        .fill(Color("Button_red"))
+                        .shadow(color: Color("Button_red").opacity(0.35), radius: 6, x: 0, y: 3)
+                )
+            }
+            .buttonStyle(PlainButtonStyle())
+            .padding(.top, 8)
         }
     }
 }
