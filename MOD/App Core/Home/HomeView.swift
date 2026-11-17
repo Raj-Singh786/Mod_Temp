@@ -66,7 +66,8 @@ struct HomeView: View {
     @State private var isDeliveryScheduled: Bool = false
     @State private var showOrderSetup: Bool = false
     @State private var showMenuView: Bool = false
-    @State private var showCustomizationView: Bool = false
+    @State private var showBuildYourPizzaHero: Bool = false
+    @State private var selectedHomeItemForCustomization: HomeMenuItem? = nil
     @State private var orderSetupInitialTab: Int = 0
     @State private var orderSetupAutoScrollToWhen: Bool = false
     @State private var favoritesState: [UUID: Bool] = [:]
@@ -207,8 +208,29 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showMenuView) {
             MenuView(showDismissButton: true)
         }
-        .fullScreenCover(isPresented: $showCustomizationView) {
-            MenuCustomizationView()
+        .fullScreenCover(isPresented: $showBuildYourPizzaHero) {
+            MenuCustomizationView(
+                pizzaTitle: "BUILD YOUR PIZZA",
+                pizzaCategory: "PIZZAS",
+                pizzaDescription: "Build your own with 40+ toppings and 8 finishing sauces — all for one price. Supports independent half-and-half recipes.",
+                pizzaImageName: "PizzaOn",
+                showRecipeStyle: true, // ONLY show recipe style when clicked on Build Your Pizza in HeroCardView!
+                onBack: {
+                    showBuildYourPizzaHero = false
+                }
+            )
+        }
+        .fullScreenCover(item: $selectedHomeItemForCustomization) { item in
+            MenuCustomizationView(
+                pizzaTitle: item.title,
+                pizzaCategory: "PIZZAS",
+                pizzaDescription: item.description,
+                pizzaImageName: item.imageName,
+                showRecipeStyle: false, // Don't show recipe style for particular pizza!
+                onBack: {
+                    selectedHomeItemForCustomization = nil
+                }
+            )
         }
         .onAppear {
             withAnimation(.linear(duration: 35).repeatForever(autoreverses: false)) {
@@ -335,7 +357,7 @@ struct HomeView: View {
                     if let onBuildPizza = onBuildPizza {
                         onBuildPizza()
                     } else {
-                        showCustomizationView = true
+                        showBuildYourPizzaHero = true
                     }
                 }) {
                     Text("BUILD YOUR PIZZA")
@@ -960,7 +982,7 @@ struct HomeView: View {
                             if let onCustomizeItem = onCustomizeItem {
                                 onCustomizeItem(item)
                             } else {
-                                showCustomizationView = true
+                                selectedHomeItemForCustomization = item
                             }
                         } else {
                             onAddItem?(item)

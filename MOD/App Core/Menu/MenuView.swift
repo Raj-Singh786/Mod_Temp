@@ -134,6 +134,7 @@ struct MenuView: View {
     @State private var whenSubtitle: String = "Schedule for later"
     @State private var showOrderSetup: Bool = false
     @State private var showCustomizationView: Bool = false
+    @State private var selectedItemForCustomization: MenuItemModel? = nil
     @State private var orderSetupInitialTab: Int = 0
     @State private var orderSetupAutoScrollToWhen: Bool = false
     
@@ -702,10 +703,17 @@ struct MenuView: View {
                 }
             )
         }
-        .fullScreenCover(isPresented: $showCustomizationView) {
-            MenuCustomizationView(onBack: {
-                showCustomizationView = false
-            })
+        .fullScreenCover(item: $selectedItemForCustomization) { item in
+            MenuCustomizationView(
+                pizzaTitle: item.title,
+                pizzaCategory: "PIZZAS",
+                pizzaDescription: item.description,
+                pizzaImageName: item.imageName,
+                showRecipeStyle: false, // Recipe style is strictly hidden for particular pizzas in Menu
+                onBack: {
+                    selectedItemForCustomization = nil
+                }
+            )
         }
     }
     
@@ -1263,7 +1271,7 @@ struct MenuView: View {
                                 if let onCustomizeItem = onCustomizeItem {
                                     onCustomizeItem(item)
                                 } else {
-                                    showCustomizationView = true
+                                    selectedItemForCustomization = item
                                 }
                             } else {
                                 let priceVal = Double(item.price.replacingOccurrences(of: "$", with: "")) ?? 3.99

@@ -180,6 +180,14 @@ enum PizzaCrust: String, CaseIterable, Identifiable {
 
 struct MenuCustomizationView: View {
     
+    // MARK: - Customization Target Info
+    
+    var pizzaTitle: String = "BUILD YOUR PIZZA"
+    var pizzaCategory: String = "PIZZAS"
+    var pizzaDescription: String = "Build your own with 40+ toppings and 8 finishing sauces — all for one price. Supports independent half-and-half recipes."
+    var pizzaImageName: String = "PizzaOn"
+    var showRecipeStyle: Bool = false
+    
     // MARK: - Callbacks
     
     var onBack: (() -> Void)? = nil
@@ -200,7 +208,7 @@ struct MenuCustomizationView: View {
     
     // MARK: - Sauce State (Single Selection with Grid)
     
-    @State private var selectedSauceId: String = "s_tomato"
+    @State private var selectedSauceId: String
     @State private var saucePortion: ToppingPortion = .whole
     @State private var sauceAmount: ToppingAmount = .regular
     
@@ -218,7 +226,41 @@ struct MenuCustomizationView: View {
     
     // MARK: - Toppings State (Cheeses, Meats, Veggies, Finishes)
     
-    @State private var toppings: [CustomizableTopping] = [
+    @State private var toppings: [CustomizableTopping]
+    
+    // MARK: - Initializer Supporting Custom Build or Particular Pizza Customization
+    
+    init(
+        pizzaTitle: String = "BUILD YOUR PIZZA",
+        pizzaCategory: String = "PIZZAS",
+        pizzaDescription: String = "Build your own with 40+ toppings and 8 finishing sauces — all for one price. Supports independent half-and-half recipes.",
+        pizzaImageName: String = "PizzaOn",
+        showRecipeStyle: Bool = false,
+        onBack: (() -> Void)? = nil,
+        onAddToCart: ((Int, Double, Int) -> Void)? = nil,
+        onStarTap: (() -> Void)? = nil,
+        onCartTap: (() -> Void)? = nil
+    ) {
+        self.pizzaTitle = pizzaTitle
+        self.pizzaCategory = pizzaCategory
+        self.pizzaDescription = pizzaDescription
+        self.pizzaImageName = pizzaImageName
+        self.showRecipeStyle = showRecipeStyle
+        self.onBack = onBack
+        self.onAddToCart = onAddToCart
+        self.onStarTap = onStarTap
+        self.onCartTap = onCartTap
+        
+        _recipeStyle = State(initialValue: .whole)
+        
+        let (sauceId, initialToppings) = Self.recipeForPizza(title: pizzaTitle, description: pizzaDescription)
+        _selectedSauceId = State(initialValue: sauceId)
+        _toppings = State(initialValue: initialToppings)
+    }
+    
+    // MARK: - Static Default Toppings & Recipe Matching
+    
+    static let defaultToppingsList: [CustomizableTopping] = [
         // CHEESES
         CustomizableTopping(id: "c1", name: "Mozzarella", category: .cheese, baseCalories: 180, dotColor: Color(red: 0xF7 / 255.0, green: 0xDF / 255.0, blue: 0xA5 / 255.0), isSelected: true, portion: .whole, amount: .regular),
         CustomizableTopping(id: "c2", name: "Asiago", category: .cheese, baseCalories: 90, dotColor: Color(red: 0xF3 / 255.0, green: 0xEA / 255.0, blue: 0xCA / 255.0)),
@@ -267,6 +309,106 @@ struct MenuCustomizationView: View {
         CustomizableTopping(id: "f7", name: "Sri-racha Drizzle", category: .finish, baseCalories: 15, dotColor: Color(red: 0xCA / 255.0, green: 0x3A / 255.0, blue: 0x27 / 255.0)),
         CustomizableTopping(id: "f8", name: "Red Pepper Flakes", category: .finish, baseCalories: 0, dotColor: Color(red: 0xB5 / 255.0, green: 0x31 / 255.0, blue: 0x25 / 255.0))
     ]
+    
+    static func recipeForPizza(title: String, description: String) -> (sauceId: String, toppings: [CustomizableTopping]) {
+        let titleUpper = title.uppercased()
+        let descLower = description.lowercased()
+        
+        // If it's standard Build Your Pizza, start with default (Mozzarella, Tomato Sauce)
+        if titleUpper.contains("BUILD YOUR PIZZA") {
+            return ("s_tomato", defaultToppingsList)
+        }
+        
+        // 1. Determine Sauce
+        var sauceId = "s_tomato"
+        if titleUpper.contains("PESTO") || descLower.contains("pesto") {
+            sauceId = "s_pesto"
+        } else if titleUpper.contains("BBQ") || descLower.contains("bbq") {
+            sauceId = "s_bbq"
+        } else if titleUpper.contains("BUFFALO") || titleUpper.contains("CALEXICO") || descLower.contains("buffalo") {
+            sauceId = "s_buffalo"
+        } else if titleUpper.contains("ALFREDO") || titleUpper.contains("DOMINIC") || descLower.contains("alfredo") {
+            sauceId = "s_creamy_alfredo"
+        } else if titleUpper.contains("LUCY") || descLower.contains("garlic rub") {
+            sauceId = "s_garlic_rub"
+        } else if titleUpper.contains("DION") || descLower.contains("olive oil") {
+            sauceId = "s_olive_oil"
+        } else if titleUpper.contains("JASPER") || descLower.contains("spicy tomato") {
+            sauceId = "s_spicy_tomato"
+        }
+        
+        // 2. Determine Toppings
+        var toppingsCopy = defaultToppingsList.map { topping -> CustomizableTopping in
+            var t = topping
+            t.isSelected = false
+            return t
+        }
+        
+        func selectTopping(id: String) {
+            if let idx = toppingsCopy.firstIndex(where: { $0.id == id }) {
+                toppingsCopy[idx].isSelected = true
+            }
+        }
+        
+        // Standard recipe cheeses & meats selection
+        selectTopping(id: "c1") // Mozzarella by default
+        
+        if titleUpper.contains("PEPPERONI") || descLower.contains("pepperoni") {
+            selectTopping(id: "m1") // Pepperoni
+            selectTopping(id: "c2") // Asiago
+        }
+        if titleUpper.contains("MADDY") {
+            selectTopping(id: "c2") // Asiago
+        }
+        if titleUpper.contains("MIKE") || descLower.contains("chicken sausage") {
+            selectTopping(id: "c3") // Parmesan
+            selectTopping(id: "c7") // Ricotta
+            selectTopping(id: "m3") // Spicy Chicken Sausage
+        }
+        if titleUpper.contains("PESTO") {
+            selectTopping(id: "c5") // Feta
+            selectTopping(id: "v1") // Artichokes
+            selectTopping(id: "v14") // Arugula
+        }
+        if titleUpper.contains("CALEXICO") {
+            selectTopping(id: "c6") // Gorgonzola
+            selectTopping(id: "m6") // Grilled Chicken
+            selectTopping(id: "v9") // Jalapeños
+        }
+        if titleUpper.contains("CASPIAN") {
+            selectTopping(id: "c6") // Gorgonzola
+            selectTopping(id: "m6") // Grilled Chicken
+            selectTopping(id: "v2") // Red Onion
+        }
+        if titleUpper.contains("LUCY") {
+            selectTopping(id: "c3") // Parmesan
+            selectTopping(id: "v8") // Sliced Tomatoes
+        }
+        if titleUpper.contains("JASPER") {
+            selectTopping(id: "m2") // Mild Italian Sausage
+            selectTopping(id: "v5") // Mushrooms
+        }
+        if titleUpper.contains("DION") {
+            selectTopping(id: "c2") // Asiago
+            selectTopping(id: "v12") // Fresh Basil
+        }
+        if titleUpper.contains("TRISTAN") {
+            selectTopping(id: "c2") // Asiago
+            selectTopping(id: "v4") // Roasted Red Peppers
+            selectTopping(id: "v5") // Mushrooms
+        }
+        if titleUpper.contains("DOMINIC") {
+            selectTopping(id: "c2") // Asiago
+            selectTopping(id: "v8") // Sliced Tomatoes
+            selectTopping(id: "v12") // Fresh Basil
+            selectTopping(id: "m2") // Mild Italian Sausage
+        }
+        if titleUpper.contains("ONE TOPPING") {
+            selectTopping(id: "m1") // Pepperoni
+        }
+        
+        return (sauceId, toppingsCopy)
+    }
     
     // MARK: - Computed Calorie & Price Calculations
     
@@ -374,8 +516,10 @@ struct MenuCustomizationView: View {
                             // 4. Crust Selection Section
                             crustSection
                             
-                            // 5. Recipe Style Section
-                            recipeStyleSection
+                            // 5. Recipe Style Section (Only shown when showRecipeStyle is true)
+                            if showRecipeStyle {
+                                recipeStyleSection
+                            }
                             
                             // 6. Sauce Selection Section (2-Column Grid + Shared Controls)
                             sauceSection
@@ -408,7 +552,7 @@ struct MenuCustomizationView: View {
                 if showAddedToast {
                     VStack {
                         Spacer()
-                        Text("Added custom Build Your Pizza to cart!")
+                        Text("Added custom \(pizzaTitle) to cart!")
                             .font(.barlowMedium(size: 14))
                             .foregroundColor(.white)
                             .padding(.horizontal, 20)
@@ -505,7 +649,7 @@ struct MenuCustomizationView: View {
                         saucePortion: saucePortion,
                         sauceAmount: sauceAmount,
                         toppings: toppings,
-                        recipeStyle: recipeStyle,
+                        recipeStyle: showRecipeStyle ? recipeStyle : .whole,
                         pizzaSize: selectedSize
                     )
                     .transition(.asymmetric(
@@ -513,17 +657,30 @@ struct MenuCustomizationView: View {
                         removal: .scale(scale: 0.94).combined(with: .opacity)
                     ))
                 } else {
-                    // High-resolution Pizza Image
-                    Image("PizzaOn")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 205, height: 205)
-                        .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.14), radius: 8, x: 0, y: 4)
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.94).combined(with: .opacity),
-                            removal: .scale(scale: 0.94).combined(with: .opacity)
-                        ))
+                    // High-resolution Pizza Image (shows specific recipe image if available)
+                    if let uiImg = UIImage(named: pizzaImageName) {
+                        Image(uiImage: uiImg)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 205, height: 205)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.14), radius: 8, x: 0, y: 4)
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.94).combined(with: .opacity),
+                                removal: .scale(scale: 0.94).combined(with: .opacity)
+                            ))
+                    } else {
+                        Image("PizzaOn")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 205, height: 205)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.14), radius: 8, x: 0, y: 4)
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.94).combined(with: .opacity),
+                                removal: .scale(scale: 0.94).combined(with: .opacity)
+                            ))
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
@@ -568,20 +725,20 @@ struct MenuCustomizationView: View {
     
     private var titleBadgeSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Category Red Title (Replaced Value Tag)
-            Text("PIZZAS")
+            // Category Red Title
+            Text(pizzaCategory)
                 .font(.oswaldMedium(size: 13))
                 .tracking(1.0)
                 .foregroundColor(Color("Button_red"))
             
             // Title
-            Text("BUILD YOUR PIZZA")
+            Text(pizzaTitle)
                 .font(.oswaldBold(size: 28))
                 .tracking(0.6)
                 .foregroundColor(Color("app_black"))
             
             // Subtitle
-            Text("Build your own with 40+ toppings and 8 finishing sauces — all for one price. Supports independent half-and-half recipes.")
+            Text(pizzaDescription)
                 .font(.barlowRegular(size: 14))
                 .foregroundColor(Color("text_gary"))
                 .lineSpacing(2)
@@ -1278,11 +1435,12 @@ struct MenuCustomizationView: View {
                     let detailsText = "\(selectedSize.rawValue) · \(selectedCrust.rawValue) crust · \(sauceName) sauce" + toppingsSummary
                     
                     CartManager.shared.addItem(
-                        title: "BUILD YOUR PIZZA",
+                        title: pizzaTitle,
                         price: singlePizzaPrice,
                         quantity: quantity,
                         details: detailsText,
-                        calories: singlePizzaCalories
+                        calories: singlePizzaCalories,
+                        imageName: pizzaImageName
                     )
                     
                     onAddToCart?(quantity, finalTotalPrice, singlePizzaCalories)

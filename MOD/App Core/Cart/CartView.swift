@@ -14,6 +14,7 @@ struct CartView: View {
     // MARK: - State
     
     @State private var showEditPizza: Bool = false
+    @State private var itemToEdit: CartItem? = nil
     @State private var showPromoSheet: Bool = false
     @State private var promoCodeInput: String = ""
     @State private var appliedPromo: String? = nil
@@ -105,9 +106,24 @@ struct CartView: View {
             }
         }
         .fullScreenCover(isPresented: $showEditPizza) {
-            MenuCustomizationView(onBack: {
-                showEditPizza = false
-            })
+            if let item = itemToEdit {
+                let isBuildYourPizza = item.title.uppercased().contains("BUILD YOUR PIZZA")
+                MenuCustomizationView(
+                    pizzaTitle: item.title,
+                    pizzaCategory: "PIZZAS",
+                    pizzaDescription: item.details ?? "Customized pizza recipe",
+                    pizzaImageName: item.imageName ?? "PizzaOn",
+                    showRecipeStyle: isBuildYourPizza,
+                    onBack: {
+                        showEditPizza = false
+                        itemToEdit = nil
+                    }
+                )
+            } else {
+                MenuCustomizationView(onBack: {
+                    showEditPizza = false
+                })
+            }
         }
     }
     
@@ -254,6 +270,7 @@ struct CartView: View {
             HStack(spacing: 24) {
                 // EDIT Button
                 Button(action: {
+                    itemToEdit = item
                     showEditPizza = true
                 }) {
                     HStack(spacing: 5) {
