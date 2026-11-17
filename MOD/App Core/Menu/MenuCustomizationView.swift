@@ -196,6 +196,7 @@ struct MenuCustomizationView: View {
     @State private var recipeStyle: RecipeStyle = .whole
     @State private var quantity: Int = 1
     @State private var showAddedToast: Bool = false
+    @State private var isCustomBuildActive: Bool = false
     
     // MARK: - Sauce State (Single Selection with Grid)
     
@@ -253,12 +254,12 @@ struct MenuCustomizationView: View {
         CustomizableTopping(id: "v12", name: "Fresh Basil", category: .veggie, baseCalories: 5, dotColor: Color(red: 0x46 / 255.0, green: 0x7A / 255.0, blue: 0x36 / 255.0)),
         CustomizableTopping(id: "v13", name: "Roasted Corn", category: .veggie, baseCalories: 30, dotColor: Color(red: 0xE6 / 255.0, green: 0xB9 / 255.0, blue: 0x41 / 255.0)),
         CustomizableTopping(id: "v14", name: "Arugula", category: .veggie, baseCalories: 10, dotColor: Color(red: 0x51 / 255.0, green: 0x77 / 255.0, blue: 0x3D / 255.0)),
-        CustomizableTopping(id: "v15", name: "Green Bell Pepper", category: .veggie, baseCalories: 15, dotColor: Color(red: 0x42 / 255.0, green: 0x7E / 255.0, blue: 0x3F / 255.0)),
+        CustomizableTopping(id: "v15", name: "Green peppers", category: .veggie, baseCalories: 15, dotColor: Color(red: 0x42 / 255.0, green: 0x7E / 255.0, blue: 0x3F / 255.0)),
         CustomizableTopping(id: "v16", name: "Kalamata Olives", category: .veggie, baseCalories: 40, dotColor: Color(red: 0x47 / 255.0, green: 0x34 / 255.0, blue: 0x4B / 255.0)),
         
         // FINISHES (AFTER BAKE)
         CustomizableTopping(id: "f1", name: "Balsamic Fig Glaze", category: .finish, baseCalories: 40, dotColor: Color(red: 0x50 / 255.0, green: 0x28 / 255.0, blue: 0x22 / 255.0)),
-        CustomizableTopping(id: "f2", name: "Hot Honey Drizzle", category: .finish, baseCalories: 50, dotColor: Color(red: 0xDD / 255.0, green: 0x8C / 255.0, blue: 0x26 / 255.0)),
+        CustomizableTopping(id: "f2", name: "Mike’s Hot Honey", category: .finish, baseCalories: 50, dotColor: Color(red: 0xDD / 255.0, green: 0x8C / 255.0, blue: 0x26 / 255.0)),
         CustomizableTopping(id: "f3", name: "BBQ Drizzle", category: .finish, baseCalories: 35, dotColor: Color(red: 0x70 / 255.0, green: 0x33 / 255.0, blue: 0x1E / 255.0)),
         CustomizableTopping(id: "f4", name: "Buffalo Drizzle", category: .finish, baseCalories: 25, dotColor: Color("Button_red")),
         CustomizableTopping(id: "f5", name: "Pesto Drizzle", category: .finish, baseCalories: 50, dotColor: Color(red: 0x58 / 255.0, green: 0x7A / 255.0, blue: 0x30 / 255.0)),
@@ -300,6 +301,49 @@ struct MenuCustomizationView: View {
     /// Total final price for current quantity
     var finalTotalPrice: Double {
         singlePizzaPrice * Double(quantity)
+    }
+    
+    // MARK: - Active Ingredient Pill Tags
+    
+    /// Formatted pills describing all customized ingredients matching snapshot
+    var activeIngredientPills: [String] {
+        var pills: [String] = []
+        
+        // 1. Sauce
+        if let sauce = sauceOptions.first(where: { $0.id == selectedSauceId }) {
+            if sauce.isNoSauce {
+                pills.append("No sauce")
+            } else {
+                let sauceName = sauce.name
+                if saucePortion == .whole && sauceAmount == .regular {
+                    pills.append("Sauce: \(sauceName)")
+                } else if saucePortion != .whole && sauceAmount != .regular {
+                    pills.append("Sauce: \(sauceName) (\(sauceAmount.rawValue), \(saucePortion.shortTitle))")
+                } else if saucePortion != .whole {
+                    pills.append("Sauce: \(sauceName) (\(saucePortion.shortTitle))")
+                } else {
+                    pills.append("Sauce: \(sauceName) (\(sauceAmount.rawValue))")
+                }
+            }
+        }
+        
+        // 2. Toppings in Category Order (Cheese, Meat, Veggie, Finish)
+        let selected = toppings.filter { $0.isSelected }
+        for topping in selected {
+            let label: String
+            if topping.portion == .whole && topping.amount == .regular {
+                label = "Add \(topping.name)"
+            } else if topping.portion != .whole && topping.amount != .regular {
+                label = "Add \(topping.name) (\(topping.amount.rawValue), \(topping.portion.shortTitle))"
+            } else if topping.portion != .whole {
+                label = "Add \(topping.name) (\(topping.portion.shortTitle))"
+            } else {
+                label = "Add \(topping.name) (\(topping.amount.rawValue))"
+            }
+            pills.append(label)
+        }
+        
+        return pills
     }
     
     // MARK: - Body
@@ -454,24 +498,70 @@ struct MenuCustomizationView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 235)
                 
-                // High-resolution Pizza Image
-                Image("PizzaOn")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 205, height: 205)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.14), radius: 8, x: 0, y: 4)
+                if isCustomBuildActive {
+                    // Real-Time Animated Pizza Canvas with SwiftUI Animations
+                    InteractivePizzaCanvasView(
+                        selectedSauceId: selectedSauceId,
+                        saucePortion: saucePortion,
+                        sauceAmount: sauceAmount,
+                        toppings: toppings,
+                        recipeStyle: recipeStyle,
+                        pizzaSize: selectedSize
+                    )
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.94).combined(with: .opacity),
+                        removal: .scale(scale: 0.94).combined(with: .opacity)
+                    ))
+                } else {
+                    // High-resolution Pizza Image
+                    Image("PizzaOn")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 205, height: 205)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.14), radius: 8, x: 0, y: 4)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.94).combined(with: .opacity),
+                            removal: .scale(scale: 0.94).combined(with: .opacity)
+                        ))
+                }
             }
             .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isCustomBuildActive.toggle()
+                }
+            }
             
-            Text("Standard recipe photo. Customize it and we’ll switch to a live illustration of your build.")
-                .font(.barlowRegular(size: 13))
-                .foregroundColor(Color("text_gary"))
-                .multilineTextAlignment(.center)
-                .lineSpacing(2)
-                .padding(.horizontal, 16)
+            // Description below pizza visual
+            if isCustomBuildActive {
+                VStack(spacing: 12) {
+                    Text("Illustrative preview — reflects your toppings, portions and placement.\nNot product photography.")
+                        .font(.barlowRegular(size: 13))
+                        .foregroundColor(Color("text_gary"))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+                        .padding(.horizontal, 16)
+                    
+                    if !activeIngredientPills.isEmpty {
+                        IngredientsPillsFlowView(pills: activeIngredientPills)
+                            .padding(.top, 2)
+                    }
+                }
+                .transition(.opacity)
+            } else {
+                Text("Standard recipe photo. Customize it and we’ll switch to a live illustration of your build.")
+                    .font(.barlowRegular(size: 13))
+                    .foregroundColor(Color("text_gary"))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .padding(.horizontal, 16)
+                    .transition(.opacity)
+            }
         }
         .frame(maxWidth: .infinity)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isCustomBuildActive)
     }
     
     // MARK: - 2. Title & Badge Section
@@ -558,6 +648,7 @@ struct MenuCustomizationView: View {
         return Button(action: {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                 selectedSize = size
+                isCustomBuildActive = true
             }
         }) {
             VStack(spacing: 4) {
@@ -624,6 +715,7 @@ struct MenuCustomizationView: View {
         return Button(action: {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                 selectedCrust = crust
+                isCustomBuildActive = true
             }
         }) {
             VStack(spacing: 3) {
@@ -682,6 +774,7 @@ struct MenuCustomizationView: View {
                     Button(action: {
                         withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                             recipeStyle = style
+                            isCustomBuildActive = true
                         }
                     }) {
                         Text(style.rawValue)
@@ -745,6 +838,7 @@ struct MenuCustomizationView: View {
                         Button(action: {
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                 saucePortion = portion
+                                isCustomBuildActive = true
                             }
                         }) {
                             Text(portion.shortTitle)
@@ -774,6 +868,7 @@ struct MenuCustomizationView: View {
                         Button(action: {
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                 sauceAmount = amount
+                                isCustomBuildActive = true
                             }
                         }) {
                             Text(amount.rawValue)
@@ -811,6 +906,7 @@ struct MenuCustomizationView: View {
         return Button(action: {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                 selectedSauceId = sauce.id
+                isCustomBuildActive = true
             }
         }) {
             VStack(spacing: 8) {
@@ -916,6 +1012,7 @@ struct MenuCustomizationView: View {
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.78)) {
                         toppings[index].isSelected.toggle()
+                        isCustomBuildActive = true
                     }
                 }) {
                     HStack(spacing: 12) {
@@ -1039,6 +1136,7 @@ struct MenuCustomizationView: View {
         return Button(action: {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                 toppings[index].portion = portion
+                isCustomBuildActive = true
             }
         }) {
             Text(portion.shortTitle)
@@ -1061,6 +1159,7 @@ struct MenuCustomizationView: View {
         return Button(action: {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                 toppings[index].amount = amount
+                isCustomBuildActive = true
             }
         }) {
             Text(amount.rawValue)
