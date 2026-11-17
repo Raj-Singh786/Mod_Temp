@@ -242,7 +242,24 @@ struct OrderHistoryView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $activeTrackingOrder) { order in
-            OrderTrackingSheet(order: order)
+            OrderTrackingView(
+                orderId: order.id,
+                storeName: order.storeName,
+                storeAddress: "1302 Pine St, Seattle, WA 98101",
+                fulfillmentText: order.fulfillment.rawValue,
+                scheduledTimeText: "Tue, Nov 17, 9:15\nPM PST",
+                items: [
+                    TrackOrderItem(title: order.itemsDescription, quantity: 1, price: order.totalAmount)
+                ],
+                subtotal: order.totalAmount * 0.85,
+                tax: order.totalAmount * 0.08,
+                tip: order.totalAmount * 0.07,
+                total: order.totalAmount,
+                earnedPoints: Int(order.totalAmount * 10),
+                onBack: {
+                    activeTrackingOrder = nil
+                }
+            )
         }
         .sheet(item: $activeDetailsOrder) { order in
             OrderDetailsSheet(order: order)

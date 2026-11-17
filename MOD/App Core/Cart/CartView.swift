@@ -20,6 +20,7 @@ struct CartView: View {
     @State private var appliedPromo: String? = nil
     @State private var showCheckoutSuccess: Bool = false
     @State private var showStoreFulfillmentSheet: Bool = false
+    @State private var showCheckoutView: Bool = false
     
     // MARK: - Computed Totals
     
@@ -124,6 +125,17 @@ struct CartView: View {
                     showEditPizza = false
                 })
             }
+        }
+        .fullScreenCover(isPresented: $showCheckoutView) {
+            CheckoutView(
+                onBack: {
+                    showCheckoutView = false
+                },
+                onOrderPlaced: {
+                    showCheckoutView = false
+                    dismiss()
+                }
+            )
         }
     }
     
@@ -592,11 +604,7 @@ struct CartView: View {
             
             // Big Red CHECKOUT Button
             Button(action: {
-                showCheckoutSuccess = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                    cartManager.clearCart()
-                    dismiss()
-                }
+                showCheckoutView = true
             }) {
                 HStack(spacing: 6) {
                     Text("CHECKOUT")
