@@ -289,9 +289,11 @@ struct PromotionView: View {
 
 // MARK: - SwiftUI Preview
 
-#Preview {
-    PromotionView(
-        onSignInWithCode: { print("Sign in tapped") },
-        onContinueAsGuest: { print("Continue as guest tapped") }
-    )
+struct PromotionView_Previews: PreviewProvider {
+    static var previews: some View {
+        PromotionView(
+            onSignInWithCode: { print("Sign in tapped") },
+            onContinueAsGuest: { print("Continue as guest tapped") }
+        )
+    }
 }

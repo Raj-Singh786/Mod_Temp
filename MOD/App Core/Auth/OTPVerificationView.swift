@@ -109,15 +109,39 @@ struct OTPVerificationView: View {
                 .shadow(color: Color.black.opacity(0.16), radius: 16, x: 0, y: 8)
                 .offset(y: pizzaTop)
             
-            // MOD Shield Logo at Top Center
+            // MOD Shield Logo & Optional Back Button at Top
             HStack {
+                if let onBack = onBack {
+                    Button(action: onBack) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color("app_black"))
+                            .frame(width: 38, height: 38)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.88))
+                                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.leading, 16)
+                }
+                
                 Spacer()
+                
                 Image("app_logo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 36, height: 42)
                     .accessibilityLabel("MOD Pizza Logo")
+                
                 Spacer()
+                
+                if onBack != nil {
+                    Color.clear
+                        .frame(width: 38, height: 38)
+                        .padding(.trailing, 16)
+                }
             }
             .padding(.top, safeTop > 20 ? 6 : 14)
         }
@@ -231,7 +255,7 @@ struct OTPVerificationView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(
-                        errorMessage != nil ? Color.buttonRed : (isFieldFocused ? Color("Button_red").opacity(0.6) : Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC7 / 255.0)),
+                        errorMessage != nil ? Color.red : (isFieldFocused ? Color("Button_red").opacity(0.6) : Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC7 / 255.0)),
                         lineWidth: 1.5
                     )
             )
@@ -367,9 +391,11 @@ struct OTPVerificationView: View {
 
 // MARK: - Preview
 
-#Preview {
-    OTPVerificationView(
-        destination: "+1 (555) 000-0463",
-        mode: .sms
-    )
+struct OTPVerificationView_Previews: PreviewProvider {
+    static var previews: some View {
+        OTPVerificationView(
+            destination: "+1 (555) 000-0463",
+            mode: .sms
+        )
+    }
 }

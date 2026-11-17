@@ -15,6 +15,13 @@ enum RewardsScreenState {
     case memberPass
 }
 
+// MARK: - Auth Source
+
+enum RewardsAuthSource: Hashable {
+    case signIn
+    case join
+}
+
 // MARK: - Simulated Barcode Graphic
 
 struct BarcodeGraphicView: View {
@@ -42,7 +49,6 @@ struct RewardsCoordinatorView: View {
     
     // MARK: - Configuration
     
-    var isGuest: Bool = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
     var onBackToHome: (() -> Void)? = nil
     var onSignIn: (() -> Void)? = nil
     var onProfileTap: (() -> Void)? = nil
@@ -50,7 +56,10 @@ struct RewardsCoordinatorView: View {
     
     // MARK: - State
     
+    @State private var isGuest: Bool
     @State private var screenState: RewardsScreenState
+    @State private var showLoginFlow: Bool = false
+    @State private var authSource: RewardsAuthSource = .signIn
     @State private var fullName: String = "Raj"
     @State private var email: String = "raj@example.com"
     @State private var sendOffersByEmail: Bool = false
@@ -64,12 +73,12 @@ struct RewardsCoordinatorView: View {
         onProfileTap: (() -> Void)? = nil,
         onCartTap: (() -> Void)? = nil
     ) {
-        self.isGuest = isGuest
+        _isGuest = State(initialValue: isGuest)
         self.onBackToHome = onBackToHome
         self.onSignIn = onSignIn
         self.onProfileTap = onProfileTap
         self.onCartTap = onCartTap
-        _screenState = State(initialValue: isGuest ? .guestPromo : .join)
+        _screenState = State(initialValue: isGuest ? .guestPromo : .memberPass)
     }
     
     var body: some View {
@@ -99,6 +108,28 @@ struct RewardsCoordinatorView: View {
                     .padding(.top, 10)
                 }
             }
+        }
+        .fullScreenCover(isPresented: $showLoginFlow) {
+            RewardsAuthFlowView(
+                initialSource: authSource,
+                onSuccess: { source, destination in
+                    isGuest = false
+                    UserDefaults.standard.set(false, forKey: "isGuestUser")
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        if source == .join {
+                            screenState = .join
+                            if destination.contains("@") {
+                                email = destination
+                            }
+                        } else {
+                            screenState = .memberPass
+                        }
+                    }
+                },
+                onDismiss: {
+                    // Stayed as guest on promo screen
+                }
+            )
         }
     }
     
@@ -148,7 +179,7 @@ struct RewardsCoordinatorView: View {
             
             // Center: Title
             Text(screenState == .guestPromo ? "Rewards" : (screenState == .join ? "Join" : "Member pass"))
-                .font(screenState == .guestPromo ? .barlowBold(size: 18) : .oswaldMedium(size: 17))
+                .font(screenState == .guestPromo ? .oswaldMedium(size: 18) : .oswaldMedium(size: 17))
                 .foregroundColor(Color("app_black"))
             
             Spacer()
@@ -158,7 +189,12 @@ struct RewardsCoordinatorView: View {
                 if screenState == .guestPromo {
                     // Profile Icon
                     Button(action: {
-                        onProfileTap?()
+                        if let onProfileTap = onProfileTap {
+                            onProfileTap()
+                        } else {
+                            authSource = .signIn
+                            showLoginFlow = true
+                        }
                     }) {
                         Image(systemName: "person")
                             .font(.system(size: 19, weight: .regular))
@@ -201,7 +237,7 @@ struct RewardsCoordinatorView: View {
         VStack(alignment: .leading, spacing: 14) {
             // Screen Title: REWARDS
             Text("REWARDS")
-                .font(.oswaldBold(size: 32))
+                .font(.oswaldMedium(size: 32))
                 .tracking(0.8)
                 .foregroundColor(Color("app_black"))
                 .padding(.top, 4)
@@ -215,7 +251,7 @@ struct RewardsCoordinatorView: View {
                             .fill(Color("pizza_found"))
                             .frame(width: 190, height: 190)
                         
-                        Image("pizza7")
+                        Image("PizzaOn")
                             .resizable()
                             .scaledToFill()
                             .frame(width: 154, height: 154)
@@ -238,14 +274,14 @@ struct RewardsCoordinatorView: View {
                             .foregroundColor(Color("Button_red"))
                         
                         Text("JOIN TO EARN AND REDEEM")
-                            .font(.oswaldBold(size: 24))
+                            .font(.oswaldMedium(size: 24))
                             .tracking(0.6)
                             .foregroundColor(Color("app_black"))
                     }
                     
                     // Body text
                     Text("Guests can order, track and get support without joining. Points, wallet funds, service credit, member coupons and the member pass are for members.")
-                        .font(.barlowRegular(size: 14))
+                        .font(.barlowLight(size: 14))
                         .foregroundColor(Color("text_gary"))
                         .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
@@ -254,12 +290,8 @@ struct RewardsCoordinatorView: View {
                     HStack(spacing: 12) {
                         // SIGN IN button
                         Button(action: {
-                            if let onSignIn = onSignIn {
-                                onSignIn()
-                            } else if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                                      let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController {
-                                rootNav.popToRootViewController(animated: true)
-                            }
+                            authSource = .signIn
+                            showLoginFlow = true
                         }) {
                             Text("SIGN IN")
                                 .font(.oswaldMedium(size: 14))
@@ -277,9 +309,8 @@ struct RewardsCoordinatorView: View {
                         
                         // JOIN MOD REWARDS button
                         Button(action: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                screenState = .join
-                            }
+                            authSource = .join
+                            showLoginFlow = true
                         }) {
                             Text("JOIN MOD REWARDS")
                                 .font(.oswaldMedium(size: 14))
@@ -532,7 +563,7 @@ struct RewardsCoordinatorView: View {
                             .frame(width: 32, height: 38)
                         
                         Text("Rewards")
-                            .font(.barlowBold(size: 22))
+                            .font(.oswaldMedium(size: 22))
                             .foregroundColor(.white)
                     }
                     
@@ -651,6 +682,69 @@ struct RewardsCoordinatorView: View {
                 Spacer()
             }
             .padding(.top, 4)
+        }
+    }
+}
+
+// MARK: - Rewards Auth Flow View
+
+struct RewardsAuthFlowView: View {
+    let initialSource: RewardsAuthSource
+    var onSuccess: ((RewardsAuthSource, String) -> Void)? = nil
+    var onDismiss: (() -> Void)? = nil
+    
+    @Environment(\.dismiss) private var dismiss
+    @State private var navigationPath = NavigationPath()
+    
+    enum Step: Hashable {
+        case otp(destination: String, mode: LoginInputMode)
+    }
+    
+    var body: some View {
+        NavigationStack(path: $navigationPath) {
+            LoginView(
+                subtitle: initialSource == .join ? "MOD REWARDS" : "SIGN IN",
+                headline: initialSource == .join ? "JOIN MOD REWARDS" : "WELCOME BACK",
+                onSendCode: { destination, mode in
+                    navigationPath.append(Step.otp(destination: destination, mode: mode))
+                },
+                onContinueAsGuest: {
+                    dismiss()
+                    onDismiss?()
+                },
+                onBack: {
+                    dismiss()
+                    onDismiss?()
+                }
+            )
+            .navigationBarBackButtonHidden(true)
+            .navigationDestination(for: Step.self) { step in
+                switch step {
+                case .otp(let destination, let mode):
+                    OTPVerificationView(
+                        destination: destination,
+                        mode: mode,
+                        onVerificationSuccess: {
+                            UserDefaults.standard.set(false, forKey: "isGuestUser")
+                            dismiss()
+                            onSuccess?(initialSource, destination)
+                        },
+                        onContinueAsGuest: {
+                            dismiss()
+                            onDismiss?()
+                        },
+                        onBack: {
+                            if !navigationPath.isEmpty {
+                                navigationPath.removeLast()
+                            }
+                        },
+                        onResend: {
+                            print("Resend code requested for \(destination)")
+                        }
+                    )
+                    .navigationBarBackButtonHidden(true)
+                }
+            }
         }
     }
 }

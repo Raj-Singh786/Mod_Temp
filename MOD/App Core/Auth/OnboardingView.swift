@@ -367,9 +367,11 @@ struct ScaleButtonStyle: ButtonStyle {
 
 // MARK: - SwiftUI Preview
 
-#Preview {
-    OnboardingView(
-        onSkip: { print("Skipped") },
-        onFinish: { print("Finished") }
-    )
+struct OnboardingView_Previews: PreviewProvider {
+    static var previews: some View {
+        OnboardingView(
+            onSkip: { print("Skipped") },
+            onFinish: { print("Finished") }
+        )
+    }
 }

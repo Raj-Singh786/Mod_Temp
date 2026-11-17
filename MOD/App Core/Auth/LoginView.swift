@@ -59,6 +59,11 @@ enum LoginInputMode: String, CaseIterable, Identifiable, Hashable {
 
 struct LoginView: View {
     
+    // MARK: - Configuration
+    
+    var subtitle: String = "SIGN IN"
+    var headline: String = "WELCOME BACK"
+    
     // MARK: - Callbacks
     
     var onSendCode: ((String, LoginInputMode) -> Void)? = nil
@@ -119,15 +124,39 @@ struct LoginView: View {
                 .shadow(color: Color.black.opacity(0.16), radius: 16, x: 0, y: 8)
                 .offset(y: pizzaTop)
             
-            // MOD Shield Logo at Top Center
+            // MOD Shield Logo & Optional Back Button at Top
             HStack {
+                if let onBack = onBack {
+                    Button(action: onBack) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color("app_black"))
+                            .frame(width: 38, height: 38)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.88))
+                                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.leading, 16)
+                }
+                
                 Spacer()
+                
                 Image("app_logo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 36, height: 42)
                     .accessibilityLabel("MOD Pizza Logo")
+                
                 Spacer()
+                
+                if onBack != nil {
+                    Color.clear
+                        .frame(width: 38, height: 38)
+                        .padding(.trailing, 16)
+                }
             }
             .padding(.top, safeTop > 20 ? 6 : 14)
         }
@@ -139,14 +168,14 @@ struct LoginView: View {
     private func cardContent(minHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // Subtitle
-            Text("SIGN IN")
+            Text(subtitle)
                 .font(.oswaldMedium(size: 13))
                 .tracking(1.4)
                 .foregroundColor(Color("Button_red"))
                 .padding(.top, 28)
             
             // Headline
-            Text("WELCOME BACK")
+            Text(headline)
                 .font(.oswaldMedium(size: 32))
                 .tracking(0.6)
                 .foregroundColor(Color("app_black"))
@@ -431,13 +460,15 @@ struct CustomTopRoundedCard: Shape {
 
 // MARK: - SwiftUI Preview
 
-#Preview {
-    LoginView(
-        onSendCode: { destination, mode in
-            print("Sending code to \(destination) via \(mode.rawValue)")
-        },
-        onContinueAsGuest: {
-            print("Continue as guest")
-        }
-    )
+struct LoginView_Previews: PreviewProvider {
+    static var previews: some View {
+        LoginView(
+            onSendCode: { destination, mode in
+                print("Sending code to \(destination) via \(mode.rawValue)")
+            },
+            onContinueAsGuest: {
+                print("Continue as guest")
+            }
+        )
+    }
 }

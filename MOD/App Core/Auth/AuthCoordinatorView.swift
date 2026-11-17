@@ -112,6 +112,8 @@ struct AuthCoordinatorView: View {
 
 // MARK: - Preview
 
-#Preview {
-    AuthCoordinatorView()
+struct AuthCoordinatorView_Previews: PreviewProvider {
+    static var previews: some View {
+        AuthCoordinatorView()
+    }
 }
