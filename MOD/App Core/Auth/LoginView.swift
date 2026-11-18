@@ -124,24 +124,8 @@ struct LoginView: View {
                 .shadow(color: Color.black.opacity(0.16), radius: 16, x: 0, y: 8)
                 .offset(y: pizzaTop)
             
-            // MOD Shield Logo & Optional Back Button at Top
+            // MOD Shield Logo Centered at Top
             HStack {
-                if let onBack = onBack {
-                    Button(action: onBack) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color("app_black"))
-                            .frame(width: 38, height: 38)
-                            .background(
-                                Circle()
-                                    .fill(Color.white.opacity(0.88))
-                                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .padding(.leading, 16)
-                }
-                
                 Spacer()
                 
                 Image("app_logo")
@@ -151,12 +135,6 @@ struct LoginView: View {
                     .accessibilityLabel("MOD Pizza Logo")
                 
                 Spacer()
-                
-                if onBack != nil {
-                    Color.clear
-                        .frame(width: 38, height: 38)
-                        .padding(.trailing, 16)
-                }
             }
             .padding(.top, safeTop > 20 ? 6 : 14)
         }
