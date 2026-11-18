@@ -56,33 +56,122 @@ struct OTPVerificationView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            let safeTop = geometry.safeAreaInsets.top > 0 ? geometry.safeAreaInsets.top : 20.0
-            let pizzaSize = min(geometry.size.width * 0.72, 280.0)
-            let pizzaTop = safeTop + 10.0
-            let topSpacing = pizzaTop + (pizzaSize * 0.50)
-            let minCardHeight = geometry.size.height - topSpacing + geometry.safeAreaInsets.bottom + 60
+            // Everything is sized from the real screen width, so the oversized dome
+            // circle can't make the layout wider than the screen.
+            let width = geometry.size.width
+            
+            // Real top inset (status bar / Dynamic Island). The fallback is only for previews.
+            let safeTop = geometry.safeAreaInsets.top > 0 ? geometry.safeAreaInsets.top : 47.0
+            
+            // Layout metrics (same as LoginView)
+            let logoStripHeight: CGFloat = 56
+            let logoHeight: CGFloat = 34
+            let redBandTop = safeTop + logoStripHeight
+            let redBandHeight: CGFloat = 200
+            let domeDiameter = width * 1.2
+            let domeTop: CGFloat = 36
+            let pizzaDiameter = min(width * 0.56, 220)
+            let pizzaTopInBand: CGFloat = 92
+            
+            // Card overlaps the lower part of the pizza
+            let cardTop = redBandTop + pizzaTopInBand + (pizzaDiameter * 0.38)
             
             ZStack(alignment: .top) {
-                // Background Color
+                // Page background (also shows behind the status bar)
                 Color("app_background")
-                    .ignoresSafeArea()
                 
-                // Top Header Graphic (Pizza peaking behind card - half pizza shown, no red zigzag)
-                topBackgroundGraphic(pizzaSize: pizzaSize, pizzaTop: pizzaTop, safeTop: safeTop)
-                
-                // Main Content Card (Scrollable)
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        // Spacing from top so half of pizza & logo are visible
-                        Color.clear
-                            .frame(height: topSpacing)
-                        
-                        // White Content Card
-                        cardContent(minHeight: minCardHeight)
+                // 1. Beige logo strip: logo centered, back button on the leading side
+                ZStack {
+                    Color("pizza_found")
+                    
+                    Image("app_logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 32, height: logoHeight)
+                        .accessibilityLabel("MOD Pizza Logo")
+                    
+                    if let onBack = onBack {
+                        HStack {
+                            Button(action: onBack) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(Color("app_black"))
+                                    .frame(width: 38, height: 38)
+                                    .background(
+                                        Circle()
+                                            .fill(Color.white.opacity(0.88))
+                                            .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                                    )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Spacer()
+                        }
+                        .padding(.leading, 16)
                     }
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .frame(width: width, height: logoStripHeight)
+                .offset(y: safeTop)
+                
+                // 2. Red gradient band with cream dome, pizza, stripes and badge
+                ZStack(alignment: .top) {
+                    // Gradient: brand red -> deep maroon (#7D1226 is the prototype's theme color)
+                    LinearGradient(
+                        colors: [
+                            Color("Button_red"),
+                            Color(red: 0x7D / 255.0, green: 0x12 / 255.0, blue: 0x26 / 255.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    
+                    // Cream dome. The extra frame makes it report the band size,
+                    // so the oversized circle can't widen the layout.
+                    Circle()
+                        .fill(Color("pizza_found"))
+                        .frame(width: domeDiameter, height: domeDiameter)
+                        .frame(width: width, height: redBandHeight, alignment: .top)
+                        .offset(y: domeTop)
+                    
+                    // Pizza
+                    Image("PizzaOn")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: pizzaDiameter, height: pizzaDiameter)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 5)
+                        .offset(y: pizzaTopInBand)
+                    
+                    // Top-left accent stripes (red & cream)
+                    VStack(alignment: .leading, spacing: 4.5) {
+                        Capsule()
+                            .fill(Color(red: 0xD7 / 255.0, green: 0x2E / 255.0, blue: 0x48 / 255.0))
+                            .frame(width: 38, height: 6)
+                        
+                        Capsule()
+                            .fill(Color("pizza_found"))
+                            .frame(width: 38, height: 6)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 20)
+                    .padding(.top, 22)
+                    
+                    // Top-right tilted "MADE YOUR WAY" sticker
+                    madeYourWayBadge
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.trailing, 14)
+                        .padding(.top, 22)
+                }
+                .frame(width: width, height: redBandHeight, alignment: .top)
+                .clipped()
+                .offset(y: redBandTop)
+                
+                // 3. White verification card
+                cardContent
+                    .padding(.horizontal, 12)
+                    .offset(y: cardTop)
             }
+            .frame(width: width, height: geometry.size.height, alignment: .top)
             .onAppear {
                 isFieldFocused = true
             }
@@ -94,119 +183,101 @@ struct OTPVerificationView: View {
                 }
             }
         }
+        // Lets the layout start at the very top of the screen so safeAreaInsets.top
+        // is the real inset. .container keeps the keyboard behavior untouched.
+        .ignoresSafeArea(.container)
+        // Hide the top navigation bar and the back button.
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
     }
     
-    // MARK: - Top Background Graphic
+    // MARK: - "MADE YOUR WAY" Badge
     
-    private func topBackgroundGraphic(pizzaSize: CGFloat, pizzaTop: CGFloat, safeTop: CGFloat) -> some View {
-        ZStack(alignment: .top) {
-            // Centered Pizza Peaking Behind Card (showing top half)
-            Image(UIImage(named: "PizzaOn") != nil ? "PizzaOn" : "pizza1")
-                .resizable()
-                .scaledToFit()
-                .frame(width: pizzaSize, height: pizzaSize)
-                .clipShape(Circle())
-                .shadow(color: Color.black.opacity(0.16), radius: 16, x: 0, y: 8)
-                .offset(y: pizzaTop)
+    private var madeYourWayBadge: some View {
+        VStack(spacing: 1.5) {
+            Text("MADE")
+                .font(.oswaldBold(size: 10.5))
+                .tracking(0.6)
             
-            // MOD Shield Logo & Optional Back Button at Top
-            HStack {
-                if let onBack = onBack {
-                    Button(action: onBack) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color("app_black"))
-                            .frame(width: 38, height: 38)
-                            .background(
-                                Circle()
-                                    .fill(Color.white.opacity(0.88))
-                                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .padding(.leading, 16)
-                }
-                
-                Spacer()
-                
-                Image("app_logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 36, height: 42)
-                    .accessibilityLabel("MOD Pizza Logo")
-                
-                Spacer()
-                
-                if onBack != nil {
-                    Color.clear
-                        .frame(width: 38, height: 38)
-                        .padding(.trailing, 16)
-                }
-            }
-            .padding(.top, safeTop > 20 ? 6 : 14)
+            Text("YOUR")
+                .font(.oswaldBold(size: 17))
+                .tracking(0.6)
+            
+            Text("WAY")
+                .font(.oswaldBold(size: 10.5))
+                .tracking(0.6)
         }
-        .frame(maxWidth: .infinity)
+        .foregroundColor(Color("Button_red"))
+        .frame(width: 72, height: 72)
+        .background(
+            Circle()
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.2), radius: 8, x: -2, y: 4)
+        )
+        // Negative = counter-clockwise tilt, like the prototype
+        .rotationEffect(.degrees(-8))
     }
     
-    // MARK: - Card Content
+    // MARK: - Card Content (Fixed Card with Rounded Corners)
     
-    private func cardContent(minHeight: CGFloat) -> some View {
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Subtitle
             Text("SIGN IN")
                 .font(.oswaldMedium(size: 13))
                 .tracking(1.4)
                 .foregroundColor(Color("Button_red"))
-                .padding(.top, 28)
+                .padding(.top, 22)
             
             // Headline
             Text("ENTER YOUR CODE")
-                .font(.oswaldMedium(size: 32))
+                .font(.oswaldMedium(size: 30))
                 .tracking(0.6)
                 .foregroundColor(Color("app_black"))
-                .padding(.top, 6)
+                .padding(.top, 4)
             
             // Description
             (
                 Text("We sent a 6-digit code to ")
-                    .font(.barlowRegular(size: 15.5))
+                    .font(.barlowRegular(size: 14.5))
                 +
                 Text(maskedDestination)
-                    .font(.barlowBold(size: 15.5))
+                    .font(.barlowBold(size: 14.5))
             )
             .foregroundColor(Color("text_gary"))
-            .lineSpacing(3)
+            .lineSpacing(2)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.top, 6)
+            .padding(.bottom, 18)
             
             // 6-digit Code Input Section
             codeInputSection
-                .padding(.bottom, 20)
+                .padding(.bottom, 16)
             
             // Verify & Sign In Button
             verifyButton
-                .padding(.bottom, 20)
+                .padding(.bottom, 18)
             
             // Actions Row (Resend Code + Use a Different Number / Email)
             actionRow
-                .padding(.bottom, 24)
+                .padding(.bottom, 18)
             
             // "or" Divider
             orDivider
-                .padding(.bottom, 24)
+                .padding(.bottom, 16)
             
             // Continue As Guest Button
             continueAsGuestButton
-                .padding(.bottom, 36)
+                .padding(.bottom, 24)
         }
-        .padding(.horizontal, 24)
-        .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .top)
+        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity, alignment: .top)
         .background(
-            // White card with top-rounded corners extending downward
-            CustomTopRoundedCard(cornerRadius: 26)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.08), radius: 18, x: 0, y: -4)
+                // Two layered shadows: a tight one for contact, a wide soft one for depth
+                .shadow(color: Color.black.opacity(0.10), radius: 6, x: 0, y: 3)
+                .shadow(color: Color.black.opacity(0.16), radius: 22, x: 0, y: 12)
         )
     }
     
@@ -393,9 +464,11 @@ struct OTPVerificationView: View {
 
 struct OTPVerificationView_Previews: PreviewProvider {
     static var previews: some View {
-        OTPVerificationView(
-            destination: "+1 (555) 000-0463",
-            mode: .sms
-        )
+        NavigationStack {
+            OTPVerificationView(
+                destination: "+1 (555) 000-0463",
+                mode: .sms
+            )
+        }
     }
 }

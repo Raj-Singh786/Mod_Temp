@@ -71,7 +71,9 @@ struct AuthCoordinatorView: View {
                     )
                 }
             }
+            .navigationBarHidden(true)
             .navigationBarBackButtonHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: AuthDestination.self) { destination in
                 switch destination {
                 case .promotion:
@@ -88,7 +90,9 @@ struct AuthCoordinatorView: View {
                             }
                         }
                     )
+                    .navigationBarHidden(true)
                     .navigationBarBackButtonHidden(true)
+                    .toolbar(.hidden, for: .navigationBar)
                     
                 case .login:
                     LoginView(
@@ -99,7 +103,9 @@ struct AuthCoordinatorView: View {
                             handleMoveToTabBar(isGuest: true, selectedIndex: 0)
                         }
                     )
+                    .navigationBarHidden(true)
                     .navigationBarBackButtonHidden(true)
+                    .toolbar(.hidden, for: .navigationBar)
                     
                 case .otp(let destination, let mode):
                     OTPVerificationView(
@@ -123,7 +129,9 @@ struct AuthCoordinatorView: View {
                             print("Resend code requested for \(destination)")
                         }
                     )
+                    .navigationBarHidden(true)
                     .navigationBarBackButtonHidden(true)
+                    .toolbar(.hidden, for: .navigationBar)
                     
                 case .home(let isGuest):
                     HomeView(isGuest: isGuest)

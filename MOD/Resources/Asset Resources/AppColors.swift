@@ -75,12 +75,4 @@ enum AppColor {
     static var oliveGreen: Color { Color("olive_green") }
 }
 
-//extension Color {
-//    static var appBackground: Color { Color("app_background") }
-//    static var pizzaFound: Color { Color("pizza_found") }
-//    static var romaRed: Color { Color("roma_red") }
-//    static var kaleGreen: Color { Color("kale_green") }
-//    static var buttonRed: Color { Color("Button_red") }
-//    static var appBlack: Color { Color("app_black") }
-//    static var appWhite: Color { Color("app_white") }
-//}
+
