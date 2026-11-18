@@ -97,6 +97,11 @@ struct CheckoutView: View {
     var onBack: (() -> Void)? = nil
     var onOrderPlaced: (() -> Void)? = nil
     
+    // Group Checkout Options
+    var customNavTitle: String? = nil
+    var customHeaderTitle: String? = nil
+    var groupOrder: GroupOrderItem? = nil
+    
     // MARK: - Form States
     
     // Contact
@@ -149,7 +154,10 @@ struct CheckoutView: View {
     // MARK: - Computed Pricing
     
     private var subtotal: Double {
-        cartManager.totalPrice > 0 ? cartManager.totalPrice : 11.99
+        if let group = groupOrder, group.totalFoodSubtotal > 0 {
+            return group.totalFoodSubtotal
+        }
+        return cartManager.totalPrice > 0 ? cartManager.totalPrice : 11.99
     }
     
     private var estimatedTax: Double {
@@ -191,9 +199,9 @@ struct CheckoutView: View {
                     // 2. Scrollable Checkout Content
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 20) {
-                            // Big Screen Title: CHECKOUT
-                            Text("CHECKOUT")
-                                .font(.oswaldBold(size: 28))
+                            // Big Screen Title: CHECKOUT / GROUP CHECKOUT
+                            Text(customHeaderTitle ?? "CHECKOUT")
+                                .font(.oswaldBold(size: customHeaderTitle != nil ? 22 : 28))
                                 .tracking(0.6)
                                 .foregroundColor(Color("app_black"))
                                 .padding(.horizontal, 16)
@@ -315,9 +323,10 @@ struct CheckoutView: View {
             Spacer()
             
             // Center: Screen Title
-            Text("Checkout")
-                .font(.oswaldMedium(size: 18))
+            Text(customNavTitle ?? "Checkout")
+                .font(.oswaldMedium(size: customNavTitle != nil ? 16 : 18))
                 .foregroundColor(Color("app_black"))
+                .lineLimit(1)
             
             Spacer()
             
@@ -1059,9 +1068,40 @@ struct CheckoutView: View {
                 .tracking(0.6)
                 .foregroundColor(Color("app_black"))
             
-            // Dynamic Item Rows (from CartManager)
+            // Dynamic Item Rows
             VStack(spacing: 8) {
-                if cartManager.items.isEmpty {
+                if let group = groupOrder, !group.participants.flatMap({ $0.items }).isEmpty {
+                    ForEach(group.participants) { participant in
+                        if !participant.items.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(participant.name.uppercased()) (\(participant.isHost ? "Host" : "Member"))")
+                                    .font(.barlowBold(size: 12))
+                                    .foregroundColor(Color("Button_red"))
+                                    .padding(.top, 4)
+                                
+                                ForEach(participant.items) { food in
+                                    HStack {
+                                        HStack(spacing: 6) {
+                                            Circle()
+                                                .fill(Color("Button_red"))
+                                                .frame(width: 6, height: 6)
+                                            
+                                            Text(food.title)
+                                                .font(.barlowSemiBold(size: 14))
+                                                .foregroundColor(Color("app_black"))
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Text(String(format: "$%.2f", food.price))
+                                            .font(.barlowBold(size: 14))
+                                            .foregroundColor(Color("app_black"))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if cartManager.items.isEmpty {
                     // Fallback matching snapshot
                     HStack {
                         HStack(spacing: 6) {

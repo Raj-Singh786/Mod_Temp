@@ -113,6 +113,7 @@ final class MenuCoordinator: ObservableObject {
 struct MenuView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var coordinator = MenuCoordinator.shared
+    @ObservedObject private var groupManager = GroupOrderManager.shared
     
     // MARK: - Configuration
     
@@ -125,6 +126,8 @@ struct MenuView: View {
     var onAddItem: ((MenuItemModel) -> Void)? = nil
     
     // MARK: - State
+    
+    @State private var showGroupCustomizationSheet: Bool = false
     
     @State private var selectedOrderType: Int = 0 // 0: Pickup, 1: Delivery
     @State private var storeName: String = "Capitol Hill, Seattle"
@@ -637,8 +640,14 @@ struct MenuView: View {
                 ScrollViewReader { scrollProxy in
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 16) {
-                            // 1. Order Setup Summary Card
-                            orderModeCard
+                            // 1. Order Setup / Group Order Banner Card (Snapshot media_1794984669960_ac7c15cc.png)
+                            if let session = groupManager.currentSession {
+                                groupOrderBannerCard(session: session)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            } else {
+                                orderModeCard
+                                    .transition(.opacity)
+                            }
                             
                             // 2. MENU Title & Store Info
                             menuTitleSection
@@ -661,6 +670,7 @@ struct MenuView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 10)
                         .padding(.bottom, 30)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: groupManager.currentSession)
                     }
                 }
             }
@@ -715,6 +725,79 @@ struct MenuView: View {
                 }
             )
         }
+        .sheet(isPresented: $showGroupCustomizationSheet) {
+            if let session = groupManager.currentSession,
+               let group = groupManager.activeGroups.first(where: { $0.id == session.id }) {
+                GroupDealCustomizationView(
+                    group: group,
+                    onBack: {
+                        showGroupCustomizationSheet = false
+                    },
+                    onNavigateToMenu: {
+                        showGroupCustomizationSheet = false
+                    },
+                    onCartTap: onCartTap,
+                    onStarTap: onProfileTap
+                )
+            }
+        }
+    }
+    
+    // MARK: - Group Order Banner Card (Snapshot media_1794984669960_ac7c15cc.png)
+    
+    private func groupOrderBannerCard(session: GroupOrderingSession) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "person.2")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.leading, 4)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("Adding food for")
+                        .font(.barlowRegular(size: 13.5))
+                        .foregroundColor(.white.opacity(0.92))
+                    
+                    Text(session.participantName)
+                        .font(.barlowBold(size: 14))
+                        .foregroundColor(.white)
+                    
+                    Text("in")
+                        .font(.barlowRegular(size: 13.5))
+                        .foregroundColor(.white.opacity(0.92))
+                }
+                
+                Text(session.groupName)
+                    .font(.oswaldBold(size: 17))
+                    .tracking(0.4)
+                    .foregroundColor(.white)
+            }
+            
+            Spacer()
+            
+            Button(action: {
+                showGroupCustomizationSheet = true
+            }) {
+                Text("BACK TO GROUP")
+                    .font(.oswaldMedium(size: 13))
+                    .tracking(0.6)
+                    .foregroundColor(Color("app_black"))
+                    .padding(.horizontal, 14)
+                    .frame(height: 36)
+                    .background(
+                        Capsule()
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0))
+                .shadow(color: Color("Button_red").opacity(0.3), radius: 6, x: 0, y: 3)
+        )
     }
     
     // MARK: - Top Navigation Bar
@@ -1284,6 +1367,7 @@ struct MenuView: View {
                                     calories: calVal,
                                     imageName: item.imageName
                                 )
+                                groupManager.addFoodItemToCurrentSession(title: item.title, price: priceVal)
                                 onAddItem?(item)
                             }
                         }) {

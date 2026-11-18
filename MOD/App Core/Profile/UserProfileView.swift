@@ -11,9 +11,21 @@ import SwiftUI
 
 typealias UserprofileView = UserProfileView
 
+// MARK: - Dietary Option Model
+
+struct DietaryOptionItem: Identifiable {
+    let id: String
+    let title: String
+    let subtitle: String
+}
+
 // MARK: - UserProfileView
 
 struct UserProfileView: View {
+    
+    // MARK: - Initial Guest Configuration
+    
+    var initialIsGuest: Bool? = nil
     
     // MARK: - Callbacks
     
@@ -26,11 +38,23 @@ struct UserProfileView: View {
     // MARK: - Observed State
     
     @ObservedObject private var walletManager = WalletManager.shared
+    @ObservedObject private var addressManager = AddressManager.shared
+    @ObservedObject private var dealsManager = DealsManager.shared
+    @ObservedObject private var groupOrderManager = GroupOrderManager.shared
+    
+    // MARK: - Guest / Member Mode State
+    
+    @State private var isGuest: Bool = false
+    @State private var guestFullName: String = ""
+    @State private var guestEmail: String = ""
+    @State private var guestPhone: String = ""
+    @State private var guestOffersEmailEnabled: Bool = false
+    @State private var showLoginSheet: Bool = false
     
     // MARK: - User State
     
     @State private var fullName: String = "raj"
-    @State private var email: String = "rajallshputta087@gmail.com"
+    @State private var email: String = "risabhputta213@gmail.com"
     @State private var phone: String = "(206) 555-0142"
     @State private var birthday: String = ""
     @State private var tierName: String = "Silver member"
@@ -46,14 +70,52 @@ struct UserProfileView: View {
     @State private var allergiesText: String = "None added"
     @State private var dietaryText: String = "None added"
     
+    // Inline Edit States
+    @State private var isEditingPersonalInfo: Bool = false
+    @State private var isEditingAllergies: Bool = false
+    
+    // Draft Personal Info Fields (Snapshot 1)
+    @State private var editFullName: String = "raj"
+    @State private var editMobileNumber: String = "(206) 555-0142"
+    @State private var editEmail: String = "risabhputta213@gmail.com"
+    @State private var editBirthday: String = ""
+    
+    // Allergies & Dietary Selection States (Snapshot 2)
+    @State private var selectedAllergens: Set<String> = ["Milk"]
+    @State private var otherAllergiesNotes: String = ""
+    @State private var selectedDietaryRestrictions: Set<String> = []
+    
+    // Saved snapshots for cancel
+    @State private var savedAllergens: Set<String> = ["Milk"]
+    @State private var savedOtherNotes: String = ""
+    @State private var savedDietary: Set<String> = []
+    
+    // Static Allergen Rows matching Snapshot 2
+    private let allergenRows: [[String]] = [
+        ["Milk", "Eggs", "Wheat", "Soy"],
+        ["Peanuts", "Tree nuts", "Sesame"],
+        ["Fish", "Shellfish"]
+    ]
+    
+    // Static Dietary Options matching Snapshot 2
+    private let dietaryOptions: [DietaryOptionItem] = [
+        DietaryOptionItem(id: "veg", title: "Vegetarian", subtitle: "No meat or fish"),
+        DietaryOptionItem(id: "vegan", title: "Vegan", subtitle: "No animal products"),
+        DietaryOptionItem(id: "dairy", title: "Dairy-free", subtitle: "No cheese or dairy sauces"),
+        DietaryOptionItem(id: "pork", title: "No pork", subtitle: "No pepperoni, sausage, ham, bacon or salami"),
+        DietaryOptionItem(id: "gluten", title: "Gluten-conscious", subtitle: "Prefer cauliflower crust")
+    ]
+    
     // Notification Toggles
     @State private var orderUpdatesEnabled: Bool = true
     @State private var offersAndNewsEnabled: Bool = true
     @State private var dealAlertsEnabled: Bool = false
     
     // Sheets & Alerts
-    @State private var showEditPersonalInfoSheet: Bool = false
-    @State private var showEditAllergiesSheet: Bool = false
+    @State private var showSavedAddressesSheet: Bool = false
+    @State private var showFavoritesSheet: Bool = false
+    @State private var showSavedDealsSheet: Bool = false
+    @State private var showGroupOrdersSheet: Bool = false
     @State private var showWalletSheet: Bool = false
     @State private var showActivitySheet: Bool = false
     @State private var showMemberPassSheet: Bool = false
@@ -80,23 +142,25 @@ struct UserProfileView: View {
                         // 1. User Hero Card (Dark Gradient)
                         userHeroCard
                         
-                        // 2. Personal Information Card
+                        // 2. Personal Information Card (With Inline Edit Mode)
                         personalInformationCard
                         
-                        // 3. Allergies & Dietary Restrictions Card
+                        // 3. Allergies & Dietary Restrictions Card (With Inline Edit Mode)
                         allergiesAndDietaryCard
                         
                         // 4. Notifications & Privacy Card
                         notificationsAndPrivacyCard
                         
-                        // 5. MOD Rewards Quick Card
-                        rewardsQuickCard
+                        if !isGuest {
+                            // 5. MOD Rewards Quick Card
+                            rewardsQuickCard
+                        } else {
+                            // 5. Earn on Every Order Card (Guest)
+                            earnOnEveryOrderCard
+                        }
                         
-                        // 6. Account Menu Navigation List Card
+                        // 6. Account Menu Navigation List Card (Wallet & Activity hidden in Guest Mode)
                         accountMenuCard
-                        
-                        // 7. Demo Data Reset Card
-                        demoDataCard
                         
                         Spacer()
                             .frame(height: 36)
@@ -108,14 +172,63 @@ struct UserProfileView: View {
         }
         .navigationBarHidden(true)
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            if let initial = initialIsGuest {
+                isGuest = initial
+            } else if let saved = UserDefaults.standard.object(forKey: "isGuestUser") as? Bool {
+                isGuest = saved
+            }
+        }
+        .sheet(isPresented: $showLoginSheet) {
+            LoginView(
+                onSendCode: { destination, mode in
+                    UserDefaults.standard.set(false, forKey: "isGuestUser")
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isGuest = false
+                        fullName = destination.components(separatedBy: "@").first ?? "Raj"
+                        email = destination
+                        initialLetter = String(fullName.prefix(1)).uppercased()
+                    }
+                    showLoginSheet = false
+                },
+                onContinueAsGuest: {
+                    showLoginSheet = false
+                },
+                onBack: {
+                    showLoginSheet = false
+                }
+            )
+        }
         // Sheets
-        .sheet(isPresented: $showEditPersonalInfoSheet) {
-            editPersonalInfoSheetView
+        .sheet(isPresented: $showSavedAddressesSheet) {
+            AddAddressView(
+                showHeader: true,
+                onBack: {
+                    showSavedAddressesSheet = false
+                },
+                onCartTap: onCartTap,
+                onStarTap: onStarTap
+            )
         }
-        .sheet(isPresented: $showEditAllergiesSheet) {
-            editAllergiesSheetView
+        .sheet(isPresented: $showFavoritesSheet) {
+            FavouritePizzaListView(
+                showHeader: true,
+                onBack: {
+                    showFavoritesSheet = false
+                },
+                onCartTap: onCartTap,
+                onStarTap: onStarTap,
+                onBuildNewPizza: {
+                    showFavoritesSheet = false
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
+                       let tabVC = rootNav.viewControllers.first as? UITabBarController {
+                        tabVC.selectedIndex = 1
+                    }
+                }
+            )
         }
-        .sheet(isPresented: $showWalletSheet) {
+        .fullScreenCover(isPresented: $showWalletSheet) {
             AddWalletBalanceView(
                 showHeader: true,
                 onBack: {
@@ -125,7 +238,7 @@ struct UserProfileView: View {
                 onStarTap: onStarTap
             )
         }
-        .sheet(isPresented: $showActivitySheet) {
+        .fullScreenCover(isPresented: $showActivitySheet) {
             AllWalletActivityView(
                 showHeader: true,
                 onBack: {
@@ -138,6 +251,35 @@ struct UserProfileView: View {
         .sheet(isPresented: $showMemberPassSheet) {
             memberPassSheetView
         }
+        .sheet(isPresented: $showSavedDealsSheet) {
+            SaveDealsView(
+                showHeader: true,
+                initialFilter: .allOffers,
+                onBack: {
+                    showSavedDealsSheet = false
+                },
+                onCartTap: onCartTap,
+                onStarTap: onStarTap
+            )
+        }
+        .sheet(isPresented: $showGroupOrdersSheet) {
+            GroupDealView(
+                showHeader: true,
+                onBack: {
+                    showGroupOrdersSheet = false
+                },
+                onNavigateToMenu: {
+                    showGroupOrdersSheet = false
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
+                       let tabVC = rootNav.viewControllers.first as? UITabBarController {
+                        tabVC.selectedIndex = 1
+                    }
+                },
+                onCartTap: onCartTap,
+                onStarTap: onStarTap
+            )
+        }
         // Alerts
         .alert(isPresented: $showSignOutAlert) {
             Alert(
@@ -145,6 +287,9 @@ struct UserProfileView: View {
                 message: Text("Are you sure you want to sign out of your MOD account?"),
                 primaryButton: .destructive(Text("Sign Out")) {
                     UserDefaults.standard.set(true, forKey: "isGuestUser")
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isGuest = true
+                    }
                     if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                        let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
                        let tabVC = rootNav.viewControllers.first as? UITabBarController {
@@ -164,10 +309,16 @@ struct UserProfileView: View {
                     points = 1240
                     ordersCount = 3
                     savedFavoritesCount = 1
+                    dealsManager.resetToDefaults()
+                    groupOrderManager.resetToDefaults()
                     profileCompletionPercent = 60
                     orderUpdatesEnabled = true
                     offersAndNewsEnabled = true
                     dealAlertsEnabled = false
+                    selectedAllergens = ["Milk"]
+                    allergiesText = "Milk"
+                    selectedDietaryRestrictions = []
+                    dietaryText = "None added"
                     infoAlertTitle = "Demo Data Reset"
                     infoAlertMessage = "All demo data has been restored to default values."
                     showInfoAlert = true
@@ -177,7 +328,7 @@ struct UserProfileView: View {
         }
     }
     
-    // MARK: - 0. Custom Top Navigation Bar (Snapshot media_1794981635107_ec92abfa.png)
+    // MARK: - 0. Custom Top Navigation Bar
     
     private var customNavigationBar: some View {
         HStack(alignment: .center) {
@@ -194,16 +345,27 @@ struct UserProfileView: View {
             
             Spacer()
             
-            // Right: Star & Cart Icons
+            // Right: Star / Person & Cart Icons
             HStack(spacing: 16) {
-                Button(action: {
-                    onStarTap?()
-                }) {
-                    Image(systemName: "star")
-                        .font(.system(size: 18, weight: .regular))
-                        .foregroundColor(Color("app_black"))
+                if isGuest {
+                    Button(action: {
+                        showLoginSheet = true
+                    }) {
+                        Image(systemName: "person")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundColor(Color("app_black"))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    Button(action: {
+                        onStarTap?()
+                    }) {
+                        Image(systemName: "star")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundColor(Color("app_black"))
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
                 
                 TopCartButton(action: onCartTap)
             }
@@ -219,88 +381,193 @@ struct UserProfileView: View {
     
     private var userHeroCard: some View {
         VStack(alignment: .leading, spacing: 18) {
-            // Top Row: Avatar + Info + Sign Out
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .center, spacing: 14) {
-                    // Avatar Circle
-                    ZStack {
-                        Circle()
-                            .fill(Color(red: 0xF3 / 255.0, green: 0xEB / 255.0, blue: 0xDD / 255.0))
-                            .frame(width: 56, height: 56)
-                        
-                        Text(initialLetter.uppercased())
-                            .font(.oswaldBold(size: 26))
-                            .foregroundColor(Color(red: 0x76 / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0))
-                    }
-                    
-                    // Name & Tier Info
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(fullName.uppercased())
-                            .font(.oswaldBold(size: 24))
-                            .foregroundColor(.white)
-                        
-                        // Tier Pill Badge
-                        Text(tierName)
-                            .font(.barlowBold(size: 11))
-                            .foregroundColor(Color(red: 0x6E / 255.0, green: 0x51 / 255.0, blue: 0x22 / 255.0))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 3)
-                            .background(
-                                Capsule()
-                                    .fill(Color(red: 0xF7 / 255.0, green: 0xEE / 255.0, blue: 0xD8 / 255.0))
-                            )
-                    }
-                    
-                    Spacer()
-                }
-                
-                // Enrollment info subtext
-                Text("MOD Rewards member · Signed in with SMS")
-                    .font(.barlowRegular(size: 13))
-                    .foregroundColor(Color.white.opacity(0.7))
-                
-                // SIGN OUT Button
-                Button(action: {
-                    showSignOutAlert = true
-                }) {
-                    Text("SIGN OUT")
-                        .font(.oswaldMedium(size: 12))
-                        .tracking(0.8)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 14)
-                        .frame(height: 30)
-                        .background(
-                            Capsule()
-                                .stroke(Color.white.opacity(0.35), lineWidth: 1)
-                                .background(Capsule().fill(Color.white.opacity(0.08)))
-                        )
-                }
-                .buttonStyle(PlainButtonStyle())
+            if isGuest {
+                guestHeroTopSection
+            } else {
+                loggedInHeroTopSection
             }
             
-            // 4 Stat Boxes (Grid: Row 1 = 3 boxes, Row 2 = 1 box)
-            VStack(spacing: 8) {
-                // Row 1: Points, Wallet, Orders
-                HStack(spacing: 8) {
-                    statBox(value: points.formattedWithSeparator, label: "Points")
-                    statBox(value: "$45.00", label: "Wallet")
-                    statBox(value: "\(ordersCount)", label: "Orders")
-                }
-                
-                // Row 2: Saved favorite
-                HStack(spacing: 8) {
-                    statBox(value: "\(savedFavoritesCount)", label: "Saved favorite")
-                    Spacer()
-                }
+            // Stat Boxes
+            if isGuest {
+                guestStatBoxes
+            } else {
+                loggedInStatBoxes
             }
             
             // Profile Completion Section
-            VStack(alignment: .leading, spacing: 6) {
+            profileCompletionSection
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0x22 / 255.0, green: 0x18 / 255.0, blue: 0x1C / 255.0),
+                            Color(red: 0x44 / 255.0, green: 0x1A / 255.0, blue: 0x22 / 255.0),
+                            Color(red: 0x1E / 255.0, green: 0x17 / 255.0, blue: 0x1A / 255.0)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 4)
+        )
+    }
+    
+    private var guestHeroTopSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 14) {
+                // Circle Avatar with outline person
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.14))
+                        .frame(width: 56, height: 56)
+                    
+                    Image(systemName: "person")
+                        .font(.system(size: 24, weight: .regular))
+                        .foregroundColor(.white)
+                }
+                
+                // Name & Subtext
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("GUEST")
+                        .font(.oswaldBold(size: 24))
+                        .foregroundColor(.white)
+                    
+                    Text("Ordering as a guest on this device")
+                        .font(.barlowRegular(size: 13))
+                        .foregroundColor(Color.white.opacity(0.7))
+                }
+                
+                Spacer()
+            }
+            
+            // SIGN IN OR JOIN Button
+            Button(action: {
+                showLoginSheet = true
+            }) {
+                Text("SIGN IN OR JOIN")
+                    .font(.oswaldMedium(size: 12))
+                    .tracking(0.8)
+                    .foregroundColor(Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0))
+                    .padding(.horizontal, 16)
+                    .frame(height: 30)
+                    .background(
+                        Capsule()
+                            .fill(Color.white)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+    
+    private var loggedInHeroTopSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 14) {
+                // Avatar Circle
+                ZStack {
+                    Circle()
+                        .fill(Color(red: 0xF3 / 255.0, green: 0xEB / 255.0, blue: 0xDD / 255.0))
+                        .frame(width: 56, height: 56)
+                    
+                    Text(initialLetter.uppercased())
+                        .font(.oswaldBold(size: 26))
+                        .foregroundColor(Color(red: 0x76 / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0))
+                }
+                
+                // Name & Tier Info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(fullName.uppercased())
+                        .font(.oswaldBold(size: 24))
+                        .foregroundColor(.white)
+                    
+                    // Tier Pill Badge
+                    Text(tierName)
+                        .font(.barlowBold(size: 11))
+                        .foregroundColor(Color(red: 0x6E / 255.0, green: 0x51 / 255.0, blue: 0x22 / 255.0))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(Color(red: 0xF7 / 255.0, green: 0xEE / 255.0, blue: 0xD8 / 255.0))
+                        )
+                }
+                
+                Spacer()
+            }
+            
+            // Enrollment info subtext
+            Text("MOD Rewards member · Signed in with SMS")
+                .font(.barlowRegular(size: 13))
+                .foregroundColor(Color.white.opacity(0.7))
+            
+            // SIGN OUT Button
+            Button(action: {
+                showSignOutAlert = true
+            }) {
+                Text("SIGN OUT")
+                    .font(.oswaldMedium(size: 12))
+                    .tracking(0.8)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .frame(height: 30)
+                    .background(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.35), lineWidth: 1)
+                            .background(Capsule().fill(Color.white.opacity(0.08)))
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+    
+    private var guestStatBoxes: some View {
+        HStack(spacing: 8) {
+            statBox(value: "0", label: "Orders")
+            statBox(value: "0", label: "Favorites")
+            statBox(value: "0", label: "Addresses")
+        }
+    }
+    
+    private var loggedInStatBoxes: some View {
+        VStack(spacing: 8) {
+            // Row 1: Points, Wallet, Orders
+            HStack(spacing: 8) {
+                statBox(value: points.formattedWithSeparator, label: "Points")
+                statBox(value: "$45.00", label: "Wallet")
+                statBox(value: "\(ordersCount)", label: "Orders")
+            }
+            
+            // Row 2: Saved favorite
+            HStack(spacing: 8) {
+                statBox(value: "\(savedFavoritesCount)", label: "Saved favorite")
+                Spacer()
+            }
+        }
+    }
+    
+    private var profileCompletionSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if isGuest {
+                Text("Profile 0% complete")
+                    .font(.barlowSemiBold(size: 13.5))
+                    .foregroundColor(.white)
+                
+                Text("Add: Name, Email, Phone, Birthday, Food preferences")
+                    .font(.barlowRegular(size: 12))
+                    .foregroundColor(Color.white.opacity(0.7))
+                
+                // Empty Progress Bar
+                Capsule()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(height: 6)
+            } else {
                 Text("Profile \(profileCompletionPercent)% complete")
                     .font(.barlowSemiBold(size: 13.5))
                     .foregroundColor(.white)
                 
-                Text("Add birthday for 40 pts + treat")
+                Text(birthday.isEmpty ? "Add birthday for 40 pts + treat" : "Birthday added! Enjoy your birthday treat")
                     .font(.barlowRegular(size: 12))
                     .foregroundColor(Color.white.opacity(0.7))
                 
@@ -332,24 +599,8 @@ struct UserProfileView: View {
                     .foregroundColor(Color.white.opacity(0.7))
                     .padding(.top, 4)
             }
-            .padding(.top, 4)
         }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(red: 0x22 / 255.0, green: 0x18 / 255.0, blue: 0x1C / 255.0),
-                            Color(red: 0x44 / 255.0, green: 0x1A / 255.0, blue: 0x22 / 255.0),
-                            Color(red: 0x1E / 255.0, green: 0x17 / 255.0, blue: 0x1A / 255.0)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 4)
-        )
+        .padding(.top, 4)
     }
     
     private func statBox(value: String, label: String) -> some View {
@@ -371,7 +622,7 @@ struct UserProfileView: View {
         )
     }
     
-    // MARK: - 2. Personal Information Card
+    // MARK: - 2. Personal Information Card (Snapshot 1)
     
     private var personalInformationCard: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -383,7 +634,7 @@ struct UserProfileView: View {
                         .fill(Color(red: 0xFD / 255.0, green: 0xEE / 255.0, blue: 0xF0 / 255.0))
                         .frame(width: 36, height: 36)
                     
-                    Image(systemName: "person.text.rectangle")
+                    Image(systemName: "person")
                         .font(.system(size: 16, weight: .regular))
                         .foregroundColor(Color("Button_red"))
                 }
@@ -394,20 +645,55 @@ struct UserProfileView: View {
                         .tracking(0.6)
                         .foregroundColor(Color("app_black"))
                     
-                    Text("Used for your receipts and rewards")
+                    Text(isGuest ? "Remembered on this device for faster checkout" : "Used for your receipts and rewards")
                         .font(.barlowRegular(size: 12.5))
                         .foregroundColor(Color("text_gary"))
                 }
                 
                 Spacer()
                 
-                editButton {
-                    showEditPersonalInfoSheet = true
+                if !isEditingPersonalInfo {
+                    editButton {
+                        if isGuest {
+                            editFullName = guestFullName
+                            editMobileNumber = guestPhone
+                            editEmail = guestEmail
+                            editBirthday = ""
+                        } else {
+                            editFullName = fullName
+                            editMobileNumber = phone
+                            editEmail = email
+                            editBirthday = birthday
+                        }
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            isEditingPersonalInfo = true
+                        }
+                    }
                 }
             }
             
-            // Info Rows
-            VStack(spacing: 12) {
+            if isEditingPersonalInfo {
+                // Inline Edit Mode (Snapshot 1)
+                personalInfoEditView
+            } else {
+                // Display Mode
+                personalInfoDisplayView
+            }
+        }
+        .padding(18)
+        .background(whiteCardBackground)
+    }
+    
+    // Personal Info Display View
+    private var personalInfoDisplayView: some View {
+        VStack(spacing: 12) {
+            if isGuest {
+                infoRow(label: "Full name", value: guestFullName.isEmpty ? "Not added" : guestFullName, isBoldValue: true)
+                dividerLine
+                infoRow(label: "Email", value: guestEmail.isEmpty ? "Not added" : guestEmail, isBoldValue: true)
+                dividerLine
+                infoRow(label: "Mobile", value: guestPhone.isEmpty ? "Not added" : guestPhone, isBoldValue: true)
+            } else {
                 infoRow(label: "Full name", value: fullName)
                 dividerLine
                 infoRow(label: "Email", value: email)
@@ -420,26 +706,267 @@ struct UserProfileView: View {
                     isPlaceholder: birthday.isEmpty
                 )
             }
-            .padding(.top, 4)
         }
-        .padding(18)
-        .background(whiteCardBackground)
+        .padding(.top, 4)
     }
     
-    private func infoRow(label: String, value: String, isPlaceholder: Bool = false) -> some View {
+    // Personal Info Inline Edit View (Matching Snapshot 1)
+    private var personalInfoEditView: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Divider below header
+            dividerLine
+                .padding(.top, 2)
+            
+            if isGuest {
+                // Guest Fields (Full name, Mobile number, Email)
+                VStack(spacing: 12) {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Full name")
+                                .font(.barlowBold(size: 13.5))
+                                .foregroundColor(Color("app_black"))
+                            
+                            TextField("", text: $editFullName)
+                                .font(.barlowRegular(size: 15))
+                                .foregroundColor(Color("app_black"))
+                                .padding(.horizontal, 14)
+                                .frame(height: 46)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Mobile number")
+                                .font(.barlowBold(size: 13.5))
+                                .foregroundColor(Color("app_black"))
+                            
+                            TextField("", text: $editMobileNumber)
+                                .font(.barlowRegular(size: 15))
+                                .foregroundColor(Color("app_black"))
+                                .keyboardType(.phonePad)
+                                .padding(.horizontal, 14)
+                                .frame(height: 46)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Email")
+                            .font(.barlowBold(size: 13.5))
+                            .foregroundColor(Color("app_black"))
+                        
+                        TextField("", text: $editEmail)
+                            .font(.barlowRegular(size: 14))
+                            .foregroundColor(Color("app_black"))
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .padding(.horizontal, 14)
+                            .frame(height: 46)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
+                            )
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.top, 2)
+            } else {
+                // 2x2 Grid of Fields for Logged In User
+                VStack(spacing: 12) {
+                    // Row 1: Full name & Mobile number
+                    HStack(alignment: .top, spacing: 12) {
+                        // Full name
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Full name")
+                                .font(.barlowBold(size: 13.5))
+                                .foregroundColor(Color("app_black"))
+                            
+                            TextField("", text: $editFullName)
+                                .font(.barlowRegular(size: 15))
+                                .foregroundColor(Color("app_black"))
+                                .padding(.horizontal, 14)
+                                .frame(height: 46)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        // Mobile number
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Mobile number")
+                                .font(.barlowBold(size: 13.5))
+                                .foregroundColor(Color("app_black"))
+                            
+                            TextField("", text: $editMobileNumber)
+                                .font(.barlowRegular(size: 15))
+                                .foregroundColor(Color("app_black"))
+                                .keyboardType(.phonePad)
+                                .padding(.horizontal, 14)
+                                .frame(height: 46)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    
+                    // Row 2: Email & Birthday
+                    HStack(alignment: .top, spacing: 12) {
+                        // Email
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Email")
+                                .font(.barlowBold(size: 13.5))
+                                .foregroundColor(Color("app_black"))
+                            
+                            TextField("", text: $editEmail)
+                                .font(.barlowRegular(size: 14))
+                                .foregroundColor(Color("app_black"))
+                                .keyboardType(.emailAddress)
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .padding(.horizontal, 14)
+                                .frame(height: 46)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        // Birthday
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 4) {
+                                Text("Birthday")
+                                    .font(.barlowBold(size: 13.5))
+                                    .foregroundColor(Color("app_black"))
+                                
+                                Text("for a birthday treat")
+                                    .font(.barlowRegular(size: 11.5))
+                                    .foregroundColor(Color("text_gary"))
+                                    .lineLimit(1)
+                            }
+                            
+                            HStack {
+                                TextField("dd/mm/yyyy", text: $editBirthday)
+                                    .font(.barlowRegular(size: 14))
+                                    .foregroundColor(Color("app_black"))
+                                
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 15, weight: .regular))
+                                    .foregroundColor(Color("app_black"))
+                            }
+                            .padding(.horizontal, 14)
+                            .frame(height: 46)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
+                            )
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(.top, 2)
+            }
+            
+            // Actions Row: SAVE CHANGES & CANCEL
+            HStack(spacing: 16) {
+                Button(action: {
+                    if isGuest {
+                        guestFullName = editFullName
+                        guestPhone = editMobileNumber
+                        guestEmail = editEmail
+                    } else {
+                        fullName = editFullName
+                        phone = editMobileNumber
+                        email = editEmail
+                        birthday = editBirthday
+                        if !birthday.isEmpty {
+                            profileCompletionPercent = min(100, max(profileCompletionPercent, 80))
+                        }
+                        if !fullName.isEmpty {
+                            initialLetter = String(fullName.prefix(1)).uppercased()
+                        }
+                    }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isEditingPersonalInfo = false
+                    }
+                }) {
+                    Text("SAVE CHANGES")
+                        .font(.oswaldMedium(size: 13.5))
+                        .tracking(0.8)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 22)
+                        .frame(height: 42)
+                        .background(
+                            Capsule()
+                                .fill(Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0))
+                                .shadow(color: Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0).opacity(0.35), radius: 6, x: 0, y: 3)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    if isGuest {
+                        editFullName = guestFullName
+                        editMobileNumber = guestPhone
+                        editEmail = guestEmail
+                    } else {
+                        editFullName = fullName
+                        editMobileNumber = phone
+                        editEmail = email
+                        editBirthday = birthday
+                    }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isEditingPersonalInfo = false
+                    }
+                }) {
+                    Text("CANCEL")
+                        .font(.oswaldMedium(size: 13.5))
+                        .tracking(0.8)
+                        .foregroundColor(Color("app_black"))
+                        .padding(.horizontal, 8)
+                        .frame(height: 42)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Spacer()
+            }
+            .padding(.top, 6)
+        }
+    }
+    
+    private func infoRow(label: String, value: String, isPlaceholder: Bool = false, isBoldValue: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
                 .font(.barlowRegular(size: 12.5))
                 .foregroundColor(Color("text_gary"))
             
             Text(value)
-                .font(isPlaceholder ? .barlowRegular(size: 13.5) : .barlowBold(size: 14.5))
+                .font((isBoldValue || !isPlaceholder) ? .barlowBold(size: 14.5) : .barlowRegular(size: 13.5))
                 .foregroundColor(isPlaceholder ? Color("text_gary") : Color("app_black"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
-    // MARK: - 3. Allergies & Dietary Restrictions Card
+    // MARK: - 3. Allergies & Dietary Restrictions Card (Snapshot 2)
     
     private var allergiesAndDietaryCard: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -462,18 +989,40 @@ struct UserProfileView: View {
                         .tracking(0.6)
                         .foregroundColor(Color("app_black"))
                     
-                    Text("Helps us flag items and prepare your order with care")
+                    Text(isEditingAllergies ? "Help us flag items and prepare your order with care" : "Helps us flag items and prepare your order with care")
                         .font(.barlowRegular(size: 12.5))
                         .foregroundColor(Color("text_gary"))
                 }
                 
                 Spacer()
                 
-                editButton {
-                    showEditAllergiesSheet = true
+                if !isEditingAllergies {
+                    editButton {
+                        savedAllergens = selectedAllergens
+                        savedOtherNotes = otherAllergiesNotes
+                        savedDietary = selectedDietaryRestrictions
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            isEditingAllergies = true
+                        }
+                    }
                 }
             }
             
+            if isEditingAllergies {
+                // Inline Edit Mode (Snapshot 2)
+                allergiesEditView
+            } else {
+                // Display Mode
+                allergiesDisplayView
+            }
+        }
+        .padding(18)
+        .background(whiteCardBackground)
+    }
+    
+    // Allergies Display View
+    private var allergiesDisplayView: some View {
+        VStack(alignment: .leading, spacing: 12) {
             // Allergies section
             VStack(alignment: .leading, spacing: 3) {
                 Text("ALLERGIES")
@@ -499,13 +1048,245 @@ struct UserProfileView: View {
             }
             
             // Footnote
-            Text("Shared kitchens: Cross-contact with allergens is possible. For severe allergies, please speak with our team.")
+            Text(isGuest ? "Used to pre-fill checkout, filter the menu and flag items. Kept on this device only." : "Shared kitchens: Cross-contact with allergens is possible. For severe allergies, please speak with our team.")
                 .font(.barlowRegular(size: 12))
                 .foregroundColor(Color("text_gary"))
                 .lineSpacing(2)
         }
-        .padding(18)
-        .background(whiteCardBackground)
+    }
+    
+    // Allergies Inline Edit View (Matching Snapshot 2)
+    private var allergiesEditView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Divider below header
+            dividerLine
+                .padding(.top, 2)
+            
+            // Allergies Section
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Allergies")
+                    .font(.barlowBold(size: 15))
+                    .foregroundColor(Color("app_black"))
+                
+                Text("We'll pre-select these at checkout and flag items that contain them.")
+                    .font(.barlowRegular(size: 12.5))
+                    .foregroundColor(Color("text_gary"))
+                    .lineSpacing(2)
+                
+                // 3 Rows of Allergen Pills
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(0..<allergenRows.count, id: \.self) { rowIndex in
+                        HStack(spacing: 8) {
+                            ForEach(allergenRows[rowIndex], id: \.self) { allergen in
+                                allergenPill(allergen)
+                            }
+                        }
+                    }
+                }
+                .padding(.top, 2)
+                
+                // Other allergies or notes
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 4) {
+                        Text("Other allergies or notes")
+                            .font(.barlowBold(size: 13.5))
+                            .foregroundColor(Color("app_black"))
+                        
+                        Text("optional")
+                            .font(.barlowRegular(size: 12))
+                            .foregroundColor(Color("text_gary"))
+                    }
+                    
+                    TextField("e.g. mustard, celery", text: $otherAllergiesNotes)
+                        .font(.barlowRegular(size: 14))
+                        .foregroundColor(Color("app_black"))
+                        .padding(.horizontal, 14)
+                        .frame(height: 46)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
+                        )
+                }
+                .padding(.top, 4)
+            }
+            
+            // Dietary restrictions Section
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Dietary restrictions")
+                    .font(.barlowBold(size: 15))
+                    .foregroundColor(Color("app_black"))
+                
+                // 5 Checkbox cards
+                VStack(spacing: 10) {
+                    ForEach(dietaryOptions) { option in
+                        dietaryOptionCard(option)
+                    }
+                }
+            }
+            
+            // Warning Note
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(red: 0x93 / 255.0, green: 0x5E / 255.0, blue: 0x28 / 255.0))
+                    .padding(.top, 2)
+                
+                Text("Our kitchens share equipment and ingredients. Your preferences help us flag items, but we can't guarantee an allergen-free meal.")
+                    .font(.barlowRegular(size: 12.5))
+                    .foregroundColor(Color(red: 0x8C / 255.0, green: 0x55 / 255.0, blue: 0x28 / 255.0))
+                    .lineSpacing(2)
+            }
+            .padding(.top, 2)
+            
+            // Actions Row: SAVE PREFERENCES & CANCEL
+            HStack(spacing: 16) {
+                Button(action: {
+                    // Update allergiesText summary
+                    if selectedAllergens.isEmpty && otherAllergiesNotes.isEmpty {
+                        allergiesText = "None added"
+                    } else {
+                        var parts = Array(selectedAllergens).sorted()
+                        if !otherAllergiesNotes.isEmpty {
+                            parts.append(otherAllergiesNotes)
+                        }
+                        allergiesText = parts.joined(separator: ", ")
+                    }
+                    
+                    // Update dietaryText summary
+                    if selectedDietaryRestrictions.isEmpty {
+                        dietaryText = "None added"
+                    } else {
+                        dietaryText = dietaryOptions
+                            .filter { selectedDietaryRestrictions.contains($0.id) }
+                            .map { $0.title }
+                            .joined(separator: ", ")
+                    }
+                    
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isEditingAllergies = false
+                    }
+                }) {
+                    Text("SAVE PREFERENCES")
+                        .font(.oswaldMedium(size: 13.5))
+                        .tracking(0.8)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 22)
+                        .frame(height: 42)
+                        .background(
+                            Capsule()
+                                .fill(Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0))
+                                .shadow(color: Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0).opacity(0.35), radius: 6, x: 0, y: 3)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    selectedAllergens = savedAllergens
+                    otherAllergiesNotes = savedOtherNotes
+                    selectedDietaryRestrictions = savedDietary
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isEditingAllergies = false
+                    }
+                }) {
+                    Text("CANCEL")
+                        .font(.oswaldMedium(size: 13.5))
+                        .tracking(0.8)
+                        .foregroundColor(Color("app_black"))
+                        .padding(.horizontal, 8)
+                        .frame(height: 42)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Spacer()
+            }
+            .padding(.top, 4)
+        }
+    }
+    
+    // Allergen Pill Component
+    private func allergenPill(_ allergen: String) -> some View {
+        let isSelected = selectedAllergens.contains(allergen)
+        return Button(action: {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                if isSelected {
+                    selectedAllergens.remove(allergen)
+                } else {
+                    selectedAllergens.insert(allergen)
+                }
+            }
+        }) {
+            Text(allergen)
+                .font(.barlowSemiBold(size: 13))
+                .foregroundColor(Color("app_black"))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(
+                    Capsule()
+                        .stroke(
+                            isSelected ? Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0) : Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0),
+                            lineWidth: isSelected ? 2.0 : 1.2
+                        )
+                        .background(Capsule().fill(Color.white))
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // Dietary Option Checkbox Card Component
+    private func dietaryOptionCard(_ option: DietaryOptionItem) -> some View {
+        let isSelected = selectedDietaryRestrictions.contains(option.id)
+        return Button(action: {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                if isSelected {
+                    selectedDietaryRestrictions.remove(option.id)
+                } else {
+                    selectedDietaryRestrictions.insert(option.id)
+                }
+            }
+        }) {
+            HStack(alignment: .center, spacing: 14) {
+                // Checkbox
+                ZStack {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(
+                            isSelected ? Color("Button_red") : Color(red: 0xC0 / 255.0, green: 0xB8 / 255.0, blue: 0xAC / 255.0),
+                            lineWidth: 1.5
+                        )
+                        .frame(width: 18, height: 18)
+                    
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(Color("Button_red"))
+                            .frame(width: 18, height: 18)
+                        
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.title)
+                        .font(.barlowBold(size: 14))
+                        .foregroundColor(Color("app_black"))
+                    
+                    Text(option.subtitle)
+                        .font(.barlowRegular(size: 12))
+                        .foregroundColor(Color("text_gary"))
+                }
+                
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white))
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
     
     // MARK: - 4. Notifications & Privacy Card
@@ -545,17 +1326,31 @@ struct UserProfileView: View {
                     subtitle: "Status changes for your orders"
                 )
                 
-                toggleRow(
-                    isOn: $offersAndNewsEnabled,
-                    title: "Offers & news by email",
-                    subtitle: "Deals, new pizzas and member perks"
-                )
-                
-                toggleRow(
-                    isOn: $dealAlertsEnabled,
-                    title: "Deal alerts on this device",
-                    subtitle: "Push notifications about flash deals"
-                )
+                if isGuest {
+                    toggleRow(
+                        isOn: $guestOffersEmailEnabled,
+                        title: "Offers & news by email",
+                        subtitle: "Sign in to get offers"
+                    )
+                    
+                    toggleRow(
+                        isOn: $dealAlertsEnabled,
+                        title: "Deal alerts on this device",
+                        subtitle: "Occasional notifications about local offers"
+                    )
+                } else {
+                    toggleRow(
+                        isOn: $offersAndNewsEnabled,
+                        title: "Offers & news by email",
+                        subtitle: "Deals, new pizzas and member perks"
+                    )
+                    
+                    toggleRow(
+                        isOn: $dealAlertsEnabled,
+                        title: "Deal alerts on this device",
+                        subtitle: "Push notifications about flash deals"
+                    )
+                }
             }
             .padding(.top, 4)
         }
@@ -565,7 +1360,6 @@ struct UserProfileView: View {
     
     private func toggleRow(isOn: Binding<Bool>, title: String, subtitle: String) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            // Custom styled switch (on = Button_red, off = gray)
             Button(action: {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
                     isOn.wrappedValue.toggle()
@@ -684,6 +1478,57 @@ struct UserProfileView: View {
         .background(whiteCardBackground)
     }
     
+    // MARK: - 5. Earn on Every Order Card (Guest)
+    
+    private var earnOnEveryOrderCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Pale Pink star badge
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(red: 0xFD / 255.0, green: 0xEE / 255.0, blue: 0xF0 / 255.0))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: "star")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0))
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("EARN ON EVERY ORDER")
+                    .font(.oswaldMedium(size: 16))
+                    .tracking(0.6)
+                    .foregroundColor(Color("app_black"))
+                
+                Text("10 pts per $1, a free pizza at 1,500 pts, wallet and member-only deals.")
+                    .font(.barlowRegular(size: 12.5))
+                    .foregroundColor(Color("text_gary"))
+                    .lineSpacing(2)
+            }
+            
+            // Full width capsule button
+            Button(action: {
+                showLoginSheet = true
+            }) {
+                Text("JOIN MOD REWARDS")
+                    .font(.oswaldMedium(size: 14))
+                    .tracking(0.8)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(
+                        Capsule()
+                            .fill(Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0))
+                            .shadow(color: Color(red: 0x8C / 255.0, green: 0x1E / 255.0, blue: 0x2A / 255.0).opacity(0.35), radius: 6, x: 0, y: 3)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+            .padding(.top, 2)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(whiteCardBackground)
+    }
+    
     // MARK: - 6. Account Menu Navigation List Card
     
     private var accountMenuCard: some View {
@@ -691,11 +1536,9 @@ struct UserProfileView: View {
             menuRow(
                 iconName: "mappin.and.ellipse",
                 title: "Saved addresses",
-                subtitle: "0 saved",
+                subtitle: isGuest ? "\(addressManager.addresses.count) saved" : "\(addressManager.addresses.count) saved",
                 action: {
-                    infoAlertTitle = "Saved Addresses"
-                    infoAlertMessage = "You haven't saved any delivery addresses yet."
-                    showInfoAlert = true
+                    showSavedAddressesSheet = true
                 }
             )
             
@@ -704,11 +1547,9 @@ struct UserProfileView: View {
             menuRow(
                 iconName: "heart",
                 title: "Favorites & saved pizzas",
-                subtitle: "\(savedFavoritesCount) favorite pizza",
+                subtitle: isGuest ? "\(savedFavoritesCount == 0 ? 0 : savedFavoritesCount) favorites" : "\(savedFavoritesCount) favorite pizza",
                 action: {
-                    infoAlertTitle = "Favorites"
-                    infoAlertMessage = "You have 1 favorite pizza: 11\" MOD Custom Crust."
-                    showInfoAlert = true
+                    showFavoritesSheet = true
                 }
             )
             
@@ -717,7 +1558,7 @@ struct UserProfileView: View {
             menuRow(
                 iconName: "doc.text",
                 title: "Orders & receipts",
-                subtitle: "\(ordersCount) orders",
+                subtitle: isGuest ? "0 orders" : "\(ordersCount) orders",
                 action: {
                     if let onNavigateToOrders = onNavigateToOrders {
                         onNavigateToOrders()
@@ -734,11 +1575,9 @@ struct UserProfileView: View {
             menuRow(
                 iconName: "tag",
                 title: "Saved offers",
-                subtitle: "1 saved",
+                subtitle: isGuest ? "\(dealsManager.savedDealsCount) saved" : "\(dealsManager.savedDealsCount) saved",
                 action: {
-                    infoAlertTitle = "Saved Offers"
-                    infoAlertMessage = "Active offer: $5 OFF on your next order."
-                    showInfoAlert = true
+                    showSavedDealsSheet = true
                 }
             )
             
@@ -747,35 +1586,35 @@ struct UserProfileView: View {
             menuRow(
                 iconName: "person.2",
                 title: "Group orders",
-                subtitle: "Host and join group orders",
+                subtitle: isGuest ? "Host-paid group orders" : (groupOrderManager.activeGroups.isEmpty ? "Host and join group orders" : "\(groupOrderManager.activeGroups.count) active group"),
                 action: {
-                    infoAlertTitle = "Group Orders"
-                    infoAlertMessage = "Group ordering is enabled. Invite team members with a shared link."
-                    showInfoAlert = true
+                    showGroupOrdersSheet = true
                 }
             )
             
-            dividerLine
-            
-            menuRow(
-                iconName: "creditcard",
-                title: "Wallet",
-                subtitle: "$45.00",
-                action: {
-                    showWalletSheet = true
-                }
-            )
-            
-            dividerLine
-            
-            menuRow(
-                iconName: "clock",
-                title: "Activity",
-                subtitle: "Points & wallet history",
-                action: {
-                    showActivitySheet = true
-                }
-            )
+            if !isGuest {
+                dividerLine
+                
+                menuRow(
+                    iconName: "creditcard",
+                    title: "Wallet",
+                    subtitle: "$45.00",
+                    action: {
+                        showWalletSheet = true
+                    }
+                )
+                
+                dividerLine
+                
+                menuRow(
+                    iconName: "clock",
+                    title: "Activity",
+                    subtitle: "Points & wallet history",
+                    action: {
+                        showActivitySheet = true
+                    }
+                )
+            }
         }
         .background(whiteCardBackground)
     }
@@ -809,45 +1648,6 @@ struct UserProfileView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
-    }
-    
-    // MARK: - 7. Demo Data Reset Card
-    
-    private var demoDataCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("DEMO DATA")
-                .font(.oswaldMedium(size: 16))
-                .tracking(0.6)
-                .foregroundColor(Color("app_black"))
-            
-            Text("Stored in this browser.")
-                .font(.barlowRegular(size: 13))
-                .foregroundColor(Color("text_gary"))
-            
-            Button(action: {
-                showResetDemoDataAlert = true
-            }) {
-                Text("RESET ALL DEMO DATA")
-                    .font(.oswaldMedium(size: 13))
-                    .tracking(0.8)
-                    .foregroundColor(Color("Button_red"))
-                    .padding(.horizontal, 18)
-                    .frame(height: 38)
-                    .background(
-                        Capsule()
-                            .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
-                            .background(Capsule().fill(Color.white))
-                    )
-            }
-            .buttonStyle(PlainButtonStyle())
-            .padding(.top, 2)
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(red: 0xF5 / 255.0, green: 0xEE / 255.0, blue: 0xE3 / 255.0))
-        )
     }
     
     // MARK: - Helper Views & Styling
@@ -890,80 +1690,7 @@ struct UserProfileView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Sheets
-    
-    private var editPersonalInfoSheetView: some View {
-        NavigationView {
-            ZStack {
-                Color("app_background").ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        editTextField(title: "Full name", text: $fullName)
-                        editTextField(title: "Email", text: $email)
-                        editTextField(title: "Phone", text: $phone)
-                        editTextField(title: "Birthday", text: $birthday, placeholder: "e.g. Nov 14")
-                    }
-                    .padding(20)
-                }
-            }
-            .navigationTitle("Edit Information")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        if !fullName.isEmpty {
-                            initialLetter = String(fullName.prefix(1))
-                        }
-                        showEditPersonalInfoSheet = false
-                    }
-                    .font(.barlowBold(size: 16))
-                    .foregroundColor(Color("Button_red"))
-                }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        showEditPersonalInfoSheet = false
-                    }
-                    .font(.barlowRegular(size: 16))
-                    .foregroundColor(Color("text_gary"))
-                }
-            }
-        }
-    }
-    
-    private var editAllergiesSheetView: some View {
-        NavigationView {
-            ZStack {
-                Color("app_background").ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        editTextField(title: "Allergies", text: $allergiesText, placeholder: "e.g. Peanuts, Shellfish")
-                        editTextField(title: "Dietary Restrictions", text: $dietaryText, placeholder: "e.g. Vegetarian, Gluten-free")
-                    }
-                    .padding(20)
-                }
-            }
-            .navigationTitle("Edit Allergies & Diet")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        showEditAllergiesSheet = false
-                    }
-                    .font(.barlowBold(size: 16))
-                    .foregroundColor(Color("Button_red"))
-                }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        showEditAllergiesSheet = false
-                    }
-                    .font(.barlowRegular(size: 16))
-                    .foregroundColor(Color("text_gary"))
-                }
-            }
-        }
-    }
+    // MARK: - Member Pass Sheet
     
     private var memberPassSheetView: some View {
         NavigationView {
@@ -1031,25 +1758,6 @@ struct UserProfileView: View {
             }
         }
     }
-    
-    private func editTextField(title: String, text: Binding<String>, placeholder: String = "") -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.barlowBold(size: 13.5))
-                .foregroundColor(Color("app_black"))
-            
-            TextField(placeholder, text: text)
-                .font(.barlowRegular(size: 15))
-                .foregroundColor(Color("app_black"))
-                .padding(.horizontal, 14)
-                .frame(height: 48)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white))
-                )
-        }
-    }
 }
 
 // MARK: - Number Formatter Helper
@@ -1066,6 +1774,12 @@ private extension Int {
 
 struct UserProfileView_Previews: PreviewProvider {
     static var previews: some View {
-        UserProfileView()
+        Group {
+            UserProfileView(initialIsGuest: true)
+                .previewDisplayName("Guest Profile")
+            
+            UserProfileView(initialIsGuest: false)
+                .previewDisplayName("Logged-in Profile")
+        }
     }
 }

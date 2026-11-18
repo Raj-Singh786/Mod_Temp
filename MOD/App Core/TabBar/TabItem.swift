@@ -56,7 +56,9 @@ enum TabItems: String, CaseIterable {
             return UIHostingController(rootView: OrderHistoryView())
 
         case .Account:
+            let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? false
             return UIHostingController(rootView: UserProfileView(
+                initialIsGuest: isGuest,
                 onNavigateToRewards: {
                     switchToTab(2)
                 },
