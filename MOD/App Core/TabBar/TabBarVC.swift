@@ -169,6 +169,8 @@ extension TabBarVC {
             rootViewController: trackVC
         )
         
+        // MARK: Account (5th tab - direct hosting controller without BaseNavigationVC to prevent double safe-area insets)
+        
         let ProfileVC = tabItems[4].viewController
 
         ProfileVC.tabBarItem = UITabBarItem(
@@ -177,17 +179,12 @@ extension TabBarVC {
             selectedImage: tabItems[4].selectedIcon
         )
 
-        let nav5 = BaseNavigationVC(
-            rootViewController: ProfileVC
-        )
-
-
         viewControllers = [
             nav1,
             menuVC,
             serviceVC,
             nav4,
-            nav5
+            ProfileVC
         ]
 
         selectedIndex = myIndex

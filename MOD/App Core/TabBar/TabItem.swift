@@ -18,23 +18,55 @@ enum TabItems: String, CaseIterable {
     case Account = "Account"
 
     var viewController: UIViewController {
+        let switchToTab: (Int) -> Void = { targetIndex in
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
+               let tabVC = rootNav.viewControllers.first as? UITabBarController {
+                tabVC.selectedIndex = targetIndex
+            }
+        }
+        
         switch self {
         case .Home:
             let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
-            return UIHostingController(rootView: HomeView(isGuest: isGuest))
+            return UIHostingController(rootView: HomeView(
+                isGuest: isGuest,
+                onProfileTap: {
+                    switchToTab(4)
+                }
+            ))
 
         case .Menu:
-            return UIHostingController(rootView: MenuView())
+            return UIHostingController(rootView: MenuView(
+                onProfileTap: {
+                    switchToTab(4)
+                }
+            ))
 
         case .Rewards:
             let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? true
-            return UIHostingController(rootView: RewardsCoordinatorView(isGuest: isGuest))
+            return UIHostingController(rootView: RewardsCoordinatorView(
+                isGuest: isGuest,
+                onProfileTap: {
+                    switchToTab(4)
+                }
+            ))
 
         case .Orders:
             return UIHostingController(rootView: OrderHistoryView())
 
         case .Account:
-            return UIViewController()
+            return UIHostingController(rootView: UserProfileView(
+                onNavigateToRewards: {
+                    switchToTab(2)
+                },
+                onNavigateToOrders: {
+                    switchToTab(3)
+                },
+                onNavigateToHome: {
+                    switchToTab(0)
+                }
+            ))
         }
     }
 
