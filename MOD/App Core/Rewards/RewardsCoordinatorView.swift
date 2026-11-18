@@ -14,6 +14,8 @@ enum RewardsScreenState {
     case join
     case memberPass
     case userReward
+    case wallet
+    case allActivity
 }
 
 // MARK: - Auth Source
@@ -59,6 +61,7 @@ struct RewardsCoordinatorView: View {
     
     @State private var isGuest: Bool
     @State private var screenState: RewardsScreenState
+    @State private var previousStateBeforeActivity: RewardsScreenState = .wallet
     @State private var showLoginFlow: Bool = false
     @State private var authSource: RewardsAuthSource = .signIn
     @State private var fullName: String = "Raj"
@@ -110,11 +113,54 @@ struct RewardsCoordinatorView: View {
                             joinRewardsContent
                         } else if screenState == .memberPass {
                             memberPassContent
+                        } else if screenState == .wallet {
+                            AddWalletBalanceView(
+                                showHeader: false,
+                                onBack: {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        screenState = .userReward
+                                    }
+                                },
+                                onAllActivityTap: {
+                                    previousStateBeforeActivity = .wallet
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        screenState = .allActivity
+                                    }
+                                },
+                                onCartTap: onCartTap,
+                                onStarTap: {
+                                    // Star action
+                                }
+                            )
+                        } else if screenState == .allActivity {
+                            AllWalletActivityView(
+                                showHeader: false,
+                                onBack: {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        screenState = previousStateBeforeActivity
+                                    }
+                                },
+                                onCartTap: onCartTap,
+                                onStarTap: {
+                                    // Star action
+                                }
+                            )
                         } else {
                             UserRewardView(
                                 onOpenMemberPass: {
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                         screenState = .memberPass
+                                    }
+                                },
+                                onOpenWallet: {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        screenState = .wallet
+                                    }
+                                },
+                                onOpenActivity: {
+                                    previousStateBeforeActivity = .userReward
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        screenState = .allActivity
                                     }
                                 },
                                 onCartTap: onCartTap,
@@ -163,10 +209,18 @@ struct RewardsCoordinatorView: View {
     
     private var customNavigationBar: some View {
         HStack(alignment: .center) {
-            // Left: Back Button (shown only when in .join or .memberPass)
-            if screenState == .join || screenState == .memberPass {
+            // Left: Back Button (shown when in .join, .memberPass, .wallet, or .allActivity)
+            if screenState == .join || screenState == .memberPass || screenState == .wallet || screenState == .allActivity {
                 Button(action: {
-                    if screenState == .memberPass {
+                    if screenState == .allActivity {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            screenState = previousStateBeforeActivity
+                        }
+                    } else if screenState == .wallet {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            screenState = .userReward
+                        }
+                    } else if screenState == .memberPass {
                         let hasEnrolled = UserDefaults.standard.bool(forKey: "hasCompletedEnrollment")
                         if hasEnrolled {
                             withAnimation(.easeInOut(duration: 0.25)) {
@@ -211,8 +265,8 @@ struct RewardsCoordinatorView: View {
             Spacer()
             
             // Center: Title
-            Text(screenState == .guestPromo || screenState == .userReward ? "Rewards" : (screenState == .join ? "Join" : "Member pass"))
-                .font(screenState == .guestPromo || screenState == .userReward ? .oswaldMedium(size: 18) : .oswaldMedium(size: 17))
+            Text(screenState == .guestPromo || screenState == .userReward ? "Rewards" : (screenState == .join ? "Join" : (screenState == .wallet ? "Wallet" : (screenState == .allActivity ? "Activity" : "Member pass"))))
+                .font(screenState == .guestPromo || screenState == .userReward || screenState == .wallet || screenState == .allActivity ? .oswaldMedium(size: 18) : .oswaldMedium(size: 17))
                 .foregroundColor(Color("app_black"))
             
             Spacer()

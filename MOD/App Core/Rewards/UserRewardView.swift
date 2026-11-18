@@ -30,8 +30,14 @@ struct UserRewardView: View {
     // MARK: - Callbacks
     
     var onOpenMemberPass: (() -> Void)? = nil
+    var onOpenWallet: (() -> Void)? = nil
+    var onOpenActivity: (() -> Void)? = nil
     var onCartTap: (() -> Void)? = nil
     var onProfileTap: (() -> Void)? = nil
+    
+    // MARK: - Observed State
+    
+    @ObservedObject private var walletManager = WalletManager.shared
     
     // MARK: - State
     
@@ -43,6 +49,8 @@ struct UserRewardView: View {
     @State private var showAddedReceiptAlert: Bool = false
     @State private var addedReceiptMessage: String = ""
     @State private var showWalletToast: Bool = false
+    @State private var showWalletSheet: Bool = false
+    @State private var showActivitySheet: Bool = false
     @State private var showActivityToast: Bool = false
     @State private var showProfileCompleteToast: Bool = false
     @State private var isProfileFinished: Bool = false
@@ -126,6 +134,25 @@ struct UserRewardView: View {
                 title: Text("Receipt Added"),
                 message: Text(addedReceiptMessage),
                 dismissButton: .default(Text("OK"))
+            )
+        }
+        .sheet(isPresented: $showWalletSheet) {
+            AddWalletBalanceView(
+                showHeader: true,
+                onBack: {
+                    showWalletSheet = false
+                },
+                onCartTap: onCartTap
+            )
+        }
+        .sheet(isPresented: $showActivitySheet) {
+            AllWalletActivityView(
+                showHeader: true,
+                onBack: {
+                    showActivitySheet = false
+                },
+                onCartTap: onCartTap,
+                onStarTap: onProfileTap
             )
         }
     }
@@ -238,13 +265,17 @@ struct UserRewardView: View {
                     
                     // Wallet Button
                     Button(action: {
-                        showWalletToast = true
+                        if let onOpenWallet = onOpenWallet {
+                            onOpenWallet()
+                        } else {
+                            showWalletSheet = true
+                        }
                     }) {
                         HStack(spacing: 6) {
                             Image(systemName: "wallet.pass")
                                 .font(.system(size: 13, weight: .regular))
                             
-                            Text("WALLET $25.00")
+                            Text("WALLET \(walletManager.formattedGiftFunds)")
                                 .font(.oswaldMedium(size: 13))
                                 .tracking(0.8)
                         }
@@ -261,7 +292,11 @@ struct UserRewardView: View {
                 
                 // Row 2: Activity Button
                 Button(action: {
-                    showActivityToast = true
+                    if let onOpenActivity = onOpenActivity {
+                        onOpenActivity()
+                    } else {
+                        showActivitySheet = true
+                    }
                 }) {
                     Text("ACTIVITY")
                         .font(.oswaldMedium(size: 13))
