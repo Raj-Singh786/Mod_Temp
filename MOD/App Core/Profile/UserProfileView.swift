@@ -49,7 +49,6 @@ struct UserProfileView: View {
     @State private var guestEmail: String = ""
     @State private var guestPhone: String = ""
     @State private var guestOffersEmailEnabled: Bool = false
-    @State private var showLoginSheet: Bool = false
     
     // MARK: - User State
     
@@ -190,26 +189,6 @@ struct UserProfileView: View {
                     isGuest = saved
                 }
             }
-        }
-        .fullScreenCover(isPresented: $showLoginSheet) {
-            LoginView(
-                onSendCode: { destination, mode in
-                    UserDefaults.standard.set(false, forKey: "isGuestUser")
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        isGuest = false
-                        fullName = destination.components(separatedBy: "@").first ?? "Raj"
-                        email = destination
-                        initialLetter = String(fullName.prefix(1)).uppercased()
-                    }
-                    showLoginSheet = false
-                },
-                onContinueAsGuest: {
-                    showLoginSheet = false
-                },
-                onBack: {
-                    showLoginSheet = false
-                }
-            )
         }
         // Sheets
         .sheet(isPresented: $showSavedAddressesSheet) {
@@ -361,7 +340,7 @@ struct UserProfileView: View {
             HStack(spacing: 16) {
                 if isGuest {
                     Button(action: {
-                        showLoginSheet = true
+                        redirectToLogin()
                     }) {
                         Image(systemName: "person")
                             .font(.system(size: 18, weight: .regular))
@@ -461,7 +440,7 @@ struct UserProfileView: View {
             
             // SIGN IN OR JOIN Button
             Button(action: {
-                showLoginSheet = true
+                redirectToLogin()
             }) {
                 Text("SIGN IN OR JOIN")
                     .font(.oswaldMedium(size: 12))
@@ -1523,7 +1502,7 @@ struct UserProfileView: View {
             
             // Full width capsule button
             Button(action: {
-                showLoginSheet = true
+                redirectToLogin()
             }) {
                 Text("JOIN MOD REWARDS")
                     .font(.oswaldMedium(size: 14))
@@ -1772,6 +1751,16 @@ struct UserProfileView: View {
                     .foregroundColor(Color("Button_red"))
                 }
             }
+        }
+    }
+    
+    // MARK: - Login Redirection Helper
+    
+    private func redirectToLogin() {
+        if let appDelegate = kSharedAppDelegate {
+            appDelegate.moveToAuth(initialDestination: .login)
+        } else {
+            AccountSheetManager.shared.handleStarTap()
         }
     }
 }

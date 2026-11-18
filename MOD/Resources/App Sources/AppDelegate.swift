@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SwiftUI
 import IQKeyboardManagerSwift
 
 @main
@@ -50,5 +51,22 @@ extension AppDelegate {
         navVC.isNavigationBarHidden = true
         sceneDelegate.window?.rootViewController = navVC
         tabBarVC.selectedIndex = selectedIndex
+    }
+
+    func moveToAuth(initialDestination: AuthDestination = .login) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let sceneDelegate = windowScene.delegate as? SceneDelegate else { return }
+        let authCoordinator = AuthCoordinatorView(initialDestination: initialDestination)
+        let hostingVC = UIHostingController(rootView: authCoordinator)
+        let navVC = UINavigationController(rootViewController: hostingVC)
+        navVC.isNavigationBarHidden = true
+        
+        if let window = sceneDelegate.window {
+            UIView.transition(with: window, duration: 0.35, options: .transitionCrossDissolve, animations: {
+                window.rootViewController = navVC
+            })
+        } else {
+            sceneDelegate.window?.rootViewController = navVC
+        }
     }
 }

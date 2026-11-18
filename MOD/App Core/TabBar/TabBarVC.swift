@@ -80,13 +80,13 @@ extension TabBarVC {
         }
         
         NotificationCenter.default.addObserver(forName: .presentGlobalLoginNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.presentLoginSheet()
+            self?.redirectToOriginalLogin()
         }
         
         NotificationCenter.default.addObserver(forName: .handleStarTapNotification, object: nil, queue: .main) { [weak self] _ in
             let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? false
             if isGuest {
-                self?.presentLoginSheet()
+                self?.redirectToOriginalLogin()
             } else {
                 self?.presentSettingUserInfoSheet()
             }
@@ -376,28 +376,11 @@ extension TabBarVC {
         topVC.present(hostingVC, animated: false)
     }
 
-    private func presentLoginSheet() {
-        let loginView = LoginView(
-            onSendCode: { [weak self] destination, mode in
-                UserDefaults.standard.set(false, forKey: "isGuestUser")
-                self?.dismissTopModal()
-            },
-            onContinueAsGuest: { [weak self] in
-                self?.dismissTopModal()
-            },
-            onBack: { [weak self] in
-                self?.dismissTopModal()
-            }
-        )
-        
-        let hostingVC = UIHostingController(rootView: loginView)
-        hostingVC.modalPresentationStyle = .fullScreen
-        
-        var topVC: UIViewController = self
-        while let presented = topVC.presentedViewController {
-            topVC = presented
+    private func redirectToOriginalLogin() {
+        dismissTopModal()
+        if let appDelegate = kSharedAppDelegate {
+            appDelegate.moveToAuth(initialDestination: .login)
         }
-        topVC.present(hostingVC, animated: true)
     }
     
     private func presentWalletSheet() {

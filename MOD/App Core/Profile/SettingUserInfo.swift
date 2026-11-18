@@ -25,7 +25,11 @@ final class AccountSheetManager: ObservableObject {
     func handleStarTap() {
         let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? false
         if isGuest {
-            NotificationCenter.default.post(name: .presentGlobalLoginNotification, object: nil)
+            if let appDelegate = kSharedAppDelegate {
+                appDelegate.moveToAuth(initialDestination: .login)
+            } else {
+                NotificationCenter.default.post(name: .presentGlobalLoginNotification, object: nil)
+            }
         } else {
             NotificationCenter.default.post(name: .presentGlobalAccountNotification, object: nil)
         }

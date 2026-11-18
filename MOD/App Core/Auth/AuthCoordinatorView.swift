@@ -20,9 +20,18 @@ enum AuthDestination: Hashable {
 
 struct AuthCoordinatorView: View {
     
+    // MARK: - Initial Destination
+    
+    var initialDestination: AuthDestination? = nil
+    
     // MARK: - Navigation Path
     
     @State private var navigationPath = NavigationPath()
+    
+    init(initialDestination: AuthDestination? = nil) {
+        self.initialDestination = initialDestination
+        self._navigationPath = State(initialValue: NavigationPath())
+    }
     
     // MARK: - Actions
     
@@ -41,14 +50,27 @@ struct AuthCoordinatorView: View {
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            OnboardingView(
-                onSkip: {
-                    navigationPath.append(AuthDestination.promotion)
-                },
-                onFinish: {
-                    navigationPath.append(AuthDestination.promotion)
+            Group {
+                if initialDestination == .login {
+                    LoginView(
+                        onSendCode: { destination, mode in
+                            navigationPath.append(AuthDestination.otp(destination: destination, mode: mode))
+                        },
+                        onContinueAsGuest: {
+                            handleMoveToTabBar(isGuest: true, selectedIndex: 0)
+                        }
+                    )
+                } else {
+                    OnboardingView(
+                        onSkip: {
+                            navigationPath.append(AuthDestination.promotion)
+                        },
+                        onFinish: {
+                            navigationPath.append(AuthDestination.promotion)
+                        }
+                    )
                 }
-            )
+            }
             .navigationBarBackButtonHidden(true)
             .navigationDestination(for: AuthDestination.self) { destination in
                 switch destination {
