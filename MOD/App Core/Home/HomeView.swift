@@ -331,161 +331,183 @@ struct HomeView: View {
     
     // MARK: - Hero Banner Card
     
-    private var heroBannerCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Top Tag
-            HStack(spacing: 6) {
-                Image(systemName: "flame.fill")
-                    .font(.system(size: 11))
-                Text("FIRED IN MINUTES · TOPPINGS INCLUDED")
-                    .font(.oswaldMedium(size: 11.5))
-                    .tracking(1.2)
-            }
-            .foregroundColor(.white)
-            .padding(.top, 20)
-            .padding(.horizontal, 20)
-            
-            // Headline (YOUR PIZZA is app_white, YOUR WAY is pizza_found)
-            VStack(alignment: .leading, spacing: -8) {   // try -4 to -12
-                Text("YOUR PIZZA.")
-                    .font(.oswaldMedium(size: 34))
-                    .tracking(0.6)
-                    .foregroundColor(Color("app_white"))
-                
-                Text("YOUR WAY.")
-                    .font(.oswaldMedium(size: 34))
-                    .tracking(0.6)
-                    .foregroundColor(Color("pizza_found"))
-            }
-            .padding(.top, 10)
-            .padding(.horizontal, 20)
-            
-            
-            // Description
-            Text("Pile on what you love, split it down the middle, or grab a go-to in two taps. Every pizza is made on demand.")
-                .font(.barlowRegular(size: 13.5))
-                .foregroundColor(.white.opacity(0.9))
-                .lineSpacing(3)
-                .padding(.top, 8)
-                .padding(.horizontal, 20)
-            
-            // Action Buttons
-            HStack(spacing: 10) {
-                // Start Your Order Button
-                Button(action: {
-                    MenuCoordinator.shared.selectCategoryAndOpenMenu(.all)
-                    showMenuView = true
-                    onStartOrder?()
-                }) {
-                    HStack(spacing: 6) {
-                        Text("START YOUR ORDER")
-                            .font(.oswaldMedium(size: 13.5))
-                            .tracking(1.0)
-                            .foregroundColor(Color("Button_red"))
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(Color("Button_red"))
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(height: 42)
-                    .background(
-                        Capsule()
-                            .fill(Color.white)
-                    )
+    //
+    //  HomeView_HeroBanner.swift
+    //
+    //  HOW TO USE
+    //  In HomeView.swift, delete everything from
+    //      // MARK: - Hero Banner Card
+    //  down to the end of `madeYourWayBadge` (just above
+    //      // MARK: - Order Mode & Store Selector Card ),
+    //  and paste the two members below in its place.
+    //  Nothing else in HomeView changes: it uses the same @State (pizzaRotation,
+    //  showMenuView, showBuildYourPizzaHero) and the same callbacks as before.
+    //
+
+        // MARK: - Hero Banner Card
+        
+        private var heroBannerCard: some View {
+            VStack(alignment: .leading, spacing: 0) {
+                // Top tag (outlined flame, slightly softer white, like the prototype)
+                HStack(spacing: 7) {
+                    Image(systemName: "flame")
+                        .font(.system(size: 11.5, weight: .regular))
+                    Text("FIRED IN MINUTES · TOPPINGS INCLUDED")
+                        .font(.oswaldMedium(size: 11.5))
+                        .tracking(1.2)
                 }
-                .buttonStyle(PlainButtonStyle())
+                .foregroundColor(.white.opacity(0.88))
+                .padding(.top, 26)
+                .padding(.horizontal, 20)
                 
-                // Build Your Pizza Button
-                Button(action: {
-                    if let onBuildPizza = onBuildPizza {
-                        onBuildPizza()
-                    } else {
-                        showBuildYourPizzaHero = true
-                    }
-                }) {
-                    Text("BUILD YOUR PIZZA")
-                        .font(.oswaldMedium(size: 13.5))
-                        .tracking(1.0)
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
+                // Headline: smaller and tightly stacked
+                VStack(alignment: .leading, spacing: -12) {
+                    Text("YOUR PIZZA.")
+                        .font(.oswaldMedium(size: 28))
+                        .tracking(0.4)
+                        .foregroundColor(Color("app_white"))
+                    
+                    Text("YOUR WAY.")
+                        .font(.oswaldMedium(size: 28))
+                        .tracking(0.4)
+                        .foregroundColor(Color("pizza_found"))
+                }
+                .padding(.top, 10)
+                .padding(.horizontal, 20)
+                
+                // Description: larger text with more line spacing (wraps to 3 lines)
+                Text("Pile on what you love, split it down the middle, or grab a go-to in two taps. Every pizza is made on demand.")
+                    .font(.barlowRegular(size: 14.5))
+                    .foregroundColor(.white.opacity(0.88))
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 8)
+                    .padding(.horizontal, 20)
+                
+                // Action buttons (a little taller than before)
+                HStack(spacing: 10) {
+                    // Start Your Order
+                    Button(action: {
+                        MenuCoordinator.shared.selectCategoryAndOpenMenu(.all)
+                        showMenuView = true
+                        onStartOrder?()
+                    }) {
+                        HStack(spacing: 6) {
+                            Text("START YOUR ORDER")
+                                .font(.oswaldMedium(size: 13.5))
+                                .tracking(1.0)
+                                .foregroundColor(Color("Button_red"))
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(Color("Button_red"))
+                        }
                         .padding(.horizontal, 16)
-                        .frame(height: 42)
+                        .frame(height: 44)
                         .background(
                             Capsule()
-                                .stroke(Color.white.opacity(0.55), lineWidth: 1.2)
-                                .background(Capsule().fill(Color.white.opacity(0.12)))
+                                .fill(Color.white)
                         )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    // Build Your Pizza
+                    Button(action: {
+                        if let onBuildPizza = onBuildPizza {
+                            onBuildPizza()
+                        } else {
+                            showBuildYourPizzaHero = true
+                        }
+                    }) {
+                        Text("BUILD YOUR PIZZA")
+                            .font(.oswaldMedium(size: 13.5))
+                            .tracking(1.0)
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.horizontal, 16)
+                            .frame(height: 44)
+                            .background(
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.35), lineWidth: 1.2)
+                                    .background(Capsule().fill(Color.white.opacity(0.16)))
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(.top, 16)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 16)
-            
-            // Pizza Cutout Graphic with Cream Arch Dome
-            ZStack(alignment: .bottom) {
-                // 1. Cream Dome Background Arch (spans across the bottom of the card)
-                Circle()
-                    .fill(Color("pizza_found"))
-                    .frame(width: 380, height: 380)
-                    .offset(y: 110)
+                .padding(.top, 16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 18)
                 
-                // 2. Centered PizzaOn Image (with continuous rotation)
-                Image("PizzaOn")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 270, height: 270)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: 4)
-                    .rotationEffect(.degrees(pizzaRotation))
-                    .offset(y: 42)
+                // Cream dome + pizza.
+                // Color.clear fixes the size (card width x 230). The dome and pizza live in an
+                // overlay, so the oversized 580pt circle can't widen the card; .clipped() trims it.
+                Color.clear
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 230)
+                    .overlay(alignment: .top) {
+                        ZStack(alignment: .top) {
+                            // Wide, flat dome: 580pt circle => arc drops ~65pt at the card edges
+                            Circle()
+                                .fill(Color("pizza_found"))
+                                .frame(width: 580, height: 580)
+                            
+                            // Swap "PizzaOn" for your new striped pizza asset (e.g. "PizzaHero")
+                            Image("PizzaOn")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 270, height: 270)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: 4)
+                                .rotationEffect(.degrees(pizzaRotation))
+                                .offset(y: 71)
+                        }
+                    }
+                    .clipped()
+                    // Sticker is applied AFTER .clipped() so the part above the dome isn't cut off
+                    .overlay(alignment: .topTrailing) {
+                        madeYourWayBadge
+                            .padding(.trailing, 15)
+                            .offset(y: -6)
+                    }
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 205)
-            .clipped()
-            // 3. "MADE YOUR WAY" sticker: top-right, straddling the dome edge.
-            //    Applied AFTER .clipped() so the part sticking out above the dome isn't cut off.
-            .overlay(alignment: .topTrailing) {
-                madeYourWayBadge
-                    .padding(.trailing, 18)
-                    .offset(y: -1)
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Deeper maroon like the prototype (was Button_red)
+            .background(Color(red: 0x75 / 255.0, green: 0x1E / 255.0, blue: 0x29 / 255.0))
+            // Clip everything (dome corners included) to the card's rounded shape
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color("Button_red"))
-        )
-        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
-    }
+        
+        // MARK: - "MADE YOUR WAY" Sticker Badge
+        
+        private var madeYourWayBadge: some View {
+            VStack(spacing: 2) {
+                Text("MADE")
+                    .font(.oswaldBold(size: 12.5))
+                    .tracking(0.7)
+                Text("YOUR")
+                    .font(.oswaldBold(size: 19))
+                    .tracking(0.7)
+                Text("WAY")
+                    .font(.oswaldBold(size: 12.5))
+                    .tracking(0.7)
+            }
+            .foregroundColor(Color("Button_red"))
+            .frame(width: 92, height: 92)
+            .background(
+                Circle()
+                    .fill(Color.white)
+                    .shadow(color: Color.black.opacity(0.22), radius: 8, x: 0, y: 4)
+            )
+            .rotationEffect(.degrees(-10))
+        }
     
     // MARK: - "MADE YOUR WAY" Sticker Badge
     
-    private var madeYourWayBadge: some View {
-        VStack(spacing: 1.5) {
-            Text("MADE")
-                .font(.oswaldBold(size: 11))
-                .tracking(0.6)
-            Text("YOUR")
-                .font(.oswaldBold(size: 16))
-                .tracking(0.6)
-            Text("WAY")
-                .font(.oswaldBold(size: 11))
-                .tracking(0.6)
-        }
-        .foregroundColor(Color("Button_red"))
-        .frame(width: 78, height: 78)
-        .background(
-            Circle()
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 3)
-        )
-        .rotationEffect(.degrees(-10))
-    }
+    
     
     // MARK: - Order Mode & Store Selector Card
     
