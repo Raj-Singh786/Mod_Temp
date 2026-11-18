@@ -376,9 +376,7 @@ struct GroupDealView: View {
                     if let onStarTap = onStarTap {
                         onStarTap()
                     } else {
-                        alertTitle = "MOD Rewards"
-                        alertMessage = "You have 1,240 rewards points active."
-                        showAlert = true
+                        AccountSheetManager.shared.handleStarTap()
                     }
                 }) {
                     Image(systemName: "star")

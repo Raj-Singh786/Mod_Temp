@@ -74,6 +74,27 @@ extension TabBarVC {
         NotificationCenter.default.addObserver(forName: .selectMenuTabWithCategory, object: nil, queue: .main) { [weak self] _ in
             self?.selectedIndex = 1
         }
+        
+        NotificationCenter.default.addObserver(forName: .presentGlobalAccountNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.presentSettingUserInfoSheet()
+        }
+        
+        NotificationCenter.default.addObserver(forName: .presentGlobalLoginNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.presentLoginSheet()
+        }
+        
+        NotificationCenter.default.addObserver(forName: .handleStarTapNotification, object: nil, queue: .main) { [weak self] _ in
+            let isGuest = (UserDefaults.standard.object(forKey: "isGuestUser") as? Bool) ?? false
+            if isGuest {
+                self?.presentLoginSheet()
+            } else {
+                self?.presentSettingUserInfoSheet()
+            }
+        }
+        
+        NotificationCenter.default.addObserver(forName: Notification.Name("showWalletDirectlyNotification"), object: nil, queue: .main) { [weak self] _ in
+            self?.presentWalletSheet()
+        }
     }
 
 
@@ -313,6 +334,96 @@ extension TabBarVC {
             topVC = presented
         }
         topVC.present(cartVC, animated: true)
+    }
+
+    private func presentSettingUserInfoSheet() {
+        let settingView = SettingUserInfo(
+            onDismiss: { [weak self] in
+                self?.dismissTopModal()
+            },
+            onNavigateToRewards: { [weak self] in
+                self?.dismissTopModal()
+                self?.selectedIndex = 2
+            },
+            onNavigateToWallet: { [weak self] in
+                self?.dismissTopModal()
+                self?.presentWalletSheet()
+            },
+            onNavigateToOrders: { [weak self] in
+                self?.dismissTopModal()
+                self?.selectedIndex = 3
+            },
+            onNavigateToAccountSettings: { [weak self] in
+                self?.dismissTopModal()
+                self?.selectedIndex = 4
+            },
+            onSignOut: { [weak self] in
+                UserDefaults.standard.set(true, forKey: "isGuestUser")
+                NotificationCenter.default.post(name: .userLoggedOutNotification, object: nil)
+                self?.dismissTopModal()
+                self?.selectedIndex = 0
+            }
+        )
+        
+        let hostingVC = UIHostingController(rootView: settingView)
+        hostingVC.modalPresentationStyle = .overFullScreen
+        hostingVC.view.backgroundColor = .clear
+        
+        var topVC: UIViewController = self
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+        topVC.present(hostingVC, animated: false)
+    }
+
+    private func presentLoginSheet() {
+        let loginView = LoginView(
+            onSendCode: { [weak self] destination, mode in
+                UserDefaults.standard.set(false, forKey: "isGuestUser")
+                self?.dismissTopModal()
+            },
+            onContinueAsGuest: { [weak self] in
+                self?.dismissTopModal()
+            },
+            onBack: { [weak self] in
+                self?.dismissTopModal()
+            }
+        )
+        
+        let hostingVC = UIHostingController(rootView: loginView)
+        hostingVC.modalPresentationStyle = .fullScreen
+        
+        var topVC: UIViewController = self
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+        topVC.present(hostingVC, animated: true)
+    }
+    
+    private func presentWalletSheet() {
+        let walletVC = UIHostingController(rootView: AddWalletBalanceView(
+            showHeader: true,
+            onBack: { [weak self] in
+                self?.dismissTopModal()
+            }
+        ))
+        walletVC.modalPresentationStyle = .fullScreen
+        
+        var topVC: UIViewController = self
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+        topVC.present(walletVC, animated: true)
+    }
+
+    private func dismissTopModal() {
+        var topVC: UIViewController = self
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+        if topVC != self {
+            topVC.dismiss(animated: true)
+        }
     }
 }
 

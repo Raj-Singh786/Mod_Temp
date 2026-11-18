@@ -157,6 +157,10 @@ final class WalletManager: ObservableObject {
     
     // MARK: - Formatted Strings
     
+    var totalFunds: Double {
+        giftWalletFunds + serviceCredit
+    }
+    
     var formattedGiftFunds: String {
         String(format: "$%.2f", giftWalletFunds)
     }

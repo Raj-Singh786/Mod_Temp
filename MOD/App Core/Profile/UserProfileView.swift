@@ -179,7 +179,19 @@ struct UserProfileView: View {
                 isGuest = saved
             }
         }
-        .sheet(isPresented: $showLoginSheet) {
+        .onReceive(NotificationCenter.default.publisher(for: .userLoggedOutNotification)) { _ in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                isGuest = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            if let saved = UserDefaults.standard.object(forKey: "isGuestUser") as? Bool {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isGuest = saved
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showLoginSheet) {
             LoginView(
                 onSendCode: { destination, mode in
                     UserDefaults.standard.set(false, forKey: "isGuestUser")
@@ -358,7 +370,11 @@ struct UserProfileView: View {
                     .buttonStyle(PlainButtonStyle())
                 } else {
                     Button(action: {
-                        onStarTap?()
+                        if let onStarTap = onStarTap {
+                            onStarTap()
+                        } else {
+                            AccountSheetManager.shared.handleStarTap()
+                        }
                     }) {
                         Image(systemName: "star")
                             .font(.system(size: 18, weight: .regular))

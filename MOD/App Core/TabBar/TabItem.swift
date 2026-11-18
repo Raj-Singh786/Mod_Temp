@@ -32,14 +32,14 @@ enum TabItems: String, CaseIterable {
             return UIHostingController(rootView: HomeView(
                 isGuest: isGuest,
                 onProfileTap: {
-                    switchToTab(4)
+                    AccountSheetManager.shared.handleStarTap()
                 }
             ))
 
         case .Menu:
             return UIHostingController(rootView: MenuView(
                 onProfileTap: {
-                    switchToTab(4)
+                    AccountSheetManager.shared.handleStarTap()
                 }
             ))
 
@@ -48,7 +48,7 @@ enum TabItems: String, CaseIterable {
             return UIHostingController(rootView: RewardsCoordinatorView(
                 isGuest: isGuest,
                 onProfileTap: {
-                    switchToTab(4)
+                    AccountSheetManager.shared.handleStarTap()
                 }
             ))
 

@@ -291,7 +291,7 @@ struct RewardsCoordinatorView: View {
                 } else {
                     // Star Button
                     Button(action: {
-                        // Star action
+                        AccountSheetManager.shared.handleStarTap()
                     }) {
                         Image(systemName: "star")
                             .font(.system(size: 18, weight: .regular))

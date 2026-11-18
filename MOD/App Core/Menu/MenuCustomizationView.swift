@@ -606,7 +606,11 @@ struct MenuCustomizationView: View {
             // Right: Star & Red Cart Icons
             HStack(spacing: 16) {
                 Button(action: {
-                    onStarTap?()
+                    if let onStarTap = onStarTap {
+                        onStarTap()
+                    } else {
+                        AccountSheetManager.shared.handleStarTap()
+                    }
                 }) {
                     Image(systemName: "star")
                         .font(.system(size: 18, weight: .regular))

@@ -171,9 +171,7 @@ struct GroupDealCustomizationView: View {
                     if let onStarTap = onStarTap {
                         onStarTap()
                     } else {
-                        alertTitle = "MOD Rewards"
-                        alertMessage = "Rewards points will be awarded to host upon checkout."
-                        showAlert = true
+                        AccountSheetManager.shared.handleStarTap()
                     }
                 }) {
                     Image(systemName: "star")
