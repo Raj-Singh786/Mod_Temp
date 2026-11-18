@@ -95,6 +95,11 @@ extension TabBarVC {
         NotificationCenter.default.addObserver(forName: Notification.Name("showWalletDirectlyNotification"), object: nil, queue: .main) { [weak self] _ in
             self?.presentWalletSheet()
         }
+        
+        NotificationCenter.default.addObserver(forName: .userLoggedOutNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.dismissTopModal()
+            self?.selectedIndex = 0
+        }
     }
 
 

@@ -43,6 +43,7 @@ extension Notification.Name {
     static let presentGlobalLoginNotification = Notification.Name("presentGlobalLoginNotification")
     static let handleStarTapNotification = Notification.Name("handleStarTapNotification")
     static let userLoggedOutNotification = Notification.Name("userLoggedOutNotification")
+    static let userLoggedInNotification = Notification.Name("userLoggedInNotification")
 }
 
 // MARK: - Reusable Top Star Button Component
@@ -90,7 +91,6 @@ struct SettingUserInfo: View {
     var initialLetter: String = "J"
     
     @State private var showMemberPassModal: Bool = false
-    @State private var showSignOutAlert: Bool = false
     
     @Environment(\.presentationMode) private var presentationMode
     
@@ -176,7 +176,7 @@ struct SettingUserInfo: View {
                 
                 // SIGN OUT Button (Capsule)
                 Button(action: {
-                    showSignOutAlert = true
+                    handleSignOut()
                 }) {
                     Text("SIGN OUT")
                         .font(.oswaldMedium(size: 14))
@@ -208,27 +208,6 @@ struct SettingUserInfo: View {
                 onDismiss: {
                     showMemberPassModal = false
                 }
-            )
-        }
-        .alert(isPresented: $showSignOutAlert) {
-            Alert(
-                title: Text("Sign Out"),
-                message: Text("Are you sure you want to sign out of your MOD account?"),
-                primaryButton: .destructive(Text("Sign Out")) {
-                    UserDefaults.standard.set(true, forKey: "isGuestUser")
-                    NotificationCenter.default.post(name: .userLoggedOutNotification, object: nil)
-                    if let onSignOut = onSignOut {
-                        onSignOut()
-                    } else {
-                        dismissView()
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
-                           let tabVC = rootNav.viewControllers.first as? UITabBarController {
-                            tabVC.selectedIndex = 0
-                        }
-                    }
-                },
-                secondaryButton: .cancel()
             )
         }
     }
@@ -378,6 +357,18 @@ struct SettingUserInfo: View {
     }
     
     // MARK: - Helpers
+    
+    private func handleSignOut() {
+        UserDefaults.standard.set(true, forKey: "isGuestUser")
+        UserDefaults.standard.synchronize()
+        NotificationCenter.default.post(name: .userLoggedOutNotification, object: nil)
+        if let onSignOut = onSignOut {
+            onSignOut()
+        } else {
+            dismissView()
+            switchToTab(0)
+        }
+    }
     
     private func dismissView() {
         if let onDismiss = onDismiss {

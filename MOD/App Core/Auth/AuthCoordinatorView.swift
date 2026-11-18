@@ -106,8 +106,10 @@ struct AuthCoordinatorView: View {
                         destination: destination,
                         mode: mode,
                         onVerificationSuccess: {
-                            // User Logged In (Not Guest user) -> Open 3rd tab of Tab Bar (Rewards, index 2)
-                            handleMoveToTabBar(isGuest: false, selectedIndex: 2)
+                            UserDefaults.standard.set(false, forKey: "isGuestUser")
+                            UserDefaults.standard.synchronize()
+                            NotificationCenter.default.post(name: .userLoggedInNotification, object: nil)
+                            handleMoveToTabBar(isGuest: false, selectedIndex: 0)
                         },
                         onContinueAsGuest: {
                             handleMoveToTabBar(isGuest: true, selectedIndex: 0)

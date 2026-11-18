@@ -36,6 +36,10 @@ struct HomeView: View {
     // MARK: - Properties
     
     var isGuest: Bool = true
+    var userPoints: Int = 1240
+    var targetPoints: Int = 1500
+    var userTier: String = "Silver"
+    var lifetimePointsToGold: Int = 2900
     
     // MARK: - Callbacks
     
@@ -55,6 +59,8 @@ struct HomeView: View {
     
     // MARK: - State
     
+    @State private var currentIsGuest: Bool = true
+    @State private var showMemberPassModal: Bool = false
     @State private var selectedOrderType: Int = 0 // 0: Pickup, 1: Delivery
     @State private var selectedStoreName: String = "Capitol Hill, Seattle"
     @State private var deliveryAddress: String = "Add a delivery address"
@@ -157,11 +163,16 @@ struct HomeView: View {
                         // "FAVORITES IN YOUR AREA" Menu Section
                         favoritesSection
                         
-                        // Sign In Rewards Teaser
-                        signInTeaser
-                        
-                        // MOD REWARDS Banner Card
-                        modRewardsCard
+                        if currentIsGuest {
+                            // Sign In Rewards Teaser (Snap 1)
+                            signInTeaser
+                            
+                            // MOD REWARDS Banner Card for Guest (Snap 1)
+                            modRewardsCard
+                        } else {
+                            // MOD REWARDS Logged-In Card (Snap 2)
+                            loggedInRewardsCard
+                        }
                         
                         // FEATURED OFFER Card
                         featuredOfferCard
@@ -232,9 +243,40 @@ struct HomeView: View {
                 }
             )
         }
+        .sheet(isPresented: $showMemberPassModal) {
+            DigitalMemberPassSheet(
+                userName: "Jordan Rivera",
+                tierName: userTier,
+                onDismiss: {
+                    showMemberPassModal = false
+                }
+            )
+        }
         .onAppear {
             withAnimation(.linear(duration: 35).repeatForever(autoreverses: false)) {
                 pizzaRotation = 360
+            }
+            if let saved = UserDefaults.standard.object(forKey: "isGuestUser") as? Bool {
+                currentIsGuest = saved
+            } else {
+                currentIsGuest = isGuest
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .userLoggedOutNotification)) { _ in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                currentIsGuest = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .userLoggedInNotification)) { _ in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                currentIsGuest = false
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            if let saved = UserDefaults.standard.object(forKey: "isGuestUser") as? Bool {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    currentIsGuest = saved
+                }
             }
         }
     }
@@ -253,13 +295,17 @@ struct HomeView: View {
                 Spacer()
             }
             
-            // Center: Person and Cart icons in the exact middle of the screen
+            // Center: Star and Cart icons in the exact middle of the screen
             HStack(spacing: 18) {
-                // Profile Button
+                // Star Button (Tapping opens AccountSheet / redirects to Login if guest)
                 Button(action: {
-                    onProfileTap?()
+                    if let onProfileTap = onProfileTap {
+                        onProfileTap()
+                    } else {
+                        AccountSheetManager.shared.handleStarTap()
+                    }
                 }) {
-                    Image(systemName: "person")
+                    Image(systemName: "star")
                         .font(.system(size: 20, weight: .regular))
                         .foregroundColor(Color("app_black"))
                         .frame(width: 34, height: 34)
@@ -1022,7 +1068,7 @@ struct HomeView: View {
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
     
-    // MARK: - Sign In Rewards Teaser
+    // MARK: - Sign In Rewards Teaser (Guest Mode - Snap 1)
     
     private var signInTeaser: some View {
         HStack(spacing: 6) {
@@ -1031,7 +1077,7 @@ struct HomeView: View {
                 .foregroundColor(Color("Button_red"))
             
             Button(action: {
-                onSignIn?()
+                handleSignInTap()
             }) {
                 Text("Sign in")
                     .font(.barlowSemiBold(size: 13))
@@ -1040,7 +1086,7 @@ struct HomeView: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            Text("to always earn points and reorder in one tap.")
+            Text("to see your go-to orders and reorder in one tap.")
                 .font(.barlowRegular(size: 13))
                 .foregroundColor(Color("text_gary"))
             
@@ -1050,7 +1096,7 @@ struct HomeView: View {
         .padding(.vertical, 4)
     }
     
-    // MARK: - MOD REWARDS Banner Card
+    // MARK: - MOD REWARDS Banner Card (Guest Mode - Snap 1)
     
     private var modRewardsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1069,7 +1115,7 @@ struct HomeView: View {
                 .padding(.top, 6)
             
             // Description
-            Text("10 points per $1. Free pizza at 1500 points, member-only coupons and a digital wallet.")
+            Text("10 points per $1, free pizza at 1,500 points,\nmember-only coupons and a digital wallet.")
                 .font(.barlowRegular(size: 13))
                 .foregroundColor(.white.opacity(0.85))
                 .lineSpacing(2)
@@ -1078,13 +1124,13 @@ struct HomeView: View {
             // Buttons
             HStack(spacing: 10) {
                 Button(action: {
-                    onSignIn?()
+                    handleSignInTap()
                 }) {
                     Text("SIGN IN")
                         .font(.oswaldMedium(size: 13))
                         .tracking(1.0)
                         .foregroundColor(Color("Button_red"))
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 18)
                         .frame(height: 36)
                         .background(
                             Capsule()
@@ -1094,17 +1140,21 @@ struct HomeView: View {
                 .buttonStyle(PlainButtonStyle())
                 
                 Button(action: {
-                    onJoinRewards?()
+                    handleJoinRewardsTap()
                 }) {
                     Text("JOIN MOD REWARDS")
                         .font(.oswaldMedium(size: 13))
                         .tracking(1.0)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 18)
                         .frame(height: 36)
                         .background(
                             Capsule()
                                 .fill(Color.white.opacity(0.18))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.white.opacity(0.32), lineWidth: 1.0)
+                                )
                         )
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -1112,7 +1162,7 @@ struct HomeView: View {
             .padding(.top, 14)
             
             // Footnote
-            Text("Passwordless: we text or email your code.")
+            Text("Passwordless — we text or email you a code.")
                 .font(.barlowRegular(size: 11.5))
                 .foregroundColor(.white.opacity(0.55))
                 .padding(.top, 10)
@@ -1121,20 +1171,206 @@ struct HomeView: View {
         .padding(.horizontal, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color(red: 0x22 / 255.0, green: 0x1A / 255.0, blue: 0x1D / 255.0),
-                            Color(red: 0x3E / 255.0, green: 0x1B / 255.0, blue: 0x22 / 255.0),
-                            Color(red: 0x26 / 255.0, green: 0x18 / 255.0, blue: 0x1B / 255.0)
+                            Color(red: 0x1E / 255.0, green: 0x1A / 255.0, blue: 0x1C / 255.0),
+                            Color(red: 0x24 / 255.0, green: 0x19 / 255.0, blue: 0x1E / 255.0),
+                            Color(red: 0x4D / 255.0, green: 0x18 / 255.0, blue: 0x24 / 255.0)
                         ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        startPoint: .bottomLeading,
+                        endPoint: .topTrailing
                     )
                 )
         )
         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 3)
+    }
+    
+    // MARK: - Logged-In Member Rewards Card (Snap 2)
+    
+    private var loggedInRewardsCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header Row: Tag & Digital Pass Icon
+            HStack(alignment: .center) {
+                Text("MOD REWARDS · \(userTier.uppercased())")
+                    .font(.oswaldMedium(size: 13))
+                    .tracking(1.4)
+                    .foregroundColor(.white.opacity(0.85))
+                
+                Spacer()
+                
+                // Digital Member Pass Button
+                Button(action: {
+                    showMemberPassModal = true
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(width: 38, height: 38)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.24), lineWidth: 1.0)
+                            )
+                        
+                        Image(systemName: "creditcard")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.top, 20)
+            
+            // Points Display
+            Text("\(userPoints.formattedWithSeparator) pts")
+                .font(.oswaldMedium(size: 44))
+                .tracking(0.6)
+                .foregroundColor(.white)
+                .padding(.top, 6)
+            
+            // Subtitle
+            Text("Enrolled member")
+                .font(.barlowRegular(size: 14))
+                .foregroundColor(.white.opacity(0.72))
+                .padding(.top, 2)
+            
+            // Progress Bar
+            GeometryReader { geo in
+                let progress = min(max(CGFloat(userPoints) / CGFloat(targetPoints), 0.0), 1.0)
+                ZStack(alignment: .leading) {
+                    // Track
+                    Capsule()
+                        .fill(Color.white.opacity(0.16))
+                        .frame(height: 8)
+                    
+                    // Fill (Golden gradient matching snapshot)
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0xF2 / 255.0, green: 0xC1 / 255.0, blue: 0x5D / 255.0),
+                                    Color(red: 0xFF / 255.0, green: 0xFA / 255.0, blue: 0xEB / 255.0)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(geo.size.width * progress, 8), height: 8)
+                }
+            }
+            .frame(height: 8)
+            .padding(.top, 16)
+            
+            // Points to next milestone
+            let remainingPoints = max(targetPoints - userPoints, 0)
+            Text("\(remainingPoints) pts to a free pizza")
+                .font(.barlowBold(size: 15))
+                .foregroundColor(.white)
+                .padding(.top, 12)
+            
+            // Lifetime points info
+            Text("\(lifetimePointsToGold.formattedWithSeparator) lifetime pts to Gold (1.5× earning)")
+                .font(.barlowRegular(size: 13))
+                .foregroundColor(.white.opacity(0.72))
+                .padding(.top, 4)
+            
+            // Bottom Action Buttons: REDEEM & WALLET
+            HStack(spacing: 12) {
+                // REDEEM Button
+                Button(action: {
+                    switchToTab(2) // Switch to Rewards Tab
+                }) {
+                    Text("REDEEM")
+                        .font(.oswaldMedium(size: 13.5))
+                        .tracking(1.0)
+                        .foregroundColor(Color("Button_red"))
+                        .padding(.horizontal, 22)
+                        .frame(height: 38)
+                        .background(
+                            Capsule()
+                                .fill(Color.white)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                // WALLET Button
+                Button(action: {
+                    NotificationCenter.default.post(name: Notification.Name("showWalletDirectlyNotification"), object: nil)
+                }) {
+                    Text("WALLET")
+                        .font(.oswaldMedium(size: 13.5))
+                        .tracking(1.0)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 22)
+                        .frame(height: 38)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.18))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.white.opacity(0.30), lineWidth: 1.0)
+                                )
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Spacer()
+            }
+            .padding(.top, 18)
+            .padding(.bottom, 22)
+        }
+        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0x1E / 255.0, green: 0x1A / 255.0, blue: 0x1C / 255.0),
+                            Color(red: 0x24 / 255.0, green: 0x19 / 255.0, blue: 0x1E / 255.0),
+                            Color(red: 0x4D / 255.0, green: 0x18 / 255.0, blue: 0x24 / 255.0)
+                        ]),
+                        startPoint: .bottomLeading,
+                        endPoint: .topTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.06), lineWidth: 1.0)
+                )
+        )
+        .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 4)
+    }
+    
+    // MARK: - Navigation & Action Helpers
+    
+    private func handleSignInTap() {
+        if let onSignIn = onSignIn {
+            onSignIn()
+        } else if let appDelegate = kSharedAppDelegate {
+            appDelegate.moveToAuth(initialDestination: .login)
+        } else {
+            AccountSheetManager.shared.handleStarTap()
+        }
+    }
+    
+    private func handleJoinRewardsTap() {
+        if let onJoinRewards = onJoinRewards {
+            onJoinRewards()
+        } else if let appDelegate = kSharedAppDelegate {
+            appDelegate.moveToAuth(initialDestination: .login)
+        } else {
+            AccountSheetManager.shared.handleStarTap()
+        }
+    }
+    
+    private func switchToTab(_ index: Int) {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
+           let tabVC = rootNav.viewControllers.first as? UITabBarController {
+            tabVC.selectedIndex = index
+        }
     }
     
     // MARK: - FEATURED OFFER Card (roma_red with opacity, dotted border)
@@ -1268,10 +1504,30 @@ struct HomeView: View {
     }
 }
 
+// MARK: - Number Formatter Helper
+
+private extension Int {
+    var formattedWithSeparator: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: self)) ?? "\(self)"
+    }
+}
+
 // MARK: - Preview
 
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
-        HomeView(isGuest: true)
+        Group {
+            HomeView(isGuest: true)
+                .previewDisplayName("Guest Mode (Snap 1)")
+            HomeView(isGuest: false)
+                .previewDisplayName("Logged-In Mode (Snap 2)")
+        }
     }
 }
+
+
+
+
+
