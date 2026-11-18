@@ -1280,7 +1280,7 @@ struct MenuView: View {
                     Text(item.title)
                         .font(.oswaldLight(size: 19))
                         .tracking(0.4)
-                        .foregroundColor(Color(red: 0x8A / 255.0, green: 0x1E / 255.0, blue: 0x2D / 255.0))
+                        .foregroundColor(Color("app_black"))
                         .lineLimit(1)
                     
                     Spacer()
