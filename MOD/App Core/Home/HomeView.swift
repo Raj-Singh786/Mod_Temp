@@ -379,7 +379,7 @@ struct HomeView: View {
                 Text("Pile on what you love, split it down the middle, or grab a go-to in two taps. Every pizza is made on demand.")
                     .font(.barlowRegular(size: 14.5))
                     .foregroundColor(.white.opacity(0.88))
-                    .lineSpacing(5)
+                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
                     .padding(.horizontal, 20)
@@ -475,7 +475,7 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             // Deeper maroon like the prototype (was Button_red)
-            .background(Color(red: 0x75 / 255.0, green: 0x1E / 255.0, blue: 0x29 / 255.0))
+            .background(Color("Button_red"))
             // Clip everything (dome corners included) to the card's rounded shape
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)

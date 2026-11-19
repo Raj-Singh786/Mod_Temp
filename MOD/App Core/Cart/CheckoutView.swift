@@ -101,6 +101,7 @@ struct CheckoutView: View {
     var customNavTitle: String? = nil
     var customHeaderTitle: String? = nil
     var groupOrder: GroupOrderItem? = nil
+    var initialStoreName: String? = nil
     
     // MARK: - Form States
     
@@ -295,6 +296,11 @@ struct CheckoutView: View {
                     }
                 }
             )
+        }
+        .onAppear {
+            if let initial = initialStoreName, !initial.isEmpty {
+                storeName = initial
+            }
         }
     }
     

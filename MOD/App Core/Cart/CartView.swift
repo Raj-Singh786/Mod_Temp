@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+// MARK: - Cart Promo Item Model
+
+struct CartPromoItem: Identifiable, Equatable {
+    let id: String
+    let code: String
+    let discount: Double
+    let description: String
+}
+
+// MARK: - CartView
+
 struct CartView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var cartManager = CartManager.shared
@@ -15,12 +26,31 @@ struct CartView: View {
     
     @State private var showEditPizza: Bool = false
     @State private var itemToEdit: CartItem? = nil
-    @State private var showPromoSheet: Bool = false
-    @State private var promoCodeInput: String = ""
-    @State private var appliedPromo: String? = nil
     @State private var showCheckoutSuccess: Bool = false
     @State private var showStoreFulfillmentSheet: Bool = false
     @State private var showCheckoutView: Bool = false
+    
+    // Store & Fulfillment States
+    @State private var selectedOrderType: Int = 0 // 0: Pickup, 1: Delivery
+    @State private var selectedStoreName: String = "Capitol Hill, Seattle"
+    @State private var selectedPickupOption: String = "In-store pickup"
+    @State private var deliveryAddress: String = "1302 Pine St, Seattle, WA 98101"
+    @State private var selectedWhenText: String = "ASAP · ~15 min"
+    
+    // Promo / Rewards States
+    @State private var isPromoExpanded: Bool = false
+    @State private var promoCodeInput: String = ""
+    @State private var appliedPromo: String? = nil
+    @State private var appliedPromoDiscount: Double = 0.0
+    @State private var showAllOffersSheet: Bool = false
+    
+    // Available Promos (matches snap & deals)
+    private let availablePromos: [CartPromoItem] = [
+        CartPromoItem(id: "1", code: "SWEETDEAL", discount: 3.99, description: "Free dessert with any pizza"),
+        CartPromoItem(id: "2", code: "2PIZZA25", discount: 0.98, description: "Any 2 pizzas for $25"),
+        CartPromoItem(id: "3", code: "WELCOME20", discount: 7.99, description: "20% off welcome deal"),
+        CartPromoItem(id: "4", code: "PICKUP5", discount: 5.00, description: "$5 off pickup orders")
+    ]
     
     // MARK: - Computed Totals
     
@@ -28,16 +58,28 @@ struct CartView: View {
         cartManager.totalPrice
     }
     
+    private var discount: Double {
+        appliedPromoDiscount
+    }
+    
+    private var discountedSubtotal: Double {
+        max(0.0, subtotal - discount)
+    }
+    
     private var estimatedTax: Double {
-        subtotal * 0.0875
+        discountedSubtotal * 0.0875
     }
     
     private var estimatedTotal: Double {
-        subtotal + estimatedTax
+        discountedSubtotal + estimatedTax
     }
     
     private var earnedRewardsPoints: Int {
-        max(10, Int(subtotal * 10))
+        max(10, Int(discountedSubtotal * 10))
+    }
+    
+    private var displayStoreName: String {
+        selectedStoreName.components(separatedBy: ",").first ?? selectedStoreName
     }
     
     // MARK: - Body
@@ -58,7 +100,7 @@ struct CartView: View {
                     // Main Scrollable Cart Content
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 18) {
-                            // 1. Header: YOUR CART + Item Count
+                            // 1. Header: YOUR CART + Item Count + Selected Store
                             headerSection
                             
                             // 2. Cart Items List Cards
@@ -134,6 +176,42 @@ struct CartView: View {
                 onOrderPlaced: {
                     showCheckoutView = false
                     dismiss()
+                },
+                initialStoreName: "\(displayStoreName) · 1302 19th Ave"
+            )
+        }
+        .sheet(isPresented: $showStoreFulfillmentSheet) {
+            StoreLocationView(
+                initialOrderType: selectedOrderType,
+                currentStoreName: selectedStoreName,
+                currentDeliveryAddress: deliveryAddress,
+                currentPickupOption: selectedPickupOption,
+                currentWhenText: selectedWhenText,
+                onDone: { newOrderType, newStoreName, newPickupOption, newAddress, newWhen in
+                    selectedOrderType = newOrderType
+                    selectedStoreName = newStoreName
+                    selectedPickupOption = newPickupOption
+                    deliveryAddress = newAddress
+                    selectedWhenText = newWhen
+                    showStoreFulfillmentSheet = false
+                }
+            )
+        }
+        .sheet(isPresented: $showAllOffersSheet) {
+            SaveDealsView(
+                showHeader: true,
+                onBack: {
+                    showAllOffersSheet = false
+                },
+                onApplyDeal: { deal in
+                    appliedPromo = deal.code
+                    if let matched = availablePromos.first(where: { $0.code.uppercased() == deal.code.uppercased() }) {
+                        appliedPromoDiscount = matched.discount
+                    } else {
+                        appliedPromoDiscount = 3.99
+                    }
+                    promoCodeInput = deal.code
+                    showAllOffersSheet = false
                 }
             )
         }
@@ -192,7 +270,7 @@ struct CartView: View {
                 .tracking(0.6)
                 .foregroundColor(Color("app_black"))
             
-            Text("\(cartManager.totalItemCount) \(cartManager.totalItemCount == 1 ? "item" : "items") · Capitol Hill")
+            Text("\(cartManager.totalItemCount) \(cartManager.totalItemCount == 1 ? "item" : "items") · \(displayStoreName)")
                 .font(.barlowRegular(size: 14))
                 .foregroundColor(Color("text_gary"))
         }
@@ -229,7 +307,7 @@ struct CartView: View {
                     // Stepper: [ - 1 + ] + "$11.99 each"
                     HStack(spacing: 10) {
                         // Capsule Stepper
-                        HStack(spacing: 12) {
+                        HStack(spacing: 8) {
                             Button(action: {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                     cartManager.updateQuantity(for: item.id, quantity: item.quantity - 1)
@@ -239,11 +317,14 @@ struct CartView: View {
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundColor(Color("app_black"))
                                     .frame(width: 24, height: 32)
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(PlainButtonStyle())
                             
                             Text("\(item.quantity)")
-                                .font(.barlowBold(size: 14))
+                                .font(.barlowBold(size: 15))
                                 .foregroundColor(Color("app_black"))
+                                .frame(minWidth: 20, alignment: .center)
                             
                             Button(action: {
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
@@ -254,9 +335,11 @@ struct CartView: View {
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundColor(Color("app_black"))
                                     .frame(width: 24, height: 32)
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(PlainButtonStyle())
                         }
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, 8)
                         .background(
                             Capsule()
                                 .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.0)
@@ -278,18 +361,18 @@ struct CartView: View {
                     .foregroundColor(Color("app_black"))
             }
             
-            // Row 2: EDIT and REMOVE Action Buttons
-            HStack(spacing: 24) {
+            // Row 2: EDIT and REMOVE Action Buttons with Leading Space like Snap
+            HStack(spacing: 28) {
                 // EDIT Button
                 Button(action: {
                     itemToEdit = item
                     showEditPizza = true
                 }) {
-                    HStack(spacing: 5) {
+                    HStack(spacing: 6) {
                         Image(systemName: "pencil")
                             .font(.system(size: 13, weight: .semibold))
                         Text("EDIT")
-                            .font(.oswaldMedium(size: 13.5))
+                            .font(.oswaldMedium(size: 14))
                             .tracking(0.8)
                     }
                     .foregroundColor(Color("app_black"))
@@ -302,11 +385,11 @@ struct CartView: View {
                         cartManager.removeItem(id: item.id)
                     }
                 }) {
-                    HStack(spacing: 5) {
+                    HStack(spacing: 6) {
                         Image(systemName: "trash")
                             .font(.system(size: 13, weight: .semibold))
                         Text("REMOVE")
-                            .font(.oswaldMedium(size: 13.5))
+                            .font(.oswaldMedium(size: 14))
                             .tracking(0.8)
                     }
                     .foregroundColor(Color("Button_red"))
@@ -315,6 +398,7 @@ struct CartView: View {
                 
                 Spacer()
             }
+            .padding(.leading, 72)
             .padding(.top, 2)
         }
         .padding(16)
@@ -466,18 +550,18 @@ struct CartView: View {
                 .tracking(0.8)
                 .foregroundColor(Color("app_black"))
             
-            // Pickup Info Row
+            // Pickup / Delivery Info Row
             HStack(spacing: 10) {
-                Image(systemName: "bag")
+                Image(systemName: selectedOrderType == 0 ? "bag" : "car.fill")
                     .font(.system(size: 15))
                     .foregroundColor(Color("Button_red"))
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Pickup · Capitol Hill")
+                    Text("\(selectedOrderType == 0 ? "Pickup" : "Delivery") · \(displayStoreName)")
                         .font(.barlowSemiBold(size: 13.5))
                         .foregroundColor(Color("app_black"))
                     
-                    Text("ASAP unavailable")
+                    Text(selectedWhenText)
                         .font(.barlowRegular(size: 12))
                         .foregroundColor(Color("text_gary"))
                 }
@@ -504,32 +588,39 @@ struct CartView: View {
             Divider()
                 .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
             
-            // Promo Code Row
+            // Collapsible Promo Section Header Row
             Button(action: {
-                showPromoSheet.toggle()
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isPromoExpanded.toggle()
+                }
             }) {
                 HStack(spacing: 8) {
-                    Image(systemName: "tag.fill")
-                        .font(.system(size: 14))
+                    Image(systemName: "tag")
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(Color("Button_red"))
                     
-                    Text(appliedPromo ?? "Add promo code or reward")
-                        .font(.barlowSemiBold(size: 14))
+                    Text(appliedPromo != nil ? "Promo applied: \(appliedPromo!)" : "Add promo code or reward")
+                        .font(.barlowBold(size: 15))
                         .foregroundColor(Color("app_black"))
                     
                     Spacer()
                     
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                    Image(systemName: isPromoExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Color("app_black"))
                 }
             }
             .buttonStyle(PlainButtonStyle())
             
+            // Collapsible Promo View (Matches Snap)
+            if isPromoExpanded {
+                promoCollapsibleSection
+            }
+            
             Divider()
                 .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
             
-            // Subtotal & Tax Rows
+            // Subtotal, Discount & Tax Rows
             VStack(spacing: 8) {
                 HStack {
                     Text("Subtotal")
@@ -539,6 +630,18 @@ struct CartView: View {
                     Text(String(format: "$%.2f", subtotal))
                         .font(.barlowMedium(size: 14))
                         .foregroundColor(Color("app_black"))
+                }
+                
+                if appliedPromoDiscount > 0, let promo = appliedPromo {
+                    HStack {
+                        Text("Discount (\(promo))")
+                            .font(.barlowRegular(size: 14))
+                            .foregroundColor(Color(red: 0x3E / 255.0, green: 0x59 / 255.0, blue: 0x18 / 255.0))
+                        Spacer()
+                        Text(String(format: "-$%.2f", appliedPromoDiscount))
+                            .font(.barlowMedium(size: 14))
+                            .foregroundColor(Color(red: 0x3E / 255.0, green: 0x59 / 255.0, blue: 0x18 / 255.0))
+                    }
                 }
                 
                 HStack {
@@ -636,6 +739,157 @@ struct CartView: View {
                 )
                 .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 1)
         )
+    }
+    
+    // MARK: - Collapsible Promo Section (Matches Snap)
+    
+    private var promoCollapsibleSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // ENTER CODE + APPLY Row
+            HStack(spacing: 10) {
+                HStack {
+                    TextField("ENTER CODE", text: $promoCodeInput)
+                        .font(.oswaldMedium(size: 15))
+                        .tracking(0.5)
+                        .foregroundColor(Color("app_black"))
+                        .autocapitalization(.allCharacters)
+                        .disableAutocorrection(true)
+                    
+                    if !promoCodeInput.isEmpty {
+                        Button(action: {
+                            promoCodeInput = ""
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(Color("text_gary"))
+                                .font(.system(size: 14))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 48)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color(red: 0xD8 / 255.0, green: 0xD1 / 255.0, blue: 0xC6 / 255.0), lineWidth: 1.2)
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white))
+                )
+                
+                // APPLY Button
+                Button(action: {
+                    applyTypedPromo()
+                }) {
+                    Text("APPLY")
+                        .font(.oswaldBold(size: 14.5))
+                        .tracking(0.8)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 22)
+                        .frame(height: 48)
+                        .background(
+                            Capsule()
+                                .fill(Color("app_black"))
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.top, 4)
+            
+            // "Eligible right now:"
+            Text("Eligible right now:")
+                .font(.barlowRegular(size: 13.5))
+                .foregroundColor(Color("text_gary"))
+                .padding(.top, 2)
+            
+            // Eligible Promo Pills (2x2 Grid matching snap)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(availablePromos) { promo in
+                    let isSelected = appliedPromo == promo.code
+                    Button(action: {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            if isSelected {
+                                appliedPromo = nil
+                                appliedPromoDiscount = 0.0
+                            } else {
+                                appliedPromo = promo.code
+                                appliedPromoDiscount = promo.discount
+                                promoCodeInput = promo.code
+                            }
+                        }
+                    }) {
+                        HStack(spacing: 6) {
+                            Text(promo.code)
+                                .font(.oswaldBold(size: 13.5))
+                                .tracking(0.3)
+                                .foregroundColor(Color("app_black"))
+                            
+                            Text("-\(String(format: "$%.2f", promo.discount))")
+                                .font(.oswaldBold(size: 13.5))
+                                .tracking(0.3)
+                                .foregroundColor(Color(red: 0x3E / 255.0, green: 0x59 / 255.0, blue: 0x18 / 255.0))
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .background(
+                            Capsule()
+                                .stroke(
+                                    isSelected
+                                        ? Color(red: 0x3E / 255.0, green: 0x59 / 255.0, blue: 0x18 / 255.0)
+                                        : Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0),
+                                    lineWidth: isSelected ? 1.5 : 1.2
+                                )
+                                .background(
+                                    Capsule()
+                                        .fill(isSelected ? Color(red: 0xF3 / 255.0, green: 0xF8 / 255.0, blue: 0xEE / 255.0) : Color.white)
+                                )
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            
+            // Footer: "One deal, coupon or points reward per order. See all offers"
+            HStack(spacing: 0) {
+                Text("One deal, coupon ")
+                    .font(.barlowRegular(size: 12))
+                    .foregroundColor(Color("text_gary"))
+                + Text("or")
+                    .font(.barlowItalic(size: 12))
+                    .foregroundColor(Color("text_gary"))
+                + Text(" points reward per order. ")
+                    .font(.barlowRegular(size: 12))
+                    .foregroundColor(Color("text_gary"))
+                
+                Button(action: {
+                    showAllOffersSheet = true
+                }) {
+                    Text("See all offers")
+                        .font(.barlowRegular(size: 12))
+                        .foregroundColor(Color("Button_red"))
+                        .underline()
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Spacer()
+            }
+            .padding(.top, 4)
+        }
+    }
+    
+    // MARK: - Promo Action Helper
+    
+    private func applyTypedPromo() {
+        let code = promoCodeInput.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard !code.isEmpty else { return }
+        
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+            if let matched = availablePromos.first(where: { $0.code.uppercased() == code }) {
+                appliedPromo = matched.code
+                appliedPromoDiscount = matched.discount
+            } else {
+                appliedPromo = code
+                appliedPromoDiscount = 3.99
+            }
+        }
     }
     
     // MARK: - Empty Cart State

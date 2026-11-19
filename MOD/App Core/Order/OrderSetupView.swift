@@ -1187,3 +1187,7 @@ struct OrderSetupView: View {
         )
     }
 }
+
+// MARK: - Store Location View Alias
+typealias StoreLocationView = OrderSetupView
+
