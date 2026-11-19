@@ -155,11 +155,13 @@ struct CartView: View {
         .fullScreenCover(isPresented: $showEditPizza) {
             if let item = itemToEdit {
                 let isBuildYourPizza = item.title.uppercased().contains("BUILD YOUR PIZZA")
+                let isSalad = item.title.uppercased().contains("SALAD")
                 MenuCustomizationView(
                     pizzaTitle: item.title,
-                    pizzaCategory: "PIZZAS",
-                    pizzaDescription: item.details ?? "Customized pizza recipe",
-                    pizzaImageName: item.imageName ?? "PizzaOn",
+                    pizzaCategory: isSalad ? "SALADS" : "PIZZAS",
+                    pizzaDescription: item.details ?? (isSalad ? "Customized salad recipe" : "Customized pizza recipe"),
+                    pizzaImageName: item.imageName ?? (isSalad ? "salad" : "PizzaOn"),
+                    itemPrice: String(format: "$%.2f", item.price),
                     showRecipeStyle: isBuildYourPizza,
                     onBack: {
                         showEditPizza = false

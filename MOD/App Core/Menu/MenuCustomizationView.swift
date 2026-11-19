@@ -176,6 +176,44 @@ enum PizzaCrust: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Salad Size Enum
+
+enum SaladSize: String, CaseIterable, Identifiable {
+    case mini = "MINI"
+    case mod = "MOD"
+    case mega = "MEGA"
+    
+    var id: String { rawValue }
+    
+    var subtitle: String {
+        switch self {
+        case .mini: return "Side"
+        case .mod: return "Entrée"
+        case .mega: return "Family size"
+        }
+    }
+    
+    var priceModifier: Double {
+        switch self {
+        case .mini: return -3.00
+        case .mod: return 0.00
+        case .mega: return 6.00
+        }
+    }
+    
+    var priceText: String {
+        switch self {
+        case .mini: return "-$3.00"
+        case .mod: return "Base price"
+        case .mega: return "+$6.00"
+        }
+    }
+    
+    var badgeTitle: String {
+        "\(rawValue) size"
+    }
+}
+
 // MARK: - MenuCustomizationView
 
 struct MenuCustomizationView: View {
@@ -186,6 +224,7 @@ struct MenuCustomizationView: View {
     var pizzaCategory: String = "PIZZAS"
     var pizzaDescription: String = "Build your own with 40+ toppings and 8 finishing sauces — all for one price. Supports independent half-and-half recipes."
     var pizzaImageName: String = "PizzaOn"
+    var itemPrice: String? = nil
     var showRecipeStyle: Bool = false
     
     // MARK: - Callbacks
@@ -228,6 +267,38 @@ struct MenuCustomizationView: View {
     
     @State private var toppings: [CustomizableTopping]
     
+    // MARK: - Salad Configuration & Options
+    
+    @State private var selectedSaladSize: SaladSize = .mega
+    @State private var selectedGreen: String = "Romaine"
+    @State private var selectedDressing: String = "Balsamic vinaigrette"
+    @State private var selectedSaladToppings: Set<String> = ["Oregano", "Grilled chicken"]
+    
+    let saladGreensOptions: [String] = [
+        "Romaine",
+        "Mixed greens",
+        "Arugula"
+    ]
+    
+    let saladDressingOptions: [String] = [
+        "Caesar",
+        "Balsamic vinaigrette",
+        "Champagne vinaigrette",
+        "Olive oil & red wine vinegar",
+        "Ranch",
+        "No dressing"
+    ]
+    
+    let saladToppingRows: [[String]] = [
+        ["Tomatoes", "Cucumbers", "Red onion"],
+        ["Black olives", "Green peppers"],
+        ["Roasted red peppers", "Chickpeas"],
+        ["Croutons", "Pepperoncini", "Oregano"],
+        ["Mozzarella", "Asiago", "Feta"],
+        ["Parmesan", "Salami", "Grilled chicken"],
+        ["Bacon"]
+    ]
+    
     // MARK: - Initializer Supporting Custom Build or Particular Pizza Customization
     
     init(
@@ -235,6 +306,7 @@ struct MenuCustomizationView: View {
         pizzaCategory: String = "PIZZAS",
         pizzaDescription: String = "Build your own with 40+ toppings and 8 finishing sauces — all for one price. Supports independent half-and-half recipes.",
         pizzaImageName: String = "PizzaOn",
+        itemPrice: String? = nil,
         showRecipeStyle: Bool = false,
         onBack: (() -> Void)? = nil,
         onAddToCart: ((Int, Double, Int) -> Void)? = nil,
@@ -245,6 +317,7 @@ struct MenuCustomizationView: View {
         self.pizzaCategory = pizzaCategory
         self.pizzaDescription = pizzaDescription
         self.pizzaImageName = pizzaImageName
+        self.itemPrice = itemPrice
         self.showRecipeStyle = showRecipeStyle
         self.onBack = onBack
         self.onAddToCart = onAddToCart
@@ -256,6 +329,11 @@ struct MenuCustomizationView: View {
         let (sauceId, initialToppings) = Self.recipeForPizza(title: pizzaTitle, description: pizzaDescription)
         _selectedSauceId = State(initialValue: sauceId)
         _toppings = State(initialValue: initialToppings)
+        
+        _selectedSaladSize = State(initialValue: .mega)
+        _selectedGreen = State(initialValue: "Romaine")
+        _selectedDressing = State(initialValue: "Balsamic vinaigrette")
+        _selectedSaladToppings = State(initialValue: ["Oregano", "Grilled chicken"])
     }
     
     // MARK: - Static Default Toppings & Recipe Matching
@@ -445,6 +523,39 @@ struct MenuCustomizationView: View {
         singlePizzaPrice * Double(quantity)
     }
     
+    // MARK: - Salad Computed Properties
+    
+    var isSalad: Bool {
+        pizzaCategory.trimmingCharacters(in: .whitespacesAndNewlines).uppercased().contains("SALAD") ||
+        pizzaTitle.uppercased().contains("SALAD")
+    }
+    
+    var baseSaladPrice: Double {
+        if let itemPrice = itemPrice {
+            let cleaned = itemPrice.replacingOccurrences(of: "$", with: "").trimmingCharacters(in: .whitespaces)
+            if let val = Double(cleaned) {
+                return val
+            }
+        }
+        return 8.99
+    }
+    
+    var singleSaladPrice: Double {
+        max(3.99, baseSaladPrice + selectedSaladSize.priceModifier)
+    }
+    
+    var finalSaladTotalPrice: Double {
+        singleSaladPrice * Double(quantity)
+    }
+    
+    var saladCalories: Int {
+        let base = 60
+        let sizeAdj = selectedSaladSize == .mega ? 40 : (selectedSaladSize == .mini ? -20 : 0)
+        let dressingAdj = selectedDressing == "No dressing" ? 0 : 90
+        let toppingsAdj = selectedSaladToppings.count * 25
+        return max(30, base + sizeAdj + dressingAdj + toppingsAdj)
+    }
+    
     // MARK: - Active Ingredient Pill Tags
     
     /// Formatted pills describing all customized ingredients matching snapshot
@@ -504,33 +615,11 @@ struct MenuCustomizationView: View {
                     // Scrollable Customization Content (Strictly Vertical Only)
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 22) {
-                            // 1. Pizza Hero Visual Card
-                            pizzaHeroCard
-                            
-                            // 2. Title & Badge Section
-                            titleBadgeSection
-                            
-                            // 3. Size Selection Section
-                            sizeSection
-                            
-                            // 4. Crust Selection Section
-                            crustSection
-                            
-                            // 5. Recipe Style Section (Only shown when showRecipeStyle is true)
-                            if showRecipeStyle {
-                                recipeStyleSection
+                            if isSalad {
+                                saladCustomizationContent
+                            } else {
+                                pizzaCustomizationContent
                             }
-                            
-                            // 6. Sauce Selection Section (2-Column Grid + Shared Controls)
-                            sauceSection
-                            
-                            // 7. Toppings Sections (Cheeses, Meats, Veggies, Finishes)
-                            ForEach(ToppingCategory.allCases) { category in
-                                categorySection(category)
-                            }
-                            
-                            // 8. Nutrition Facts Table Card
-                            nutritionSummaryCard
                             
                             // Bottom Padding for Fixed Checkout Bar
                             Spacer()
@@ -544,9 +633,14 @@ struct MenuCustomizationView: View {
                     .clipped()
                 }
                 
-                // Fixed Bottom Checkout & Calorie Bar
-                bottomCheckoutBar
-                    .frame(width: geometry.size.width)
+                // Fixed Bottom Checkout Bar
+                if isSalad {
+                    saladBottomCheckoutBar
+                        .frame(width: geometry.size.width)
+                } else {
+                    bottomCheckoutBar
+                        .frame(width: geometry.size.width)
+                }
                 
                 // Toast Notification
                 if showAddedToast {
@@ -1490,6 +1584,457 @@ struct MenuCustomizationView: View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 18)
+        .background(
+            Color.white
+                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: -4)
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+    
+    // MARK: - Pizza Customization Content
+    
+    private var pizzaCustomizationContent: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            // 1. Pizza Hero Visual Card
+            pizzaHeroCard
+            
+            // 2. Title & Badge Section
+            titleBadgeSection
+            
+            // 3. Size Selection Section
+            sizeSection
+            
+            // 4. Crust Selection Section
+            crustSection
+            
+            // 5. Recipe Style Section (Only shown when showRecipeStyle is true)
+            if showRecipeStyle {
+                recipeStyleSection
+            }
+            
+            // 6. Sauce Selection Section (2-Column Grid + Shared Controls)
+            sauceSection
+            
+            // 7. Toppings Sections (Cheeses, Meats, Veggies, Finishes)
+            ForEach(ToppingCategory.allCases) { category in
+                categorySection(category)
+            }
+            
+            // 8. Nutrition Facts Table Card
+            nutritionSummaryCard
+        }
+    }
+    
+    // MARK: - Salad Customization Content (Matching Snapshot)
+    
+    private var saladCustomizationContent: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            // 1. Salad Hero Visual Card + Size Pill
+            saladHeroCard
+            
+            // 2. Title, Badges & Description Section
+            saladTitleSection
+            
+            // 3. Size Selection (MINI, MOD, MEGA)
+            saladSizeSection
+            
+            // 4. Greens Selection (Romaine, Mixed greens, Arugula)
+            saladGreensSection
+            
+            // 5. Dressing Selection (Caesar, Balsamic vinaigrette, etc.)
+            saladDressingSection
+            
+            // 6. Toppings Flow Pills (Tomatoes, Cucumbers, Oregano, Grilled chicken, etc.)
+            saladToppingsSection
+            
+            // 7. Nutrition Info Card & Shared Kitchen Disclaimer
+            saladNutritionSection
+        }
+    }
+    
+    // MARK: - Salad 1. Hero Visual Card + Size Pill
+    
+    private var saladHeroCard: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color(red: 0xF7 / 255.0, green: 0xF4 / 255.0, blue: 0xEE / 255.0))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 235)
+                
+                if let uiImg = UIImage(named: pizzaImageName) {
+                    Image(uiImage: uiImg)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 205, height: 205)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
+                } else if let fallback = UIImage(named: "salad") {
+                    Image(uiImage: fallback)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 205, height: 205)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
+                } else {
+                    Image("PizzaOn")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 205, height: 205)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            
+            // Pill badge below image e.g. "MEGA size"
+            Text(selectedSaladSize.badgeTitle)
+                .font(.oswaldMedium(size: 12))
+                .tracking(0.6)
+                .foregroundColor(Color("app_black"))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        .background(Capsule().fill(Color.white))
+                )
+        }
+    }
+    
+    // MARK: - Salad 2. Title, Badges & Description Section
+    
+    private var saladTitleSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("SALADS")
+                .font(.barlowBold(size: 12))
+                .tracking(1.0)
+                .foregroundColor(Color("Button_red"))
+            
+            Text(pizzaTitle.uppercased())
+                .font(.oswaldBold(size: 28))
+                .foregroundColor(Color("app_black"))
+            
+            Text(pizzaDescription)
+                .font(.barlowRegular(size: 14))
+                .foregroundColor(Color("text_gary"))
+                .fixedSize(horizontal: false, vertical: true)
+                .lineSpacing(2)
+            
+            HStack(spacing: 12) {
+                HStack(spacing: 5) {
+                    Image(systemName: "smallcircle.filled.circle")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Color(red: 0x2A / 255.0, green: 0x7E / 255.0, blue: 0x3F / 255.0))
+                    Text("Vegan")
+                        .font(.barlowBold(size: 12))
+                        .foregroundColor(Color(red: 0x2A / 255.0, green: 0x7E / 255.0, blue: 0x3F / 255.0))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .stroke(Color(red: 0x2A / 255.0, green: 0x7E / 255.0, blue: 0x3F / 255.0).opacity(0.35), lineWidth: 1)
+                        .background(Capsule().fill(Color(red: 0xEE / 255.0, green: 0xF7 / 255.0, blue: 0xF0 / 255.0)))
+                )
+                
+                Text("60 cal standard")
+                    .font(.barlowRegular(size: 13))
+                    .foregroundColor(Color("text_gary"))
+            }
+            .padding(.top, 2)
+            
+            Rectangle()
+                .fill(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
+                .frame(height: 1)
+                .padding(.top, 6)
+        }
+    }
+    
+    // MARK: - Salad 3. Size Selection (MINI, MOD, MEGA)
+    
+    private var saladSizeSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("SIZE")
+                .font(.oswaldMedium(size: 18))
+                .foregroundColor(Color("app_black"))
+            
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                ForEach(SaladSize.allCases) { size in
+                    let isSelected = selectedSaladSize == size
+                    Button(action: {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                            selectedSaladSize = size
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Text(size.rawValue)
+                                .font(.oswaldBold(size: 16))
+                                .foregroundColor(Color("app_black"))
+                            
+                            Text(size.subtitle)
+                                .font(.barlowRegular(size: 12.5))
+                                .foregroundColor(Color("text_gary"))
+                            
+                            Text(size.priceText)
+                                .font(.barlowRegular(size: 12.5))
+                                .foregroundColor(Color("text_gary"))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 78)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(isSelected ? Color("Button_red") : Color.gray.opacity(0.25), lineWidth: isSelected ? 1.5 : 1)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF3 / 255.0) : Color.white)
+                                )
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+    
+    // MARK: - Salad 4. Greens Selection (Romaine, Mixed greens, Arugula)
+    
+    private var saladGreensSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("GREENS")
+                .font(.oswaldMedium(size: 18))
+                .foregroundColor(Color("app_black"))
+            
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                ForEach(saladGreensOptions, id: \.self) { green in
+                    let isSelected = selectedGreen == green
+                    Button(action: {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                            selectedGreen = green
+                        }
+                    }) {
+                        Text(green)
+                            .font(.barlowBold(size: 14))
+                            .foregroundColor(Color("app_black"))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(isSelected ? Color("Button_red") : Color.gray.opacity(0.25), lineWidth: isSelected ? 1.5 : 1)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                            .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF3 / 255.0) : Color.white)
+                                    )
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+    
+    // MARK: - Salad 5. Dressing Selection
+    
+    private var saladDressingSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("DRESSING")
+                .font(.oswaldMedium(size: 18))
+                .foregroundColor(Color("app_black"))
+            
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                ForEach(saladDressingOptions, id: \.self) { dressing in
+                    let isSelected = selectedDressing == dressing
+                    Button(action: {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                            selectedDressing = dressing
+                        }
+                    }) {
+                        Text(dressing)
+                            .font(.barlowBold(size: 13.5))
+                            .foregroundColor(Color("app_black"))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .padding(.horizontal, 8)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(isSelected ? Color("Button_red") : Color.gray.opacity(0.25), lineWidth: isSelected ? 1.5 : 1)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                            .fill(isSelected ? Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF3 / 255.0) : Color.white)
+                                    )
+                            )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+    
+    // MARK: - Salad 6. Toppings Flow Pills
+    
+    private var saladToppingsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("TOPPINGS")
+                .font(.oswaldMedium(size: 18))
+                .foregroundColor(Color("app_black"))
+            
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(0..<saladToppingRows.count, id: \.self) { rowIndex in
+                    HStack(spacing: 8) {
+                        ForEach(saladToppingRows[rowIndex], id: \.self) { topping in
+                            saladToppingPill(topping)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func saladToppingPill(_ topping: String) -> some View {
+        let isSelected = selectedSaladToppings.contains(topping)
+        let isDarkSelected = topping == "Grilled chicken" && isSelected
+        
+        return Button(action: {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                if selectedSaladToppings.contains(topping) {
+                    selectedSaladToppings.remove(topping)
+                } else {
+                    selectedSaladToppings.insert(topping)
+                }
+            }
+        }) {
+            HStack(spacing: 5) {
+                Image(systemName: "plus")
+                    .font(.system(size: 11, weight: .bold))
+                Text(topping)
+                    .font(isSelected ? .barlowBold(size: 13.5) : .barlowRegular(size: 13.5))
+            }
+            .foregroundColor(Color("app_black"))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8.5)
+            .background(
+                Capsule()
+                    .stroke(
+                        isSelected ? (isDarkSelected ? Color("app_black") : Color("Button_red")) : Color.gray.opacity(0.35),
+                        lineWidth: isSelected ? 1.5 : 1.0
+                    )
+                    .background(
+                        Capsule()
+                            .fill(isSelected ? (isDarkSelected ? Color.white : Color(red: 0xFD / 255.0, green: 0xF2 / 255.0, blue: 0xF3 / 255.0)) : Color.white)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - Salad 7. Nutrition Info Card & Disclaimer
+    
+    private var saladNutritionSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(Color("app_black"))
+                
+                Text("Nutrition — standard recipe")
+                    .font(.barlowBold(size: 14.5))
+                    .foregroundColor(Color("app_black"))
+                
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white))
+            )
+            
+            Text("Customizing may change dietary suitability. All food is prepared in shared kitchen areas.")
+                .font(.barlowRegular(size: 12))
+                .foregroundColor(Color("text_gary"))
+                .lineSpacing(2)
+        }
+        .padding(.top, 4)
+    }
+    
+    // MARK: - Salad Fixed Bottom Checkout Bar
+    
+    private var saladBottomCheckoutBar: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                // Stepper: [-] 1 [+]
+                HStack(spacing: 14) {
+                    Button(action: {
+                        if quantity > 1 { quantity -= 1 }
+                    }) {
+                        Image(systemName: "minus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(quantity > 1 ? Color("app_black") : Color("text_gary"))
+                            .frame(width: 30, height: 46)
+                    }
+                    .disabled(quantity <= 1)
+                    
+                    Text("\(quantity)")
+                        .font(.barlowBold(size: 16))
+                        .foregroundColor(Color("app_black"))
+                    
+                    Button(action: {
+                        quantity += 1
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color("app_black"))
+                            .frame(width: 30, height: 46)
+                    }
+                }
+                .padding(.horizontal, 6)
+                .background(
+                    Capsule()
+                        .stroke(Color.gray.opacity(0.35), lineWidth: 1.2)
+                        .background(Capsule().fill(Color.white))
+                )
+                
+                // ADD TO CART · $14.99 Button
+                Button(action: {
+                    let toppingsSummary = selectedSaladToppings.isEmpty ? "" : " · " + selectedSaladToppings.sorted().joined(separator: ", ")
+                    let detailsText = "\(selectedSaladSize.rawValue) size · \(selectedGreen) · \(selectedDressing)" + toppingsSummary
+                    
+                    CartManager.shared.addItem(
+                        title: pizzaTitle,
+                        price: singleSaladPrice,
+                        quantity: quantity,
+                        details: detailsText,
+                        calories: saladCalories,
+                        imageName: pizzaImageName
+                    )
+                    
+                    onAddToCart?(quantity, finalSaladTotalPrice, saladCalories)
+                    showAddedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                        dismiss()
+                    }
+                }) {
+                    Text("ADD TO CART · $\(String(format: "%.2f", finalSaladTotalPrice))")
+                        .font(.oswaldMedium(size: 15))
+                        .tracking(0.8)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            Capsule()
+                                .fill(Color("Button_red"))
+                                .shadow(color: Color("Button_red").opacity(0.35), radius: 6, x: 0, y: 3)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 22)
         .background(
             Color.white
                 .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: -4)

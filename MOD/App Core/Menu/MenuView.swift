@@ -716,9 +716,10 @@ struct MenuView: View {
         .fullScreenCover(item: $selectedItemForCustomization) { item in
             MenuCustomizationView(
                 pizzaTitle: item.title,
-                pizzaCategory: "PIZZAS",
+                pizzaCategory: (item.category == .salads || item.title.uppercased().contains("SALAD")) ? "SALADS" : "PIZZAS",
                 pizzaDescription: item.description,
                 pizzaImageName: item.imageName,
+                itemPrice: item.price,
                 showRecipeStyle: false, // Recipe style is strictly hidden for particular pizzas in Menu
                 onBack: {
                     selectedItemForCustomization = nil

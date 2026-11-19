@@ -27,6 +27,9 @@ struct HomeMenuItem: Identifiable {
     let calories: String
     let actionTitle: String
     var isFavorite: Bool = false
+    var category: MenuCategory {
+        title.uppercased().contains("SALAD") ? .salads : .pizzas
+    }
 }
 
 // MARK: - HomeView
@@ -234,9 +237,10 @@ struct HomeView: View {
         .fullScreenCover(item: $selectedHomeItemForCustomization) { item in
             MenuCustomizationView(
                 pizzaTitle: item.title,
-                pizzaCategory: "PIZZAS",
+                pizzaCategory: item.title.uppercased().contains("SALAD") ? "SALADS" : "PIZZAS",
                 pizzaDescription: item.description,
                 pizzaImageName: item.imageName,
+                itemPrice: item.price,
                 showRecipeStyle: false, // Don't show recipe style for particular pizza!
                 onBack: {
                     selectedHomeItemForCustomization = nil
