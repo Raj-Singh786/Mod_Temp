@@ -350,10 +350,7 @@ extension TabBarVC {
                 self?.dismissTopModal()
                 self?.selectedIndex = 2
             },
-            onNavigateToWallet: { [weak self] in
-                self?.dismissTopModal()
-                self?.presentWalletSheet()
-            },
+            onNavigateToWallet: nil,
             onNavigateToOrders: { [weak self] in
                 self?.dismissTopModal()
                 self?.selectedIndex = 3
@@ -404,13 +401,15 @@ extension TabBarVC {
         topVC.present(walletVC, animated: true)
     }
 
-    private func dismissTopModal() {
+    private func dismissTopModal(animated: Bool = true, completion: (() -> Void)? = nil) {
         var topVC: UIViewController = self
         while let presented = topVC.presentedViewController {
             topVC = presented
         }
         if topVC != self {
-            topVC.dismiss(animated: true)
+            topVC.dismiss(animated: animated, completion: completion)
+        } else {
+            completion?()
         }
     }
 }

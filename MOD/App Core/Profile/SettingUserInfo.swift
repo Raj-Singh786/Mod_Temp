@@ -91,6 +91,7 @@ struct SettingUserInfo: View {
     var initialLetter: String = "J"
     
     @State private var showMemberPassModal: Bool = false
+    @State private var showAddWalletBalanceSheet: Bool = false
     
     @Environment(\.presentationMode) private var presentationMode
     
@@ -210,6 +211,14 @@ struct SettingUserInfo: View {
                 }
             )
         }
+        .fullScreenCover(isPresented: $showAddWalletBalanceSheet) {
+            AddWalletBalanceView(
+                showHeader: true,
+                onBack: {
+                    showAddWalletBalanceSheet = false
+                }
+            )
+        }
     }
     
     // MARK: - Menu Card
@@ -262,8 +271,7 @@ struct SettingUserInfo: View {
                     if let onNavigateToWallet = onNavigateToWallet {
                         onNavigateToWallet()
                     } else {
-                        dismissView()
-                        NotificationCenter.default.post(name: Notification.Name("showWalletDirectlyNotification"), object: nil)
+                        showAddWalletBalanceSheet = true
                     }
                 }
             )

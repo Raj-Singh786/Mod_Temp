@@ -9,6 +9,9 @@ import SwiftUI
 
 // MARK: - AddWalletBalanceView
 
+typealias AddWalletbalance = AddWalletBalanceView
+typealias AddWalletBalance = AddWalletBalanceView
+
 struct AddWalletBalanceView: View {
     
     // MARK: - Configuration & Callbacks
