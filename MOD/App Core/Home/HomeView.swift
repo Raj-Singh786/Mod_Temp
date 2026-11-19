@@ -243,9 +243,10 @@ struct HomeView: View {
                 }
             )
         }
-        .sheet(isPresented: $showMemberPassModal) {
+        .fullScreenCover(isPresented: $showMemberPassModal) {
             DigitalMemberPassSheet(
-                userName: "Jordan Rivera",
+                userName: "Raj",
+                userPoints: 1240,
                 tierName: userTier,
                 onDismiss: {
                     showMemberPassModal = false

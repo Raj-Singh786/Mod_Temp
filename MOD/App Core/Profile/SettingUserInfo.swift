@@ -85,10 +85,10 @@ struct SettingUserInfo: View {
     
     @ObservedObject private var walletManager = WalletManager.shared
     
-    var userName: String = "Jordan Rivera"
+    var userName: String = "Raj"
     var userPoints: Int = 1240
     var userTier: String = "Silver"
-    var initialLetter: String = "J"
+    var initialLetter: String = "R"
     
     @State private var showMemberPassModal: Bool = false
     @State private var showAddWalletBalanceSheet: Bool = false
@@ -202,12 +202,18 @@ struct SettingUserInfo: View {
             )
             .edgesIgnoringSafeArea(.bottom)
         }
-        .sheet(isPresented: $showMemberPassModal) {
+        .fullScreenCover(isPresented: $showMemberPassModal) {
             DigitalMemberPassSheet(
                 userName: userName,
+                userPoints: userPoints,
                 tierName: userTier,
                 onDismiss: {
                     showMemberPassModal = false
+                },
+                onBrowseRewards: {
+                    showMemberPassModal = false
+                    dismissView()
+                    switchToTab(2)
                 }
             )
         }
@@ -395,20 +401,37 @@ struct SettingUserInfo: View {
     }
 }
 
-// MARK: - Digital Member Pass Sheet (Used inside SettingUserInfo)
+// MARK: - Digital Member Pass Sheet (Post-Enrollment Member Pass)
+
+typealias MemberPassView = DigitalMemberPassSheet
 
 struct DigitalMemberPassSheet: View {
-    var userName: String = "Jordan Rivera"
+    var userName: String = "Raj"
+    var userPoints: Int = 1240
     var tierName: String = "Silver"
     var onDismiss: (() -> Void)? = nil
+    var onBack: (() -> Void)? = nil
+    var onBrowseRewards: (() -> Void)? = nil
+    var onScanReceipt: (() -> Void)? = nil
+    var onEnterCode: (() -> Void)? = nil
+    var onCartTap: (() -> Void)? = nil
+    var onStarTap: (() -> Void)? = nil
+    
+    @ObservedObject private var cartManager = CartManager.shared
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color("app_background").ignoresSafeArea()
+        ZStack {
+            // Background color matching Rewards theme
+            Color("app_background").ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Custom Top Navigation Bar matching post-enrollment screen
+                customNavigationBar
                 
-                ScrollView {
+                // Scrollable Content
+                ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 18) {
+                        // Header Titles
                         VStack(alignment: .leading, spacing: 6) {
                             Text("MEMBER PASS")
                                 .font(.oswaldMedium(size: 32))
@@ -421,56 +444,286 @@ struct DigitalMemberPassSheet: View {
                         }
                         .padding(.top, 4)
                         
-                        // Pass Card
-                        VStack(spacing: 16) {
-                            HStack {
-                                Image("app_logo")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 30, height: 36)
-                                
-                                Text("Rewards")
-                                    .font(.oswaldMedium(size: 20))
-                                
-                                Spacer()
-                                
-                                Text(tierName)
-                                    .font(.barlowBold(size: 11))
-                                    .foregroundColor(Color(red: 0x6E / 255.0, green: 0x51 / 255.0, blue: 0x22 / 255.0))
-                                    .padding(.horizontal, 9)
-                                    .padding(.vertical, 3)
-                                    .background(Capsule().fill(Color(red: 0xF7 / 255.0, green: 0xEE / 255.0, blue: 0xD8 / 255.0)))
-                            }
-                            
-                            BarcodeGraphicView()
-                                .frame(height: 58)
-                            
-                            Text("7730 4821 0093")
-                                .font(.system(size: 16, weight: .bold, design: .monospaced))
-                                .tracking(2.0)
-                        }
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .fill(Color.white)
-                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
-                        )
+                        // Digital Member Pass Card (Dark Gradient Card)
+                        memberPassCard
+                        
+                        // Action Buttons Below Card
+                        actionButtonsRow
+                        
+                        // BROWSE REWARDS Button
+                        browseRewardsButton
                     }
-                    .padding(16)
-                }
-            }
-            .navigationTitle("Digital Pass")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        onDismiss?()
-                    }
-                    .font(.barlowBold(size: 16))
-                    .foregroundColor(Color("Button_red"))
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                    .padding(.bottom, 36)
                 }
             }
         }
+    }
+    
+    // MARK: - Custom Navigation Bar
+    
+    private var customNavigationBar: some View {
+        HStack(alignment: .center) {
+            // Left: Back Button
+            Button(action: {
+                if let onBack = onBack {
+                    onBack()
+                } else if let onDismiss = onDismiss {
+                    onDismiss()
+                }
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.backward")
+                        .font(.system(size: 15, weight: .bold))
+                    Text("Back")
+                        .font(.barlowBold(size: 16))
+                }
+                .foregroundColor(Color("Button_red"))
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Spacer()
+            
+            // Center: Title
+            Text("Member pass")
+                .font(.oswaldMedium(size: 17))
+                .foregroundColor(Color("app_black"))
+            
+            Spacer()
+            
+            // Right: Star & Cart Icons
+            HStack(spacing: 16) {
+                Button(action: {
+                    if let onStarTap = onStarTap {
+                        onStarTap()
+                    } else {
+                        AccountSheetManager.shared.handleStarTap()
+                    }
+                }) {
+                    Image(systemName: "star")
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundColor(Color("app_black"))
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    if let onCartTap = onCartTap {
+                        onCartTap()
+                    } else {
+                        NotificationCenter.default.post(name: Notification.Name("showCartDirectlyNotification"), object: nil)
+                    }
+                }) {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bag")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundColor(Color("app_black"))
+                        
+                        let count = cartManager.totalItemCount
+                        if count > 0 {
+                            Text("\(count)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 15, height: 15)
+                                .background(Circle().fill(Color("Button_red")))
+                                .offset(x: 7, y: -6)
+                        }
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color("app_background"))
+    }
+    
+    // MARK: - Member Pass Card (Dark Gradient Card Matching Post-Enrollment)
+    
+    private var memberPassCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Top Row: MOD Logo + "Rewards" + "Silver" Tier Badge
+            HStack(alignment: .center) {
+                HStack(spacing: 8) {
+                    Image("app_logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 32, height: 38)
+                    
+                    Text("Rewards")
+                        .font(.oswaldMedium(size: 22))
+                        .foregroundColor(.white)
+                }
+                
+                Spacer()
+                
+                // Silver Tier Badge
+                let badgeTier = tierName.replacingOccurrences(of: " member", with: "")
+                Text(badgeTier.isEmpty ? "Silver" : badgeTier)
+                    .font(.barlowBold(size: 12.5))
+                    .foregroundColor(Color(red: 0x58 / 255.0, green: 0x40 / 255.0, blue: 0x1E / 255.0))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule()
+                            .fill(Color(red: 0xF5 / 255.0, green: 0xEA / 255.0, blue: 0xD6 / 255.0))
+                    )
+            }
+            
+            // Member Name & Points
+            VStack(alignment: .leading, spacing: 3) {
+                Text(userName.isEmpty ? "Raj" : userName)
+                    .font(.oswaldMedium(size: 34))
+                    .tracking(0.5)
+                    .foregroundColor(.white)
+                
+                HStack(spacing: 4) {
+                    Text("\(userPoints.formattedWithSeparator)")
+                        .font(.barlowBold(size: 15))
+                        .foregroundColor(.white)
+                    Text("pts available")
+                        .font(.barlowRegular(size: 15))
+                        .foregroundColor(Color.white.opacity(0.75))
+                }
+            }
+            .padding(.top, 4)
+            
+            // Barcode White Container
+            VStack(spacing: 8) {
+                // Barcode Stripes Graphic
+                BarcodeGraphicView()
+                    .padding(.top, 14)
+                    .padding(.horizontal, 10)
+                
+                // Barcode Number
+                Text("7730  4821  0093")
+                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .foregroundColor(Color("app_black"))
+                    .tracking(2.5)
+                    .padding(.bottom, 12)
+            }
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.white)
+            )
+            
+            // Disclaimer below barcode
+            Text("Enrolled member · Sample barcode for demonstration — not scannable.")
+                .font(.barlowRegular(size: 11.5))
+                .foregroundColor(Color.white.opacity(0.6))
+                .lineSpacing(2)
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color(red: 0x18 / 255.0, green: 0x14 / 255.0, blue: 0x16 / 255.0), location: 0.0),
+                            .init(color: Color(red: 0x22 / 255.0, green: 0x16 / 255.0, blue: 0x19 / 255.0), location: 0.5),
+                            .init(color: Color(red: 0x48 / 255.0, green: 0x17 / 255.0, blue: 0x20 / 255.0), location: 1.0)
+                        ],
+                        startPoint: .bottomLeading,
+                        endPoint: .topTrailing
+                    )
+                )
+        )
+        .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
+    }
+    
+    // MARK: - Action Buttons Below Card
+    
+    private var actionButtonsRow: some View {
+        HStack(spacing: 12) {
+            // SCAN A RECEIPT INSTEAD
+            Button(action: {
+                if let onScanReceipt = onScanReceipt {
+                    onScanReceipt()
+                }
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "scope")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("SCAN A RECEIPT INSTEAD")
+                        .font(.oswaldMedium(size: 13.5))
+                        .tracking(0.8)
+                }
+                .foregroundColor(Color("app_black"))
+                .padding(.horizontal, 16)
+                .frame(height: 44)
+                .background(
+                    Capsule()
+                        .stroke(Color.gray.opacity(0.35), lineWidth: 1)
+                        .background(Capsule().fill(Color.white.opacity(0.6)))
+                )
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            // ENTER A CODE
+            Button(action: {
+                if let onEnterCode = onEnterCode {
+                    onEnterCode()
+                }
+            }) {
+                Text("ENTER A CODE")
+                    .font(.oswaldMedium(size: 13.5))
+                    .tracking(0.8)
+                    .foregroundColor(Color("app_black"))
+                    .padding(.horizontal, 10)
+                    .frame(height: 44)
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Spacer()
+        }
+        .padding(.top, 4)
+    }
+    
+    // MARK: - BROWSE REWARDS Button
+    
+    private var browseRewardsButton: some View {
+        Button(action: {
+            if let onBrowseRewards = onBrowseRewards {
+                onBrowseRewards()
+            } else {
+                if let onBack = onBack {
+                    onBack()
+                } else if let onDismiss = onDismiss {
+                    onDismiss()
+                }
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
+                   let tabVC = rootNav.viewControllers.first as? UITabBarController {
+                    tabVC.selectedIndex = 2
+                }
+            }
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: "gift")
+                    .font(.system(size: 15, weight: .semibold))
+                
+                Text("BROWSE REWARDS")
+                    .font(.oswaldMedium(size: 15))
+                    .tracking(1.0)
+                
+                Spacer()
+                
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 13, weight: .bold))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 22)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(
+                Capsule()
+                    .fill(Color("Button_red"))
+                    .shadow(color: Color("Button_red").opacity(0.35), radius: 6, x: 0, y: 3)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .padding(.top, 8)
     }
 }
 

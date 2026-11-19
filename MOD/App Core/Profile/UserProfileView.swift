@@ -240,7 +240,7 @@ struct UserProfileView: View {
                 onStarTap: onStarTap
             )
         }
-        .sheet(isPresented: $showMemberPassSheet) {
+        .fullScreenCover(isPresented: $showMemberPassSheet) {
             memberPassSheetView
         }
         .sheet(isPresented: $showSavedDealsSheet) {
@@ -1678,73 +1678,23 @@ struct UserProfileView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Member Pass Sheet
+    // MARK: - Member Pass Sheet (Post-Enrollment Member Pass)
     
     private var memberPassSheetView: some View {
-        NavigationView {
-            ZStack {
-                Color("app_background").ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("MEMBER PASS")
-                                .font(.oswaldMedium(size: 32))
-                                .tracking(0.6)
-                                .foregroundColor(Color("app_black"))
-                            
-                            Text("Show this at the counter to earn on in-store orders.")
-                                .font(.barlowRegular(size: 14))
-                                .foregroundColor(Color("text_gary"))
-                        }
-                        .padding(.top, 4)
-                        
-                        // Pass Card
-                        VStack(spacing: 16) {
-                            HStack {
-                                Image("app_logo")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 30, height: 36)
-                                
-                                Text("Rewards")
-                                    .font(.oswaldMedium(size: 20))
-                                
-                                Spacer()
-                                
-                                Text(tierName)
-                                    .font(.barlowBold(size: 11))
-                                    .foregroundColor(Color(red: 0x6E / 255.0, green: 0x51 / 255.0, blue: 0x22 / 255.0))
-                                    .padding(.horizontal, 9)
-                                    .padding(.vertical, 3)
-                                    .background(Capsule().fill(Color(red: 0xF7 / 255.0, green: 0xEE / 255.0, blue: 0xD8 / 255.0)))
-                            }
-                            
-                            BarcodeGraphicView()
-                                .frame(height: 58)
-                            
-                            Text("7730 4821 0093")
-                                .font(.system(size: 16, weight: .bold, design: .monospaced))
-                                .tracking(2.0)
-                        }
-                        .padding(20)
-                        .background(whiteCardBackground)
-                    }
-                    .padding(16)
-                }
-            }
-            .navigationTitle("Digital Pass")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        showMemberPassSheet = false
-                    }
-                    .font(.barlowBold(size: 16))
-                    .foregroundColor(Color("Button_red"))
-                }
-            }
-        }
+        DigitalMemberPassSheet(
+            userName: fullName,
+            userPoints: points,
+            tierName: tierName,
+            onDismiss: {
+                showMemberPassSheet = false
+            },
+            onBrowseRewards: {
+                showMemberPassSheet = false
+                switchToTab(2)
+            },
+            onCartTap: onCartTap,
+            onStarTap: onStarTap
+        )
     }
     
     // MARK: - Login Redirection Helper
