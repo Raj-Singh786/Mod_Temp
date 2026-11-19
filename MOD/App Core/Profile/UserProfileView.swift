@@ -34,6 +34,7 @@ struct UserProfileView: View {
     var onNavigateToRewards: (() -> Void)? = nil
     var onNavigateToOrders: (() -> Void)? = nil
     var onNavigateToHome: (() -> Void)? = nil
+    var onSignOut: (() -> Void)? = nil
     
     // MARK: - Observed State
     
@@ -172,10 +173,10 @@ struct UserProfileView: View {
         .navigationBarHidden(true)
         .navigationBarBackButtonHidden(true)
         .onAppear {
-            if let initial = initialIsGuest {
-                isGuest = initial
-            } else if let saved = UserDefaults.standard.object(forKey: "isGuestUser") as? Bool {
+            if let saved = UserDefaults.standard.object(forKey: "isGuestUser") as? Bool {
                 isGuest = saved
+            } else if let initial = initialIsGuest {
+                isGuest = initial
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .userLoggedOutNotification)) { _ in
@@ -277,15 +278,7 @@ struct UserProfileView: View {
                 title: Text("Sign Out"),
                 message: Text("Are you sure you want to sign out of your MOD account?"),
                 primaryButton: .destructive(Text("Sign Out")) {
-                    UserDefaults.standard.set(true, forKey: "isGuestUser")
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        isGuest = true
-                    }
-                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                       let rootNav = windowScene.windows.first?.rootViewController as? UINavigationController,
-                       let tabVC = rootNav.viewControllers.first as? UITabBarController {
-                        tabVC.selectedIndex = 0
-                    }
+                    handleSignOut()
                 },
                 secondaryButton: .cancel()
             )
@@ -499,7 +492,7 @@ struct UserProfileView: View {
             
             // SIGN OUT Button
             Button(action: {
-                showSignOutAlert = true
+                handleSignOut()
             }) {
                 Text("SIGN OUT")
                     .font(.oswaldMedium(size: 12))
@@ -1762,6 +1755,85 @@ struct UserProfileView: View {
         } else {
             AccountSheetManager.shared.handleStarTap()
         }
+    }
+    
+    // MARK: - Sign Out & Navigation Helpers
+    
+    private func handleSignOut() {
+        UserDefaults.standard.set(true, forKey: "isGuestUser")
+        UserDefaults.standard.synchronize()
+        
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            isGuest = true
+        }
+        
+        NotificationCenter.default.post(name: .userLoggedOutNotification, object: nil)
+        
+        DispatchQueue.main.async {
+            self.switchToTab(0)
+            self.onSignOut?()
+            self.onNavigateToHome?()
+        }
+    }
+    
+    private func switchToTab(_ index: Int) {
+        var foundTabBarController: UITabBarController? = nil
+        
+        // 1. Through active SceneDelegate window
+        if let windowScene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
+            if let sceneDelegate = windowScene.delegate as? SceneDelegate,
+               let root = sceneDelegate.window?.rootViewController {
+                foundTabBarController = extractTabBar(from: root)
+            }
+            
+            if foundTabBarController == nil {
+                for window in windowScene.windows {
+                    if let root = window.rootViewController {
+                        if let tab = extractTabBar(from: root) {
+                            foundTabBarController = tab
+                            break
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 2. Fallback through UIApplication.shared.windows
+        if foundTabBarController == nil {
+            for window in UIApplication.shared.windows {
+                if let root = window.rootViewController {
+                    if let tab = extractTabBar(from: root) {
+                        foundTabBarController = tab
+                        break
+                    }
+                }
+            }
+        }
+        
+        // 3. Perform tab selection and switch view controller
+        if let tabVC = foundTabBarController {
+            tabVC.selectedIndex = index
+            if let controllers = tabVC.viewControllers, index < controllers.count {
+                tabVC.selectedViewController = controllers[index]
+            }
+        }
+    }
+    
+    private func extractTabBar(from viewController: UIViewController) -> UITabBarController? {
+        if let tab = viewController as? UITabBarController {
+            return tab
+        }
+        if let nav = viewController as? UINavigationController {
+            for child in nav.viewControllers {
+                if let tab = child as? UITabBarController {
+                    return tab
+                }
+            }
+        }
+        if let presented = viewController.presentedViewController {
+            return extractTabBar(from: presented)
+        }
+        return nil
     }
 }
 
