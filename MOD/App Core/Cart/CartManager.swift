@@ -25,6 +25,16 @@ struct CartItem: Identifiable, Hashable {
     }
 }
 
+// MARK: - Applied Reward Model
+
+struct AppliedReward: Equatable {
+    let id: String
+    let title: String
+    let discount: Double
+    let points: Int
+    let subtitle: String
+}
+
 // MARK: - Cart Manager Singleton
 
 final class CartManager: ObservableObject {
@@ -32,6 +42,7 @@ final class CartManager: ObservableObject {
     
     @Published var items: [CartItem] = []
     @Published var showCartSheet: Bool = false
+    @Published var appliedReward: AppliedReward? = nil
     
     var totalItemCount: Int {
         items.reduce(0) { $0 + $1.quantity }
@@ -41,8 +52,30 @@ final class CartManager: ObservableObject {
         items.reduce(0.0) { $0 + ($1.price * Double($1.quantity)) }
     }
     
+    var rewardDiscount: Double {
+        appliedReward?.discount ?? 0.0
+    }
+    
+    var discountedTotalPrice: Double {
+        max(0.0, totalPrice - rewardDiscount)
+    }
+    
     var formattedTotalPrice: String {
         String(format: "$%.2f", totalPrice)
+    }
+    
+    var formattedDiscountedTotalPrice: String {
+        String(format: "$%.2f", discountedTotalPrice)
+    }
+    
+    func applyReward(id: String, title: String, discount: Double, points: Int, subtitle: String) {
+        self.appliedReward = AppliedReward(id: id, title: title, discount: discount, points: points, subtitle: subtitle)
+        postUpdates()
+    }
+    
+    func removeReward() {
+        self.appliedReward = nil
+        postUpdates()
     }
     
     // Add item to cart
@@ -90,6 +123,7 @@ final class CartManager: ObservableObject {
     
     func clearCart() {
         items.removeAll()
+        appliedReward = nil
         postUpdates()
     }
     
@@ -142,7 +176,7 @@ struct PersistentFloatingCartBar: View {
                         Spacer()
                         
                         // Right: Total Price "$11.99"
-                        Text(cartManager.formattedTotalPrice)
+                        Text(cartManager.appliedReward != nil ? cartManager.formattedDiscountedTotalPrice : cartManager.formattedTotalPrice)
                             .font(.oswaldBold(size: 18))
                             .foregroundColor(.white)
                     }

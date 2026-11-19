@@ -58,8 +58,12 @@ struct CartView: View {
         cartManager.totalPrice
     }
     
+    private var rewardDiscount: Double {
+        cartManager.appliedReward?.discount ?? 0.0
+    }
+    
     private var discount: Double {
-        appliedPromoDiscount
+        appliedPromoDiscount + rewardDiscount
     }
     
     private var discountedSubtotal: Double {
@@ -585,6 +589,49 @@ struct CartView: View {
                     .fill(Color(red: 0xFA / 255.0, green: 0xF7 / 255.0, blue: 0xF2 / 255.0))
             )
             
+            // Applied Reward Card (Matching Snap 1)
+            if let reward = cartManager.appliedReward {
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "star")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundColor(Color(red: 0x8C / 255.0, green: 0x6E / 255.0, blue: 0x25 / 255.0))
+                    
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(reward.title)
+                            .font(.barlowBold(size: 14.5))
+                            .foregroundColor(Color("app_black"))
+                        
+                        Text(reward.subtitle)
+                            .font(.barlowRegular(size: 12))
+                            .foregroundColor(Color("text_gary"))
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            cartManager.removeReward()
+                        }
+                    }) {
+                        Text("Remove")
+                            .font(.barlowBold(size: 13))
+                            .foregroundColor(Color("Button_red"))
+                            .underline()
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color(red: 0xFD / 255.0, green: 0xF7 / 255.0, blue: 0xE8 / 255.0))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color(red: 0xF2 / 255.0, green: 0xE4 / 255.0, blue: 0xC8 / 255.0), lineWidth: 1.0)
+                        )
+                )
+            }
+            
             Divider()
                 .background(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0))
             
@@ -599,7 +646,7 @@ struct CartView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(Color("Button_red"))
                     
-                    Text(appliedPromo != nil ? "Promo applied: \(appliedPromo!)" : "Add promo code or reward")
+                    Text(cartManager.appliedReward != nil ? "Change offer or reward" : (appliedPromo != nil ? "Promo applied: \(appliedPromo!)" : "Add promo code or reward"))
                         .font(.barlowBold(size: 15))
                         .foregroundColor(Color("app_black"))
                     
@@ -630,6 +677,18 @@ struct CartView: View {
                     Text(String(format: "$%.2f", subtotal))
                         .font(.barlowMedium(size: 14))
                         .foregroundColor(Color("app_black"))
+                }
+                
+                if rewardDiscount > 0, let reward = cartManager.appliedReward {
+                    HStack {
+                        Text("Reward (\(reward.title))")
+                            .font(.barlowRegular(size: 14))
+                            .foregroundColor(Color(red: 0x3E / 255.0, green: 0x59 / 255.0, blue: 0x18 / 255.0))
+                        Spacer()
+                        Text(String(format: "-$%.2f", reward.discount))
+                            .font(.barlowMedium(size: 14))
+                            .foregroundColor(Color(red: 0x3E / 255.0, green: 0x59 / 255.0, blue: 0x18 / 255.0))
+                    }
                 }
                 
                 if appliedPromoDiscount > 0, let promo = appliedPromo {

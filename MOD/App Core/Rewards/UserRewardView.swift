@@ -38,6 +38,7 @@ struct UserRewardView: View {
     // MARK: - Observed State
     
     @ObservedObject private var walletManager = WalletManager.shared
+    @ObservedObject private var cartManager = CartManager.shared
     
     // MARK: - State
     
@@ -63,7 +64,7 @@ struct UserRewardView: View {
             points: 500,
             title: "$5 OFF YOUR ORDER",
             description: "Take $5.00 off food when you spend $15 or more.",
-            requirementNote: "Minimum food spend $15.00",
+            requirementNote: "Eligible for your current cart",
             isGoldTierOnly: false,
             isProgressBased: false
         ),
@@ -71,8 +72,8 @@ struct UserRewardView: View {
             id: "r2",
             points: 400,
             title: "FREE DELIVERY",
-            description: "Delivery fee waived. Delivery orders only. Before taxes.",
-            requirementNote: "Minimum food spend $15.00",
+            description: "Delivery fee waived. Delivery orders only. Up to 3 uses.",
+            requirementNote: "Delivery orders only",
             isGoldTierOnly: false,
             isProgressBased: false
         ),
@@ -360,22 +361,25 @@ struct UserRewardView: View {
     }
     
     private func rewardCard(_ reward: RewardItem) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let isSelected = cartManager.appliedReward?.id == reward.id
+        let isAnotherSelected = cartManager.appliedReward != nil && !isSelected
+        
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 14) {
                 // Circle Badge with Points
                 ZStack {
                     Circle()
-                        .fill(Color("pizza_found"))
+                        .fill(Color(red: 0xF9 / 255.0, green: 0xF3 / 255.0, blue: 0xE0 / 255.0))
                         .frame(width: 58, height: 58)
                     
                     VStack(spacing: -1) {
                         Text("\(reward.points)")
-                            .font(.oswaldBold(size: 16))
+                            .font(.oswaldBold(size: 18))
                             .foregroundColor(Color("app_black"))
                         
                         Text("pts")
-                            .font(.barlowRegular(size: 11))
-                            .foregroundColor(Color("text_gary"))
+                            .font(.barlowBold(size: 11))
+                            .foregroundColor(Color(red: 0x6E / 255.0, green: 0x51 / 255.0, blue: 0x22 / 255.0))
                     }
                 }
                 
@@ -408,8 +412,26 @@ struct UserRewardView: View {
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                     
-                    // Requirement Note (if present)
-                    if !reward.requirementNote.isEmpty {
+                    // Status Line
+                    if isSelected {
+                        HStack(spacing: 5) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("Selected for this order")
+                                .font(.barlowSemiBold(size: 12.5))
+                        }
+                        .foregroundColor(Color(red: 0x2E / 255.0, green: 0x5A / 255.0, blue: 0x1A / 255.0))
+                        .padding(.top, 1)
+                    } else if reward.id == "r1" {
+                        HStack(spacing: 5) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("Eligible for your current cart")
+                                .font(.barlowSemiBold(size: 12.5))
+                        }
+                        .foregroundColor(Color(red: 0x2E / 255.0, green: 0x5A / 255.0, blue: 0x1A / 255.0))
+                        .padding(.top, 1)
+                    } else if !reward.requirementNote.isEmpty {
                         HStack(spacing: 4) {
                             Image(systemName: "info.circle")
                                 .font(.system(size: 11, weight: .medium))
@@ -446,39 +468,69 @@ struct UserRewardView: View {
                 }
             }
             
-            // SELECT / SELECTED Button (for non-progress items)
+            // SELECT / REMOVE / REPLACE Action Button (for non-progress items)
             if !reward.isProgressBased {
                 HStack {
-                    Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                            if selectedRewardId == reward.id {
-                                selectedRewardId = nil
-                            } else {
-                                selectedRewardId = reward.id
+                    if isSelected {
+                        // REMOVE Button (Black outline capsule with white fill and black text)
+                        Button(action: {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                cartManager.removeReward()
                             }
+                        }) {
+                            Text("REMOVE")
+                                .font(.oswaldBold(size: 13.5))
+                                .tracking(0.8)
+                                .foregroundColor(Color("app_black"))
+                                .padding(.horizontal, 20)
+                                .frame(height: 34)
+                                .background(
+                                    Capsule()
+                                        .stroke(Color("app_black"), lineWidth: 1.5)
+                                        .background(Capsule().fill(Color.white))
+                                )
                         }
-                    }) {
-                        HStack(spacing: 5) {
-                            if selectedRewardId == reward.id {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 11, weight: .bold))
-                                Text("SELECTED")
-                            } else {
-                                Text("SELECT")
+                        .buttonStyle(PlainButtonStyle())
+                    } else if isAnotherSelected {
+                        // REPLACE Button (Muted pink/red capsule with white text)
+                        Button(action: {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                applyThisReward(reward)
                             }
+                        }) {
+                            Text("REPLACE")
+                                .font(.oswaldBold(size: 13.5))
+                                .tracking(0.8)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .frame(height: 34)
+                                .background(
+                                    Capsule()
+                                        .fill(Color(red: 0xD4 / 255.0, green: 0x8C / 255.0, blue: 0x93 / 255.0))
+                                )
                         }
-                        .font(.oswaldMedium(size: 13))
-                        .tracking(0.8)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 22)
-                        .frame(height: 34)
-                        .background(
-                            Capsule()
-                                .fill(selectedRewardId == reward.id ? Color("Button_red") : Color(red: 0xB5 / 255.0, green: 0x6E / 255.0, blue: 0x76 / 255.0))
-                                .shadow(color: Color.black.opacity(0.06), radius: 3, x: 0, y: 1)
-                        )
+                        .buttonStyle(PlainButtonStyle())
+                    } else {
+                        // SELECT Button (Solid red for eligible item r1, muted for others)
+                        Button(action: {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                applyThisReward(reward)
+                            }
+                        }) {
+                            Text("SELECT")
+                                .font(.oswaldBold(size: 13.5))
+                                .tracking(0.8)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 22)
+                                .frame(height: 34)
+                                .background(
+                                    Capsule()
+                                        .fill(reward.id == "r1" ? Color("Button_red") : Color(red: 0xD4 / 255.0, green: 0x8C / 255.0, blue: 0x93 / 255.0))
+                                        .shadow(color: reward.id == "r1" ? Color("Button_red").opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
                     
                     Spacer()
                 }
@@ -491,9 +543,51 @@ struct UserRewardView: View {
                 .fill(Color.white)
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0), lineWidth: 1.2)
+                        .stroke(
+                            isSelected
+                                ? Color("Button_red")
+                                : Color(red: 0xEE / 255.0, green: 0xE8 / 255.0, blue: 0xDC / 255.0),
+                            lineWidth: isSelected ? 1.5 : 1.2
+                        )
                 )
                 .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 2)
+        )
+    }
+    
+    private func applyThisReward(_ reward: RewardItem) {
+        let discountAmount: Double
+        let subtitle: String
+        let displayTitle: String
+        
+        switch reward.id {
+        case "r1":
+            discountAmount = 5.00
+            displayTitle = "$5 off your order"
+            subtitle = "\(reward.points) pts · -$5.00 · points deducted at checkout"
+        case "r2":
+            discountAmount = 4.99
+            displayTitle = "Free delivery"
+            subtitle = "\(reward.points) pts · Free delivery · points deducted at checkout"
+        case "r3":
+            discountAmount = 4.49
+            displayTitle = "Free dessert"
+            subtitle = "\(reward.points) pts · Free dessert · points deducted at checkout"
+        case "r5":
+            discountAmount = 15.00
+            displayTitle = "$15 off — Gold"
+            subtitle = "\(reward.points) pts · -$15.00 · points deducted at checkout"
+        default:
+            discountAmount = 5.00
+            displayTitle = reward.title.capitalized
+            subtitle = "\(reward.points) pts · -$5.00 · points deducted at checkout"
+        }
+        
+        cartManager.applyReward(
+            id: reward.id,
+            title: displayTitle,
+            discount: discountAmount,
+            points: reward.points,
+            subtitle: subtitle
         )
     }
     
